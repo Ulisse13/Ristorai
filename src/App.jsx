@@ -172,7 +172,12 @@ function Ingredients({ ings, setIngs, isMobile }) {
   const [delTarget, setDelTarget] = useState(null)
   const [form, setForm] = useState({ name: "", cat: "Carni", unit: "kg", cur: "" })
   const [err, setErr] = useState({})
-  const list = ings.filter(i => i.name.toLowerCase().includes(search.toLowerCase()))
+  const CATS_ALL = ["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Scatolame", "Surgelati", "Bevande", "Spezie & Aromi", "Altro"]
+  const [catFilter, setCatFilter] = useState("")
+  const list = ings.filter(i =>
+    i.name.toLowerCase().includes(search.toLowerCase()) &&
+    (!catFilter || i.cat === catFilter)
+  )
   function openAdd() { setEdit(null); setForm({ name: "", cat: "Carni", unit: "kg", cur: "" }); setErr({}); setOpen(true) }
   function openEdit(i) { setEdit(i); setForm({ name: i.name, cat: i.cat, unit: i.unit, cur: String(i.cur) }); setErr({}); setOpen(true) }
   function save() {
@@ -194,7 +199,15 @@ function Ingredients({ ings, setIngs, isMobile }) {
         <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Ingredienti</div><div style={{ fontSize: 12, color: S.t3 }}>{list.length} ingredienti</div></div>
         <button style={btn("p")} onClick={openAdd}>+ Nuovo</button>
       </div>
-      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca ingrediente..." style={{ ...inp(), maxWidth: 260, marginBottom: 12 }} />
+      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca ingrediente..." style={{ ...inp(), maxWidth: 260, marginBottom: 8 }} />
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+        {["", ...CATS_ALL].map(c => (
+          <button key={c} onClick={() => setCatFilter(c)}
+            style={{ padding: "3px 10px", background: catFilter === c ? S.acg : "none", border: "1px solid " + (catFilter === c ? S.acd : "#2a2a31"), borderRadius: 999, color: catFilter === c ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>
+            {c || "Tutte"}
+          </button>
+        ))}
+      </div>
       {isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {list.map(ing => {
@@ -249,7 +262,7 @@ function Ingredients({ ings, setIngs, isMobile }) {
         footer={<><button style={btn("g")} onClick={() => setOpen(false)}>Annulla</button><button style={btn("p")} onClick={save}>Salva</button></>}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <div style={{ gridColumn: "1/-1" }}><Fld label="Nome *"><input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Petto di pollo" />{err.name && <span style={{ fontSize: 11, color: S.red }}>{err.name}</span>}</Fld></div>
-          <Fld label="Categoria"><select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>{["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Altro"].map(c => <option key={c}>{c}</option>)}</select></Fld>
+          <Fld label="Categoria"><select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>{["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Scatolame", "Surgelati", "Bevande", "Spezie & Aromi", "Altro"].map(c => <option key={c}>{c}</option>)}</select></Fld>
           <Fld label="Unità"><select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>{["kg", "g", "l", "ml", "pz"].map(u => <option key={u}>{u}</option>)}</select></Fld>
           <Fld label={"Prezzo attuale (€/" + form.unit + ") *"}><input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />{err.cur && <span style={{ fontSize: 11, color: S.red }}>{err.cur}</span>}<span style={{ fontSize: 11, color: S.t3, marginTop: 2 }}>{edit && edit.avg ? "Media storica attuale: " + F(edit.avg) + "/" + form.unit : "Il sistema calcolerà la media automaticamente"}</span></Fld>
         </div>
@@ -295,10 +308,13 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
   function openEdit(d) {
     setEdit(d)
     setForm({ name: d.name, cat: d.cat, target: String(Math.round(d.target * 100)) })
-    const existingRecipe = RECIPES[d.id]
-      ? RECIPES[d.id].map(r => ({ id: uid(), ingId: r.id, qty: String(r.qty), unit: r.unit, waste: String(Math.round((r.waste - 1) * 100)) }))
-      : [{ id: uid(), ingId: "", qty: "", unit: "kg", waste: "0" }]
-    setRecipe(existingRecipe)
+    // Carica ricetta salvata nel piatto, fallback su RECIPES statici
+    const savedRecipe = d.recipe && d.recipe.length > 0
+      ? d.recipe.map(r => ({ id: uid(), ingId: r.ingId, qty: String(r.qty), unit: r.unit, waste: String(r.waste || "0") }))
+      : RECIPES[d.id]
+        ? RECIPES[d.id].map(r => ({ id: uid(), ingId: r.id, qty: String(r.qty), unit: r.unit, waste: String(Math.round((r.waste - 1) * 100)) }))
+        : [{ id: uid(), ingId: "", qty: "", unit: "kg", waste: "0" }]
+    setRecipe(savedRecipe)
     setErr({})
     setDetail(null)
     setOpen(true)
@@ -310,14 +326,22 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
   function removeRow(id) { setRecipe(r => r.filter(x => x.id !== id)) }
   function updateRow(id, patch) { setRecipe(r => r.map(x => x.id === id ? { ...x, ...patch } : x)) }
 
+  // Converti quantità ricetta nell'unità dell'ingrediente
+  function toIngUnit(qty, rowUnit, ingUnit) {
+    if (rowUnit === ingUnit) return qty
+    if (rowUnit === "g"  && ingUnit === "kg") return qty / 1000
+    if (rowUnit === "kg" && ingUnit === "g")  return qty * 1000
+    if (rowUnit === "ml" && ingUnit === "l")  return qty / 1000
+    if (rowUnit === "l"  && ingUnit === "ml") return qty * 1000
+    return qty
+  }
+
   const liveCost = recipe.reduce((sum, row) => {
     const ing = ings.find(i => i.id === row.ingId)
     if (!ing || !row.qty) return sum
     const qty = parseFloat(row.qty) || 0
     const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
-    let lineQty = qty
-    if (row.unit === "g" && ing.unit === "kg") lineQty = qty / 1000
-    else if (row.unit === "ml" && ing.unit === "l") lineQty = qty / 1000
+    const lineQty = toIngUnit(qty, row.unit, ing.unit)
     return sum + lineQty * ing.cur * wasteMult
   }, 0)
 
@@ -334,7 +358,11 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
     const cost = r2(liveCost)
     const price = r2(suggestedPrice)
     const fc = price > 0 ? r2(cost / price) : 0
-    const d = { name: form.name.trim(), cat: form.cat, price, target: targetPct, cost, fc, margin: r2(price - cost) }
+    // Salva la ricetta nel piatto per caricarla in modifica
+    const savedRecipe = recipe.filter(r => r.ingId).map(r => ({
+      ingId: r.ingId, qty: parseFloat(r.qty) || 0, unit: r.unit, waste: r.waste || "0"
+    }))
+    const d = { name: form.name.trim(), cat: form.cat, price, target: targetPct, cost, fc, margin: r2(price - cost), recipe: savedRecipe }
     if (edit) setDishes(prev => prev.map(x => x.id === edit.id ? { ...x, ...d } : x))
     else setDishes(prev => [...prev, { ...d, id: "d" + uid() }])
     setOpen(false)
@@ -598,9 +626,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
                     const ing = ings.find(i => i.id === row.ingId)
                     const qty = parseFloat(row.qty) || 0
                     const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
-                    let lineQty = qty
-                    if (ing && row.unit === "g" && ing.unit === "kg") lineQty = qty / 1000
-                    else if (ing && row.unit === "ml" && ing.unit === "l") lineQty = qty / 1000
+                    const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : qty
                     const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMult) : 0
                     return (
                       <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 80px 90px 28px", gap: 6, padding: "8px 8px", borderBottom: idx < recipe.length - 1 ? S.bds : "none", alignItems: "center", background: idx % 2 === 0 ? "transparent" : S.el + "55" }}>
@@ -618,7 +644,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
                         </div>
                         <div style={{ textAlign: "right" }}>
                           {lineCost > 0 ? <span style={{ fontSize: 12.5, fontWeight: 600, color: S.ac, fontVariantNumeric: "tabular-nums" }}>{F(lineCost)}</span> : <span style={{ fontSize: 12, color: S.t3 }}>—</span>}
-                          {ing && qty > 0 && parseFloat(row.waste) > 0 && <div style={{ fontSize: 9.5, color: S.t3 }}>lordo: {r2(lineQty * wasteMult * (row.unit === "g" ? 1000 : row.unit === "ml" ? 1000 : 1))}{row.unit}</div>}
+                          {ing && qty > 0 && parseFloat(row.waste) > 0 && <div style={{ fontSize: 9.5, color: S.t3 }}>lordo: {r2(qty * wasteMult)}{row.unit}</div>}
                         </div>
                         <button onClick={() => removeRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 14, padding: 2 }}>x</button>
                       </div>
@@ -652,11 +678,12 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
 }
 
 function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Altro"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Scatolame", "Surgelati", "Bevande", "Spezie & Aromi", "Altro"]
   const GEMINI_KEY = "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"
 
   // step: "list" | "upload" | "loading" | "review"
   const [step, setStep]           = useState("list")
+  const [detailInv, setDetailInv] = useState(null)
   const [prog, setProg]           = useState(0)
   const [progLabel, setProgLabel] = useState("")
   const [ocrError, setOcrError]   = useState(null)
@@ -789,6 +816,23 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         vat:   parsed.iva    ? String(parsed.iva)    : "",
       })
 
+      // Auto-categorizzazione ingrediente per nome
+      function guessCat(nome) {
+        const n = nome.toLowerCase()
+        if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia/.test(n)) return "Carni"
+        if (/pesce|merluzzo|salmone|tonno|branzino|orata|sogliola|baccalà|acciuga|sarda|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
+        if (/spinaci gelo|piselli surgelati|fagiolini surgelati|mais surgelato|misto mare|surgelat/.test(n)) return "Surgelati"
+        if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado/.test(n)) return "Verdure"
+        if (/parmigiano|mozzarella|grana|pecorino|burro|latte|panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|uova|uovo/.test(n)) return "Latticini"
+        if (/prosciutto|salame|mortadella|bresaola|coppa|speck|culatello|nduja|lonza|soppressata|finocchiona/.test(n)) return "Salumi"
+        if (/pasta|riso|farro|orzo|farina|semola|gnocchi|polenta|quinoa|couscous|bulgur|pane|grissini|crackers/.test(n)) return "Pasta & Cereali"
+        if (/olio|burro|strutto|margarina|lardo/.test(n)) return "Olio & Grassi"
+        if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola/.test(n)) return "Scatolame"
+        if (/vino|birra|acqua|succo|coca|aranciata|limonata|aperol|campari|gin|vodka|rum|whisky|grappa|amaro/.test(n)) return "Bevande"
+        if (/sale|pepe|zucchero|aceto|limone|rosmarino|timo|basilico|origano|prezzemolo|salvia|menta|curry|paprika|cannella|vaniglia|chiodi|noce moscata|curcuma/.test(n)) return "Spezie & Aromi"
+        return "Altro"
+      }
+
       // Analisi prodotti
       const prodotti = parsed.prodotti || []
       const foundList = prodotti.filter(p => p && p.nome).map(p => {
@@ -809,7 +853,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
             nome: p.nome, quantita: p.quantita, unita: p.unita,
             prezzoUnitario: p.prezzoUnitario,
             tipo: "new", ingId: null, ingName: null,
-            cat: "Altro", include: true
+            cat: guessCat(p.nome), include: true
           }
         }
       })
@@ -869,7 +913,10 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
     setInvs(prev => [{
       id: "v" + uid(), sup: fattura.sup, num: fattura.num,
       date: fattura.date, total: +fattura.total,
-      vat: v, net: +fattura.total - v, ok: true
+      vat: v, net: +fattura.total - v, ok: true,
+      prodotti: found.filter(p => p.include).map(p => ({
+        nome: p.nome, quantita: p.quantita, unita: p.unita, prezzoUnitario: p.prezzoUnitario
+      }))
     }, ...prev])
 
     reset()
@@ -1031,13 +1078,95 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         </div>
       )}
 
+      {/* ── DETTAGLIO FATTURA ── */}
+      {detailInv && (
+        <div onClick={e => e.target === e.currentTarget && setDetailInv(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "28px 20px", zIndex: 999, overflowY: "auto" }}>
+          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 520, margin: "auto" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0" }}>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>{detailInv.sup}</div>
+              <button onClick={() => setDetailInv(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+            </div>
+            <div style={{ padding: "16px 22px" }}>
+              {/* KPI */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
+                {[
+                  { l: "Data", v: D(detailInv.date) },
+                  { l: "N° Fattura", v: detailInv.num || "—" },
+                  { l: "Totale", v: F(detailInv.total) },
+                  { l: "IVA", v: F(detailInv.vat || 0) },
+                  { l: "Imponibile", v: F(detailInv.net || 0) },
+                  { l: "Stato", v: "Elaborata" },
+                ].map((k, i) => (
+                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{k.v}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Prodotti con prezzo modificabile */}
+              {detailInv.prodotti && detailInv.prodotti.length > 0 && (
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>
+                    Prodotti — modifica prezzo se necessario
+                  </div>
+                  <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
+                    {detailInv.prodotti.map((p, i) => (
+                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px", gap: 8, padding: "10px 14px", borderBottom: i < detailInv.prodotti.length - 1 ? S.bds : "none", alignItems: "center" }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: S.t1 }}>{p.nome}</div>
+                          <div style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</div>
+                        </div>
+                        <span style={{ fontSize: 12, color: S.t2 }}>{p.unita}</span>
+                        <input type="number" step="0.01" min="0"
+                          defaultValue={p.prezzoUnitario}
+                          onBlur={e => {
+                            const newPrice = parseFloat(e.target.value)
+                            if (!isNaN(newPrice) && newPrice !== p.prezzoUnitario) {
+                              setInvs(prev => prev.map(inv => inv.id === detailInv.id
+                                ? { ...inv, prodotti: inv.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }
+                                : inv
+                              ))
+                              setDetailInv(prev => ({ ...prev, prodotti: prev.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }))
+                            }
+                          }}
+                          style={{ ...inp({ fontSize: 12.5, padding: "6px 8px" }) }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(!detailInv.prodotti || detailInv.prodotti.length === 0) && (
+                <div style={{ textAlign: "center", padding: "20px 0", color: S.t3, fontSize: 13 }}>
+                  Nessun prodotto salvato per questa fattura
+                </div>
+              )}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 22px 18px" }}>
+              <button style={{ ...btn("g", { fontSize: 12 }), color: S.red }}
+                onClick={() => {
+                  if (window.confirm("Eliminare questa fattura?")) {
+                    setInvs(prev => prev.filter(i => i.id !== detailInv.id))
+                    setDetailInv(null)
+                  }
+                }}>
+                Elimina fattura
+              </button>
+              <button style={btn("p")} onClick={() => setDetailInv(null)}>Chiudi</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── LISTA FATTURE ── */}
       {step === "list" && (
         <>
           {isMobile ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {invs.map(inv => (
-                <div key={inv.id} style={card({ padding: "16px" })}>
+                <div key={inv.id} style={card({ padding: "16px", cursor: "pointer" })} onClick={() => setDetailInv(inv)}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: S.t1 }}>{inv.sup}</div>
                     <span style={badge("g")}>Elaborata</span>
@@ -1056,7 +1185,9 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                   <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
                 ))}</tr></thead>
                 <tbody>{invs.map(inv => (
-                  <tr key={inv.id}>
+                  <tr key={inv.id} onClick={() => setDetailInv(inv)} style={{ cursor: "pointer" }}
+                    onMouseEnter={e => { for (const td of e.currentTarget.cells) td.style.background = S.el }}
+                    onMouseLeave={e => { for (const td of e.currentTarget.cells) td.style.background = "" }}>
                     <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>{D(inv.date)}</td>
                     <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>{inv.sup}</td>
                     <td style={{ padding: "11px 16px", color: S.t3, borderBottom: S.bds }}>{inv.num}</td>
@@ -1153,8 +1284,43 @@ function FoodCost({ dishes, ings, isMobile }) {
   const [sel, setSel] = useState(null)
   const [ov, setOv] = useState({})
   const dish = dishes.find(d => d.id === sel)
-  const items = sel ? (RECIPES[sel] || []) : []
-  const liveItems = items.map(it => { const p = ov[it.id] !== undefined && ov[it.id] !== "" ? parseFloat(ov[it.id]) || it.price : it.price; return { ...it, lp: p, lc: Math.round(it.qty * p * it.waste * 100) / 100 } })
+
+  function toIngUnit(qty, rowUnit, ingUnit) {
+    if (rowUnit === ingUnit) return qty
+    if (rowUnit === "g"  && ingUnit === "kg") return qty / 1000
+    if (rowUnit === "kg" && ingUnit === "g")  return qty * 1000
+    if (rowUnit === "ml" && ingUnit === "l")  return qty / 1000
+    if (rowUnit === "l"  && ingUnit === "ml") return qty * 1000
+    return qty
+  }
+
+  // Usa ricetta salvata nel piatto, fallback su RECIPES statici
+  const items = sel ? (
+    dish?.recipe?.length > 0
+      ? dish.recipe.map(r => {
+          const ing = ings.find(i => i.id === r.ingId)
+          return {
+            id: r.ingId,
+            name: ing ? ing.name : r.ingId,
+            qty: r.qty,
+            unit: r.unit,
+            price: ing ? ing.cur : 0,
+            ingUnit: ing ? ing.unit : r.unit,
+            waste: 1 + (parseFloat(r.waste) || 0) / 100
+          }
+        })
+      : (RECIPES[sel] || []).map(r => {
+          const ing = ings.find(i => i.id === r.id)
+          return { ...r, ingUnit: ing ? ing.unit : r.unit, price: ing ? ing.cur : r.price }
+        })
+  ) : []
+
+  const liveItems = items.map(it => {
+    const p = ov[it.id] !== undefined && ov[it.id] !== "" ? parseFloat(ov[it.id]) || it.price : it.price
+    const lineQty = toIngUnit(it.qty, it.unit, it.ingUnit || it.unit)
+    const lc = Math.round(lineQty * p * it.waste * 100) / 100
+    return { ...it, lp: p, lc }
+  })
   const total = liveItems.reduce((s, i) => s + i.lc, 0)
   const fcPct = dish ? total / dish.price : 0
   const margin = dish ? dish.price - total : 0
