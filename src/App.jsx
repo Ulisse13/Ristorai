@@ -121,111 +121,310 @@ function Fld({ label, children }) {
   return <div style={col({ marginBottom: 12 })}><label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2 }}>{label}</label>{children}</div>
 }
 
-function Dashboard({ sales, dishes, isMobile }) {
-  const totalR = sales.reduce((s, e) => s + e.total, 0)
-  const totalC = sales.reduce((s, e) => s + e.covers, 0)
+function Dashboard({ ings, isMobile }) {
+  // Calcola variazione % tra prezzo attuale e media storica (proxy dell'acquisto precedente)
+  function variation(ing) {
+    if (!ing.avg || ing.avg === 0) return 0
+    return Math.round(((ing.cur - ing.avg) / ing.avg) * 1000) / 10
+  }
+
+  const withVar = ings.map(ing => ({ ...ing, var: variation(ing) }))
+
+  const increased = withVar.filter(i => i.var > 0)
+  const decreased = withVar.filter(i => i.var < 0)
+  const stable    = withVar.filter(i => i.var === 0)
+
+  // Ordine: aumenti decrescenti, poi ribassi, poi invariati
+  const sorted = [
+    ...increased.sort((a, b) => b.var - a.var),
+    ...decreased.sort((a, b) => a.var - b.var),
+    ...stable,
+  ]
+
   return (
     <div>
-      <div style={{ marginBottom: 18 }}><div style={{ fontFamily: "'Georgia',serif", fontSize: isMobile ? 26 : 22, color: S.t1, marginBottom: 2 }}>Dashboard</div><div style={{ fontSize: 12, color: S.t3 }}>Panoramica economica — Novembre 2024</div></div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10, marginBottom: 16 }}>
-        {[{ l: "Incasso settimana", v: F(totalR), s: "ultimi 4 giorni" }, { l: "Food Cost medio", v: P(0.274), s: "target 28%" }, { l: "Ticket medio", v: F(totalR / totalC), s: totalC + " coperti" }, { l: "Alert attivi", v: "3", s: "alta priorità" }].map((k, i) => (
-          <div key={i} style={{ ...card({ padding: "14px 16px", position: "relative", overflow: "hidden" }) }}>
-            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
-            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 5 }}>{k.l}</div>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 21, color: S.t1, letterSpacing: "-0.03em", marginBottom: 3 }}>{k.v}</div>
-            <div style={{ fontSize: 11, color: S.t3 }}>{k.s}</div>
+      {/* Titolo */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: isMobile ? 24 : 20, color: S.t1, marginBottom: 2, letterSpacing: "-0.02em" }}>
+          Variazioni di prezzo
+        </div>
+        <div style={{ fontSize: 12, color: S.t3 }}>Aggiornato ad ogni nuova fattura</div>
+      </div>
+
+      {/* Counter riassuntivi */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 24 }}>
+        {[
+          { label: "Aumenti",  count: increased.length, color: S.red,   bg: S.rd,   symbol: "↑" },
+          { label: "Ribassi",  count: decreased.length, color: S.green, bg: S.gd,   symbol: "↓" },
+          { label: "Invariati",count: stable.length,    color: S.ac,    bg: S.acg,  symbol: "●" },
+        ].map((k, i) => (
+          <div key={i} style={{ background: k.bg, border: "1px solid " + (i === 0 ? "rgba(248,113,113,0.25)" : i === 1 ? "rgba(74,222,128,0.25)" : S.acd), borderRadius: S.r2, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: k.color, opacity: 0.4 }} />
+            <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, fontWeight: 700, marginBottom: 6 }}>{k.label}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
+              <span style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: k.color, letterSpacing: "-0.03em", lineHeight: 1 }}>{k.count}</span>
+              <span style={{ fontSize: 16, color: k.color, fontWeight: 700 }}>{k.symbol}</span>
+            </div>
           </div>
         ))}
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div style={card({ padding: 16 })}>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: S.t1, marginBottom: 12 }}>Top piatti per margine</div>
-          {[...dishes].sort((a, b) => b.margin - a.margin).slice(0, 4).map((d, i) => (
-            <div key={d.id} style={row({ padding: "7px 0", borderBottom: S.bds })}>
-              <span style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: S.t3, width: 16 }}>{i + 1}</span>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 13, fontWeight: 500, color: S.t1 }}>{d.name}</div>
-                <div style={{ fontSize: 11, color: S.t3 }}>{F(d.margin)} margine</div>
+
+      {/* Lista ingredienti */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {sorted.map(ing => {
+          const v = ing.var
+          const isUp   = v > 0
+          const isDown = v < 0
+
+          const varColor  = isUp ? S.red : isDown ? S.green : S.ac
+          const varBg     = isUp ? S.rd  : isDown ? S.gd    : S.acg
+          const varBorder = isUp ? "rgba(248,113,113,0.2)" : isDown ? "rgba(74,222,128,0.2)" : S.acd
+          const varSymbol = isUp ? "↑" : isDown ? "↓" : "●"
+          const varText   = isUp ? "+" + v.toFixed(1) + "%" : isDown ? v.toFixed(1) + "%" : "0%"
+
+          return (
+            <div key={ing.id} style={{ background: S.surf, border: "1px solid #1f1f25", borderRadius: S.r, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+              {/* Variazione */}
+              <div style={{ minWidth: 60, background: varBg, border: "1px solid " + varBorder, borderRadius: 6, padding: "4px 8px", textAlign: "center", flexShrink: 0 }}>
+                <div style={{ fontSize: 16, color: varColor, lineHeight: 1, fontWeight: 700 }}>{varSymbol}</div>
+                <div style={{ fontSize: 10, color: varColor, fontWeight: 700, marginTop: 1 }}>{varText}</div>
               </div>
-              <span style={{ fontSize: 12, fontWeight: 600, color: FC_COLOR(d.fc, d.target) }}>{P(d.fc)}</span>
+
+              {/* Info ingrediente */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.name}</div>
+                <div style={{ fontSize: 11, color: S.t3 }}>{ing.cat}</div>
+              </div>
+
+              {/* Prezzi */}
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, fontVariantNumeric: "tabular-nums" }}>
+                  {F(ing.cur)}<span style={{ fontSize: 10, color: S.t3, fontWeight: 400 }}>/{ing.unit}</span>
+                </div>
+                <div style={{ fontSize: 10, color: S.t3, fontVariantNumeric: "tabular-nums" }}>
+                  prec. {F(ing.avg)}/{ing.unit}
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-        <div style={card({ padding: 16 })}>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: S.t1, marginBottom: 12 }}>Alert prioritari</div>
-          {INSIGHTS.filter(i => i.sev === "critical" || i.sev === "high").map(ins => (
-            <div key={ins.id} style={{ padding: "9px 11px", borderRadius: 6, background: S.el, border: "1px solid rgba(248,113,113,0.2)", marginBottom: 7 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{ins.title}</div>
-              <div style={{ fontSize: 11.5, color: S.t2 }}>{ins.body.split(".")[0]}.</div>
-            </div>
-          ))}
-        </div>
+          )
+        })}
       </div>
+
+      {ings.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>
+          Nessun ingrediente — aggiungili dalla sezione Ingredienti
+        </div>
+      )}
     </div>
   )
 }
 
 function Ingredients({ ings, setIngs, isMobile }) {
-  const [search, setSearch] = useState("")
-  const [open, setOpen] = useState(false)
-  const [edit, setEdit] = useState(null)
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
+  const CAT_ICONS = { Carni: "🥩", Pesce: "🐟", Verdure: "🥦", Latticini: "🧀", Surgelati: "❄️", Scatolame: "🥫", Detersivi: "🧴" }
+
+  const [selCat, setSelCat]     = useState(null) // null = category view
+  const [open, setOpen]         = useState(false)
   const [delTarget, setDelTarget] = useState(null)
-  const [form, setForm] = useState({ name: "", cat: "Carni", unit: "kg", cur: "" })
-  const [err, setErr] = useState({})
-  const CATS_ALL = ["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Scatolame", "Surgelati", "Bevande", "Spezie & Aromi", "Altro"]
-  const [catFilter, setCatFilter] = useState("")
-  const list = ings.filter(i =>
-    i.name.toLowerCase().includes(search.toLowerCase()) &&
-    (!catFilter || i.cat === catFilter)
-  )
-  function openAdd() { setEdit(null); setForm({ name: "", cat: "Carni", unit: "kg", cur: "" }); setErr({}); setOpen(true) }
-  function openEdit(i) { setEdit(i); setForm({ name: i.name, cat: i.cat, unit: i.unit, cur: String(i.cur) }); setErr({}); setOpen(true) }
+  const [edit, setEdit]         = useState(null)
+  const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "" })
+  const [err, setErr]           = useState({})
+
+  const ingsByCat = cat => ings.filter(i => i.cat === cat)
+
+  function openAdd() {
+    setEdit(null)
+    setForm({ name: "", cat: selCat || "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "" })
+    setErr({})
+    setOpen(true)
+  }
+
+  function openEdit(ing) {
+    setEdit(ing)
+    setForm({
+      name: ing.name, cat: ing.cat, unit: ing.unit,
+      cur: String(ing.cur),
+      confPrice: ing.confPrice ? String(ing.confPrice) : "",
+      confWeight: ing.confWeight ? String(ing.confWeight) : ""
+    })
+    setErr({})
+    setOpen(true)
+  }
+
   function save() {
     const e = {}
     if (!form.name.trim()) e.name = "Obbligatorio"
-    if (!form.cur || +form.cur <= 0) e.cur = "Prezzo > 0"
+    if (form.unit === "confezione") {
+      if (!form.confPrice || +form.confPrice <= 0) e.confPrice = "Prezzo > 0"
+      if (!form.confWeight || +form.confWeight <= 0) e.confWeight = "Peso/volume > 0"
+    } else {
+      if (!form.cur || +form.cur <= 0) e.cur = "Prezzo > 0"
+    }
     if (Object.keys(e).length) { setErr(e); return }
-    const newCur = +form.cur
-    const oldAvg = edit ? edit.avg : newCur
-    const newAvg = edit ? Math.round(((oldAvg * 0.7) + (newCur * 0.3)) * 100) / 100 : newCur
-    const d = { name: form.name.trim(), cat: form.cat, unit: form.unit, cur: newCur, avg: newAvg }
-    if (edit) { setIngs(prev => prev.map(i => i.id === edit.id ? { ...i, ...d } : i)) } else { setIngs(prev => [...prev, { ...d, id: "i" + uid() }]) }
+
+    let cur, unitBase
+    if (form.unit === "confezione") {
+      // calcola prezzo per kg o litro dalla confezione
+      cur = Math.round((+form.confPrice / +form.confWeight) * 100) / 100
+      unitBase = "kg" // default — utente può cambiarlo in futuro
+    } else {
+      cur = +form.cur
+      unitBase = form.unit
+    }
+
+    const oldAvg = edit ? edit.avg : cur
+    const newAvg = edit ? Math.round(((oldAvg * 0.7) + (cur * 0.3)) * 100) / 100 : cur
+    const d = {
+      name: form.name.trim(), cat: form.cat,
+      unit: unitBase, cur, avg: newAvg,
+      ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {})
+    }
+    if (edit) setIngs(prev => prev.map(i => i.id === edit.id ? { ...i, ...d } : i))
+    else      setIngs(prev => [...prev, { ...d, id: "i" + uid() }])
     setOpen(false)
   }
-  function doDelete() { setIngs(prev => prev.filter(i => i.id !== delTarget.id)); setDelTarget(null) }
+
+  function doDelete() {
+    setIngs(prev => prev.filter(i => i.id !== delTarget.id))
+    setDelTarget(null)
+  }
+
+  // ── CATEGORY VIEW ──────────────────────────────
+  if (!selCat) return (
+    <div>
+      <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", alignItems: "flex-start" })}>
+        <div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Ingredienti</div>
+          <div style={{ fontSize: 12, color: S.t3 }}>{ings.length} ingredienti totali</div>
+        </div>
+        <button style={btn("p")} onClick={openAdd}>+ Aggiungi ingrediente</button>
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
+        {CATS.map(cat => {
+          const count = ingsByCat(cat).length
+          const spiked = ingsByCat(cat).filter(i => (i.cur - i.avg) / i.avg > 0.10).length
+          return (
+            <div key={cat} onClick={() => setSelCat(cat)}
+              style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
+                transition: "transform 0.1s", borderColor: spiked > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: spiked > 0 ? "linear-gradient(90deg," + S.red + ",transparent)" : "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
+              <div style={{ fontSize: 28, marginBottom: 8 }}>{CAT_ICONS[cat] || "📦"}</div>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
+              <div style={{ fontSize: 12, color: S.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
+              {spiked > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>↑ {spiked} prezzi aumentati</div>}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Add modal */}
+      {open && (
+        <div onClick={e => e.target === e.currentTarget && setOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 999 }}>
+          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto" }}>
+            <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
+              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>Nuovo ingrediente</span>
+              <button onClick={() => setOpen(false)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+            </div>
+            <div style={{ padding: "16px 22px" }}>
+              <Fld label="Nome *">
+                <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Petto di pollo" />
+                {err.name && <span style={{ fontSize: 11, color: S.red }}>{err.name}</span>}
+              </Fld>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <Fld label="Categoria">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
+                    {CATS.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </Fld>
+                <Fld label="Unità di misura">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
+                    {["kg", "litri", "confezione"].map(u => <option key={u}>{u}</option>)}
+                  </select>
+                </Fld>
+              </div>
+              {form.unit !== "confezione" ? (
+                <Fld label={"Prezzo (€/" + form.unit + ") *"}>
+                  <input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
+                  {err.cur && <span style={{ fontSize: 11, color: S.red }}>{err.cur}</span>}
+                </Fld>
+              ) : (
+                <>
+                  <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: S.t2 }}>
+                    Inserisci il prezzo della confezione e il peso/volume netto — il prezzo per kg/litro verrà calcolato automaticamente.
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Fld label="Prezzo confezione (€) *">
+                      <input style={inp()} type="number" step="0.01" value={form.confPrice} onChange={e => setForm(f => ({ ...f, confPrice: e.target.value }))} placeholder="0.00" />
+                      {err.confPrice && <span style={{ fontSize: 11, color: S.red }}>{err.confPrice}</span>}
+                    </Fld>
+                    <Fld label="Peso/volume netto (kg o l) *">
+                      <input style={inp()} type="number" step="0.001" value={form.confWeight} onChange={e => setForm(f => ({ ...f, confWeight: e.target.value }))} placeholder="es. 0.750" />
+                      {err.confWeight && <span style={{ fontSize: 11, color: S.red }}>{err.confWeight}</span>}
+                    </Fld>
+                  </div>
+                  {form.confPrice && form.confWeight && +form.confWeight > 0 && (
+                    <div style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "10px 12px", marginBottom: 12 }}>
+                      <span style={{ fontSize: 11, color: S.t3 }}>Prezzo calcolato: </span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: S.ac }}>{F(Math.round((+form.confPrice / +form.confWeight) * 100) / 100)}/kg</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div style={row({ justifyContent: "flex-end", padding: "0 22px 18px", gap: 8 })}>
+              <button style={btn("g")} onClick={() => setOpen(false)}>Annulla</button>
+              <button style={btn("p")} onClick={save}>Salva</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+
+  // ── INGREDIENT LIST VIEW ───────────────────────
+  const list = ingsByCat(selCat)
   return (
     <div>
-      <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", alignItems: "flex-start" })}>
-        <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Ingredienti</div><div style={{ fontSize: 12, color: S.t3 }}>{list.length} ingredienti</div></div>
-        <button style={btn("p")} onClick={openAdd}>+ Nuovo</button>
+      {/* Breadcrumb */}
+      <div style={row({ marginBottom: 16 })}>
+        <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>
+          ← Ingredienti
+        </button>
+        <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+        <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
       </div>
-      <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cerca ingrediente..." style={{ ...inp(), maxWidth: 260, marginBottom: 8 }} />
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
-        {["", ...CATS_ALL].map(c => (
-          <button key={c} onClick={() => setCatFilter(c)}
-            style={{ padding: "3px 10px", background: catFilter === c ? S.acg : "none", border: "1px solid " + (catFilter === c ? S.acd : "#2a2a31"), borderRadius: 999, color: catFilter === c ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>
-            {c || "Tutte"}
-          </button>
-        ))}
+
+      <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap" })}>
+        <div style={{ fontSize: 12, color: S.t3 }}>{list.length} ingredienti</div>
       </div>
-      {isMobile ? (
+
+      {list.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+          Nessun ingrediente in questa categoria
+        </div>
+      ) : isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {list.map(ing => {
             const spiked = (ing.cur - ing.avg) / ing.avg > 0.10
             return (
-              <div key={ing.id} style={card({ padding: "16px" })}>
-                <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: S.t1 }}>{ing.name}</div>
-                  <span style={badge("n")}>{ing.cat}</span>
+              <div key={ing.id} style={card({ padding: "14px 16px" })}>
+                <div style={row({ justifyContent: "space-between", marginBottom: 6 })}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{ing.name}</div>
+                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>🗑</button>
                 </div>
-                <div style={row({ justifyContent: "space-between", marginBottom: 12 })}>
-                  <span style={{ fontSize: 15, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>{F(ing.cur)}/{ing.unit} {spiked ? "+" : ""}</span>
-                  <span style={{ fontSize: 13, color: S.t3 }}>Media: {F(ing.avg)}/{ing.unit}</span>
+                <div style={row({ justifyContent: "space-between" })}>
+                  <span style={{ fontSize: 14, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>
+                    {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
+                  </span>
+                  <span style={{ fontSize: 12, color: S.t3 }}>Media: {F(ing.avg)}/{ing.unit}</span>
                 </div>
-                <div style={{ display: "flex", gap: 10 }}>
-                  <button style={{ ...btn("s", { fontSize: 14, padding: "10px", flex: 1 }) }} onClick={() => openEdit(ing)}>Modifica</button>
-                  <button style={{ ...btn("s", { fontSize: 14, padding: "10px", flex: 1 }), color: S.red }} onClick={() => setDelTarget(ing)}>Elimina</button>
-                </div>
+                {ing.confPrice && (
+                  <div style={{ fontSize: 11, color: S.t3, marginTop: 4 }}>
+                    Confezione: {F(ing.confPrice)} · {ing.confWeight}kg
+                  </div>
+                )}
               </div>
             )
           })}
@@ -233,22 +432,28 @@ function Ingredients({ ings, setIngs, isMobile }) {
       ) : (
         <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr>{["Ingrediente", "Categoria", "Unità", "Prezzo attuale", "Media storica", ""].map(h => <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>)}</tr></thead>
+            <thead><tr>
+              {["Ingrediente", "Prezzo attuale", "Media storica", ""].map(h => (
+                <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
+              ))}
+            </tr></thead>
             <tbody>
               {list.map(ing => {
                 const spiked = (ing.cur - ing.avg) / ing.avg > 0.10
                 return (
                   <tr key={ing.id}>
-                    <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>{ing.name}</td>
-                    <td style={{ padding: "11px 16px", borderBottom: S.bds }}><span style={badge("n")}>{ing.cat}</span></td>
-                    <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds }}>{ing.unit}</td>
-                    <td style={{ padding: "10px 14px", color: spiked ? S.red : S.t1, fontWeight: spiked ? 600 : 400, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}</td>
-                    <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(ing.avg)}/{ing.unit}</td>
+                    <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>
+                      {ing.name}
+                      {ing.confPrice && <span style={{ fontSize: 10, color: S.t3, marginLeft: 6 }}>conf. {F(ing.confPrice)}</span>}
+                    </td>
+                    <td style={{ padding: "10px 16px", color: spiked ? S.red : S.t1, fontWeight: spiked ? 600 : 400, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
+                      {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
+                    </td>
+                    <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
+                      {F(ing.avg)}/{ing.unit}
+                    </td>
                     <td style={{ padding: "11px 16px", borderBottom: S.bds, textAlign: "right" }}>
-                      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                        <button style={btn("g", { fontSize: 12, padding: "4px 9px" })} onClick={() => openEdit(ing)}>Modifica</button>
-                        <button style={{ ...btn("g", { fontSize: 12, padding: "4px 9px" }), color: S.red }} onClick={() => setDelTarget(ing)}>Elimina</button>
-                      </div>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">🗑</button>
                     </td>
                   </tr>
                 )
@@ -258,18 +463,10 @@ function Ingredients({ ings, setIngs, isMobile }) {
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title={edit ? "Modifica ingrediente" : "Nuovo ingrediente"}
-        footer={<><button style={btn("g")} onClick={() => setOpen(false)}>Annulla</button><button style={btn("p")} onClick={save}>Salva</button></>}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <div style={{ gridColumn: "1/-1" }}><Fld label="Nome *"><input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Petto di pollo" />{err.name && <span style={{ fontSize: 11, color: S.red }}>{err.name}</span>}</Fld></div>
-          <Fld label="Categoria"><select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>{["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Scatolame", "Surgelati", "Bevande", "Spezie & Aromi", "Altro"].map(c => <option key={c}>{c}</option>)}</select></Fld>
-          <Fld label="Unità"><select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>{["kg", "g", "l", "ml", "pz"].map(u => <option key={u}>{u}</option>)}</select></Fld>
-          <Fld label={"Prezzo attuale (€/" + form.unit + ") *"}><input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />{err.cur && <span style={{ fontSize: 11, color: S.red }}>{err.cur}</span>}<span style={{ fontSize: 11, color: S.t3, marginTop: 2 }}>{edit && edit.avg ? "Media storica attuale: " + F(edit.avg) + "/" + form.unit : "Il sistema calcolerà la media automaticamente"}</span></Fld>
-        </div>
-      </Modal>
-
+      {/* Delete confirm */}
       {delTarget && (
-        <div onClick={e => e.target === e.currentTarget && setDelTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
+        <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
           <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
             <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina ingrediente</div>
             <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
@@ -287,398 +484,207 @@ function Ingredients({ ings, setIngs, isMobile }) {
 }
 
 function Dishes({ dishes, setDishes, ings, isMobile }) {
-  const [cat, setCat] = useState("")
-  const [open, setOpen] = useState(false)
-  const [detail, setDetail] = useState(null)
+  const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail"]
+  const CAT_ICONS = { Speciali: "⭐", Antipasti: "🫒", Primi: "🍝", Secondi: "🥩", Dolci: "🍮", Vini: "🍷", Cocktail: "🍹" }
+  const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
+  const STAGIONE_ICONS = { Primavera: "🌸", Estate: "☀️", Autunno: "🍂", Inverno: "❄️" }
+  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
+  const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
+
+  const [selCat, setSelCat]       = useState(null)
+  const [detail, setDetail]       = useState(null)
   const [delTarget, setDelTarget] = useState(null)
-  const [edit, setEdit] = useState(null)
-  const [form, setForm] = useState({ name: "", cat: "primo", target: "28" })
-  const [recipe, setRecipe] = useState([])
-  const [err, setErr] = useState({})
-  const list = dishes.filter(d => !cat || d.cat === cat)
-  const UNITS = ["kg", "g", "l", "ml", "pz"]
 
-  function openAdd() {
-    setEdit(null)
-    setForm({ name: "", cat: "primo", target: "28" })
-    setRecipe([{ id: uid(), ingId: "", qty: "", unit: "kg", waste: "0" }])
-    setErr({})
-    setOpen(true)
-  }
-  function openEdit(d) {
-    setEdit(d)
-    setForm({ name: d.name, cat: d.cat, target: String(Math.round(d.target * 100)) })
-    // Carica ricetta salvata nel piatto, fallback su RECIPES statici
-    const savedRecipe = d.recipe && d.recipe.length > 0
-      ? d.recipe.map(r => ({ id: uid(), ingId: r.ingId, qty: String(r.qty), unit: r.unit, waste: String(r.waste || "0") }))
-      : RECIPES[d.id]
-        ? RECIPES[d.id].map(r => ({ id: uid(), ingId: r.id, qty: String(r.qty), unit: r.unit, waste: String(Math.round((r.waste - 1) * 100)) }))
-        : [{ id: uid(), ingId: "", qty: "", unit: "kg", waste: "0" }]
-    setRecipe(savedRecipe)
-    setErr({})
-    setDetail(null)
-    setOpen(true)
-  }
-  function confirmDelete(d) { setDelTarget(d); setDetail(null) }
-  function doDelete() { setDishes(prev => prev.filter(x => x.id !== delTarget.id)); setDelTarget(null) }
-
-  function addRow() { setRecipe(r => [...r, { id: uid(), ingId: "", qty: "", unit: "kg", waste: "0" }]) }
-  function removeRow(id) { setRecipe(r => r.filter(x => x.id !== id)) }
-  function updateRow(id, patch) { setRecipe(r => r.map(x => x.id === id ? { ...x, ...patch } : x)) }
-
-  // Converti quantità ricetta nell'unità dell'ingrediente
-  function toIngUnit(qty, rowUnit, ingUnit) {
-    if (rowUnit === ingUnit) return qty
-    if (rowUnit === "g"  && ingUnit === "kg") return qty / 1000
-    if (rowUnit === "kg" && ingUnit === "g")  return qty * 1000
-    if (rowUnit === "ml" && ingUnit === "l")  return qty / 1000
-    if (rowUnit === "l"  && ingUnit === "ml") return qty * 1000
-    return qty
-  }
-
-  const liveCost = recipe.reduce((sum, row) => {
-    const ing = ings.find(i => i.id === row.ingId)
-    if (!ing || !row.qty) return sum
-    const qty = parseFloat(row.qty) || 0
-    const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
-    const lineQty = toIngUnit(qty, row.unit, ing.unit)
-    return sum + lineQty * ing.cur * wasteMult
-  }, 0)
-
-  const targetPct = (parseFloat(form.target) || 28) / 100
-  const suggestedPrice = targetPct > 0 ? liveCost / targetPct : 0
   const r2 = n => Math.round(n * 100) / 100
 
-  function save() {
-    const e = {}
-    if (!form.name.trim()) e.name = "Obbligatorio"
-    if (!form.target || +form.target <= 0 || +form.target > 100) e.target = "Valore 1-100"
-    if (recipe.every(r => !r.ingId)) e.recipe = "Aggiungi almeno un ingrediente"
-    if (Object.keys(e).length) { setErr(e); return }
-    const cost = r2(liveCost)
-    const price = r2(suggestedPrice)
-    const fc = price > 0 ? r2(cost / price) : 0
-    // Salva la ricetta nel piatto per caricarla in modifica
-    const savedRecipe = recipe.filter(r => r.ingId).map(r => ({
-      ingId: r.ingId, qty: parseFloat(r.qty) || 0, unit: r.unit, waste: r.waste || "0"
-    }))
-    const d = { name: form.name.trim(), cat: form.cat, price, target: targetPct, cost, fc, margin: r2(price - cost), recipe: savedRecipe }
-    if (edit) setDishes(prev => prev.map(x => x.id === edit.id ? { ...x, ...d } : x))
-    else setDishes(prev => [...prev, { ...d, id: "d" + uid() }])
-    setOpen(false)
+  function catMatch(d, cat) {
+    const c = (d.cat || "").toLowerCase()
+    if (cat === "Antipasti") return c === "antipasto" || c === "antipasti"
+    if (cat === "Primi")     return c === "primo"    || c === "primi"
+    if (cat === "Secondi")   return c === "secondo"  || c === "secondi"
+    if (cat === "Dolci")     return c === "dolce"    || c === "dolci"
+    if (cat === "Speciali")  return c === "speciale" || c === "speciali"
+    if (cat === "Vini")      return c === "vino"     || c === "vini"
+    if (cat === "Cocktail")  return c === "cocktail"
+    return false
   }
 
-  function getDetailRecipe(d) {
-    return RECIPES[d.id] ? RECIPES[d.id].map(r => {
-      const ing = ings.find(i => i.id === r.id)
-      return { ...r, ingName: ing ? ing.name : r.name, ingPrice: ing ? ing.cur : r.price, ingUnit: ing ? ing.unit : r.unit }
-    }) : []
+  const dishesByCat = cat => dishes.filter(d => catMatch(d, cat))
+
+  function toggleStagione(dish, s) {
+    const curr = dish.stagioni || []
+    const next = curr.includes(s) ? curr.filter(x => x !== s) : [...curr, s]
+    setDishes(prev => prev.map(d => d.id === dish.id ? { ...d, stagioni: next } : d))
   }
 
+  function doDelete() {
+    setDishes(prev => prev.filter(x => x.id !== delTarget.id))
+    setDelTarget(null)
+    setDetail(null)
+  }
+
+  const DeleteConfirm = () => delTarget ? (
+    <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
+      <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
+        <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
+          Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+          <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
+          <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
+        </div>
+      </div>
+    </div>
+  ) : null
+
+  // ── CATEGORY VIEW ──────────────────────────────
+  if (!selCat) return (
+    <div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 2 }}>Piatti</div>
+        <div style={{ fontSize: 12, color: S.t3 }}>{dishes.length} piatti nel menu — aggiunti dalla sezione Food & Drink Cost</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
+        {CATS.map(cat => {
+          const list = dishesByCat(cat)
+          const overTarget = list.filter(d => d.fc > 0 && d.fc > d.target).length
+          return (
+            <div key={cat} onClick={() => setSelCat(cat)}
+              style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
+                borderColor: overTarget > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: overTarget > 0 ? "linear-gradient(90deg," + S.red + ",transparent)" : "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
+              
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
+              <div style={{ fontSize: 12, color: S.t3 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
+              {overTarget > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>⚠ {overTarget} sopra target</div>}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  // ── VINI VIEW ──────────────────────────────────
+  if (selCat === "Vini") {
+    const vini = dishesByCat("Vini")
+    return (
+      <div>
+        <div style={row({ marginBottom: 20 })}>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Piatti</button>
+          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>Vini</span>
+        </div>
+        {vini.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+            Nessun vino presente — aggiungili dalla sezione Drink Cost
+          </div>
+        ) : (
+          VINO_TIPI.map(tipo => {
+            const byTipo = vini.filter(v => v.tipoVino === tipo)
+            if (byTipo.length === 0) return null
+            return (
+              <div key={tipo} style={{ marginBottom: 28 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: S.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: S.bds }}>{tipo}</div>
+                {VINO_REGIONI.map(reg => {
+                  const byReg = byTipo.filter(v => v.regioneVino === reg)
+                  if (byReg.length === 0) return null
+                  return (
+                    <div key={reg} style={{ marginBottom: 14 }}>
+                      <div style={{ fontSize: 11, color: S.t3, marginBottom: 6, paddingLeft: 2, fontStyle: "italic" }}>{reg}</div>
+                      {byReg.map(v => (
+                        <div key={v.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }) }}>
+                          <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
+                            <div>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{v.name}</div>
+                              <div style={{ fontSize: 12, color: S.t3 }}>{v.price > 0 ? F(v.price) : "—"}</div>
+                            </div>
+                            <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>🗑</button>
+                          </div>
+                          <div style={row({ flexWrap: "wrap", gap: 4 })}>
+                            {STAGIONI.map(s => (
+                              <button key={s} onClick={() => toggleStagione(v, s)}
+                                style={{ padding: "2px 8px", background: (v.stagioni||[]).includes(s) ? S.acg : "none", border: "1px solid " + ((v.stagioni||[]).includes(s) ? S.acd : "#2a2a31"), borderRadius: 999, color: (v.stagioni||[]).includes(s) ? S.ac : S.t3, fontFamily: "inherit", fontSize: 10, cursor: "pointer" }}>
+                                {s}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })
+        )}
+        <DeleteConfirm />
+      </div>
+    )
+  }
+
+  // ── DISH LIST VIEW ─────────────────────────────
+  const list = dishesByCat(selCat)
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-        <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Piatti</div><div style={{ fontSize: 12, color: S.t3 }}>{list.length} piatti nel menu — clicca su una riga per la scheda completa</div></div>
-        <button style={btn("p")} onClick={openAdd}>+ Nuovo piatto</button>
+      <div style={row({ marginBottom: 16 })}>
+        <button onClick={() => { setSelCat(null); setDetail(null) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Piatti</button>
+        <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+        <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
       </div>
+      <div style={{ fontSize: 12, color: S.t3, marginBottom: 14 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
 
-      <div style={row({ flexWrap: "wrap", marginBottom: 12 })}>
-        {["", "antipasto", "primo", "secondo", "dolce"].map(c => (
-          <button key={c} onClick={() => setCat(c)} style={{ padding: "4px 11px", background: cat === c ? S.acg : "none", border: "1px solid " + (cat === c ? S.acd : "#2a2a31"), borderRadius: 999, color: cat === c ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>{c || "Tutti"}</button>
-        ))}
-      </div>
-
-      {isMobile ? (
+      {list.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+          Nessun piatto in questa categoria — aggiungili dalla sezione Food Cost
+        </div>
+      ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {list.map(d => (
-            <div key={d.id} style={card({ padding: "16px" })} onClick={() => setDetail(d)}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <div>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: S.t1 }}>{d.name}</div>
-                  <span style={{ fontSize: 12, color: S.t3, textTransform: "capitalize" }}>{d.cat}</span>
+            <div key={d.id} style={card({ padding: "14px 16px" })}>
+              <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{d.name}</div>
+                  <div style={row({ gap: 10 })}>
+                    <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{d.price > 0 ? F(d.price) : "—"}</span>
+                    {d.fc > 0 && <span style={{ fontSize: 12, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{P(d.fc)} FC</span>}
+                    {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
+                  </div>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>{d.price > 0 ? F(d.price) : "—"}</div>
-                  {d.fc > 0 && <div style={{ fontSize: 13, fontWeight: 700, color: FC_COLOR(d.fc, d.target) }}>{P(d.fc)} FC</div>}
-                </div>
+                <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>🗑</button>
               </div>
-              {d.cost > 0 && (
-                <div style={{ background: S.el, borderRadius: S.r, padding: "10px 12px", marginBottom: 10 }}>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 8 }}>
-                    {[{ l: "Costo", v: F(d.cost) }, { l: "Margine", v: F(d.margin) }, { l: "Target", v: P(d.target) }].map((k, i) => (
-                      <div key={i}>
-                        <div style={{ fontSize: 9, textTransform: "uppercase", color: S.t3, fontWeight: 700 }}>{k.l}</div>
-                        <div style={{ fontSize: 14, fontWeight: 600, color: S.t2 }}>{k.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div style={{ height: 4, background: S.surf, borderRadius: 999, overflow: "hidden" }}>
-                    <div style={{ height: "100%", width: Math.min(d.fc * 100, 100) + "%", background: FC_COLOR(d.fc, d.target), borderRadius: 999 }} />
-                  </div>
+              {/* Food cost bar */}
+              {d.fc > 0 && (
+                <div style={{ height: 4, background: S.el, borderRadius: 999, overflow: "hidden", marginBottom: 10, position: "relative" }}>
+                  <div style={{ height: "100%", width: Math.min(d.fc * 100, 100) + "%", background: FC_COLOR(d.fc, d.target), borderRadius: 999 }} />
+                  <div style={{ position: "absolute", top: 0, bottom: 0, left: (d.target * 100) + "%", width: 1, background: S.t3 }} />
                 </div>
               )}
-              <div style={{ display: "flex", gap: 10 }} onClick={e => e.stopPropagation()}>
-                <button style={{ ...btn("s", { fontSize: 14, padding: "10px", flex: 1 }) }} onClick={() => openEdit(d)}>Modifica</button>
-                <button style={{ ...btn("s", { fontSize: 14, padding: "10px", flex: 1 }), color: S.red }} onClick={() => confirmDelete(d)}>Elimina</button>
+              {/* Stagionalità */}
+              <div style={{ borderTop: S.bds, paddingTop: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 6 }}>Stagionalità</div>
+                <div style={row({ flexWrap: "wrap", gap: 6 })}>
+                  {STAGIONI.map(s => (
+                    <button key={s} onClick={() => toggleStagione(d, s)}
+                      style={{ padding: "3px 10px", background: (d.stagioni||[]).includes(s) ? S.acg : "none", border: "1px solid " + ((d.stagioni||[]).includes(s) ? S.acd : "#2a2a31"), borderRadius: 999, color: (d.stagioni||[]).includes(s) ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           ))}
         </div>
-      ) : (
-        <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr>
-              {["Piatto", "Prezzo", "Costo ricetta", "Food Cost %", "Margine", "Stato", ""].map(h => (
-                <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>{list.map(d => (
-              <tr key={d.id} onClick={() => setDetail(d)} style={{ cursor: "pointer" }}
-                onMouseEnter={e => { for (const td of e.currentTarget.cells) td.style.background = S.el }}
-                onMouseLeave={e => { for (const td of e.currentTarget.cells) td.style.background = "" }}>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds }}>
-                  <div style={{ fontWeight: 500, color: S.t1 }}>{d.name}</div>
-                  <div style={{ fontSize: 11, color: S.t3, textTransform: "capitalize" }}>{d.cat}</div>
-                </td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds, fontVariantNumeric: "tabular-nums", fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : "—"}</td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds, fontVariantNumeric: "tabular-nums", color: S.t2 }}>{d.cost > 0 ? F(d.cost) : "—"}</td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds }}>
-                  {d.fc > 0 ? <><div style={{ fontWeight: 600, color: FC_COLOR(d.fc, d.target) }}>{P(d.fc)}</div><div style={{ fontSize: 10, color: S.t3 }}>target {P(d.target)}</div></> : <span style={{ color: S.t3 }}>—</span>}
-                </td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds, fontVariantNumeric: "tabular-nums", color: S.green, fontWeight: 500 }}>{d.margin > 0 ? F(d.margin) : "—"}</td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds }}>
-                  {d.fc > 0 && d.fc > d.target ? <span style={badge("r")}>Sopra target</span> : d.fc > 0 ? <span style={badge("g")}>OK</span> : <span style={badge("n")}>Senza ricetta</span>}
-                </td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds, textAlign: "right" }} onClick={e => e.stopPropagation()}>
-                  <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                    <button style={btn("g", { fontSize: 12, padding: "4px 10px" })} onClick={() => openEdit(d)}>Modifica</button>
-                    <button style={{ ...btn("g", { fontSize: 12, padding: "4px 10px" }), color: S.red }} onClick={() => confirmDelete(d)}>Elimina</button>
-                  </div>
-                </td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
       )}
-
-      {detail && (
-        <div onClick={e => e.target === e.currentTarget && setDetail(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "28px 20px", zIndex: 999, overflowY: "auto" }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 560, margin: "auto" }}>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "20px 22px 0" }}>
-              <div>
-                <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 3 }}>{detail.name}</div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                  <span style={badge("n", { textTransform: "capitalize" })}>{detail.cat}</span>
-                  {detail.fc > 0 && detail.fc > detail.target
-                    ? <span style={badge("r")}>Sopra target</span>
-                    : detail.fc > 0 ? <span style={badge("g")}>Food cost OK</span>
-                    : <span style={badge("n")}>Senza ricetta</span>}
-                </div>
-              </div>
-              <button onClick={() => setDetail(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
-            </div>
-
-            <div style={{ padding: "16px 22px" }}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10, marginBottom: 16 }}>
-                {[
-                  { l: "Prezzo di vendita", v: detail.price > 0 ? F(detail.price) : "—", c: S.t1, highlight: false },
-                  { l: "Costo ricetta",     v: detail.cost > 0 ? F(detail.cost) : "—",  c: S.t2, highlight: false },
-                  { l: "Food cost %",       v: detail.fc > 0 ? P(detail.fc) : "—",       c: detail.fc > 0 ? FC_COLOR(detail.fc, detail.target) : S.t3, highlight: true },
-                  { l: "Margine lordo",     v: detail.margin > 0 ? F(detail.margin) : "—", c: S.green, highlight: true },
-                ].map((k, i) => (
-                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "12px 14px" }}>
-                    <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 22, color: k.c, letterSpacing: "-0.02em", fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
-                    {k.l === "Food cost %" && detail.fc > 0 && (
-                      <div style={{ fontSize: 10, color: S.t3, marginTop: 3 }}>target {P(detail.target)}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {detail.fc > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: S.t3, marginBottom: 5 }}>
-                    <span>Food cost attuale</span>
-                    <span>Target {P(detail.target)}</span>
-                  </div>
-                  <div style={{ height: 8, background: S.el, borderRadius: 999, overflow: "hidden", position: "relative" }}>
-                    <div style={{ height: "100%", width: Math.min(detail.fc * 100, 100) + "%", background: FC_COLOR(detail.fc, detail.target), borderRadius: 999, transition: "width 0.4s" }} />
-                    <div style={{ position: "absolute", top: 0, bottom: 0, left: (detail.target * 100) + "%", width: 2, background: S.t3, borderRadius: 1 }} />
-                  </div>
-                </div>
-              )}
-
-              {(() => {
-                const rec = getDetailRecipe(detail)
-                if (rec.length === 0) return (
-                  <div style={{ textAlign: "center", padding: "24px 0", color: S.t3, fontSize: 13 }}>
-                    Nessuna ricetta salvata — clicca Modifica per aggiungere gli ingredienti
-                  </div>
-                )
-                return (
-                  <div>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Composizione ricetta</div>
-                    <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
-                      {rec.map((r, i) => {
-                        const wastePct = Math.round((r.waste - 1) * 100)
-                        const lineQty = r.unit === "g" && r.ingUnit === "kg" ? r.qty / 1000 : r.unit === "ml" && r.ingUnit === "l" ? r.qty / 1000 : r.qty
-                        const lineCost = r2(lineQty * r.ingPrice * r.waste)
-                        const share = detail.cost > 0 ? Math.round(lineCost / detail.cost * 100) : 0
-                        return (
-                          <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 60px", gap: 8, padding: "10px 14px", borderBottom: i < rec.length - 1 ? S.bds : "none", alignItems: "center" }}>
-                            <div>
-                              <div style={{ fontSize: 13, fontWeight: 500, color: S.t1 }}>{r.ingName}</div>
-                              <div style={{ fontSize: 10.5, color: S.t3 }}>{r.qty} {r.unit}{wastePct > 0 ? " · scarto " + wastePct + "%" : ""}</div>
-                            </div>
-                            <span style={{ fontSize: 12, color: S.t2, fontVariantNumeric: "tabular-nums" }}>{F(r.ingPrice)}/{r.ingUnit}</span>
-                            <span style={{ fontSize: 13, fontWeight: 600, color: S.ac, fontVariantNumeric: "tabular-nums" }}>{F(lineCost)}</span>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                              <div style={{ fontSize: 10, color: S.t3, textAlign: "right" }}>{share}%</div>
-                              <div style={{ height: 4, background: S.el, borderRadius: 999, overflow: "hidden" }}>
-                                <div style={{ height: "100%", width: share + "%", background: S.ac, borderRadius: 999 }} />
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px 60px", gap: 8, padding: "10px 14px", background: S.el, alignItems: "center" }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: S.t2, textTransform: "uppercase", letterSpacing: "0.06em" }}>Totale costo</span>
-                        <span />
-                        <span style={{ fontSize: 14, fontWeight: 700, color: S.t1, fontVariantNumeric: "tabular-nums" }}>{detail.cost > 0 ? F(detail.cost) : "—"}</span>
-                        <span />
-                      </div>
-                    </div>
-                  </div>
-                )
-              })()}
-            </div>
-
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 22px 18px" }}>
-              <button style={{ ...btn("g", { fontSize: 12, padding: "5px 12px" }), color: S.red }} onClick={() => confirmDelete(detail)}>Elimina piatto</button>
-              <div style={{ display: "flex", gap: 8 }}>
-                <button style={btn("g")} onClick={() => setDetail(null)}>Chiudi</button>
-                <button style={btn("p")} onClick={() => openEdit(detail)}>Modifica</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {delTarget && (
-        <div onClick={e => e.target === e.currentTarget && setDelTarget(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
-            <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-              <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {open && (
-        <div onClick={e => e.target === e.currentTarget && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 999 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 680, maxHeight: "calc(100vh - 32px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 14px", flexShrink: 0, borderBottom: S.bds }}>
-              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>{edit ? "Modifica piatto" : "Nuovo piatto"}</span>
-              <button onClick={() => setOpen(false)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
-            </div>
-            <div style={{ padding: "16px 22px", overflowY: "auto", flex: 1 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, marginBottom: 16 }}>
-                <div style={{ gridColumn: "1/-1" }}>
-                  <Fld label="Nome piatto *">
-                    <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Risotto allo zafferano" />
-                    {err.name && <span style={{ fontSize: 11, color: S.red }}>{err.name}</span>}
-                  </Fld>
-                </div>
-                <Fld label="Categoria">
-                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
-                    {["antipasto", "primo", "secondo", "contorno", "dolce", "bevanda"].map(c => <option key={c}>{c}</option>)}
-                  </select>
-                </Fld>
-                <Fld label="Food cost target %">
-                  <input style={inp()} type="number" step="1" min="1" max="100" value={form.target} onChange={e => setForm(f => ({ ...f, target: e.target.value }))} placeholder="28" />
-                  {err.target && <span style={{ fontSize: 11, color: S.red }}>{err.target}</span>}
-                </Fld>
-                <div style={{ display: "flex", alignItems: "flex-end" }}>
-                  <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "9px 12px", width: "100%" }}>
-                    <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 3 }}>Prezzo consigliato</div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac, fontVariantNumeric: "tabular-nums" }}>{liveCost > 0 ? F(suggestedPrice) : "—"}</div>
-                    <div style={{ fontSize: 10, color: S.t3, marginTop: 2 }}>al {form.target || 28}% food cost</div>
-                  </div>
-                </div>
-              </div>
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Ingredienti ricetta</span>
-                  <button style={btn("g", { fontSize: 12, padding: "4px 10px" })} onClick={addRow}>+ Aggiungi ingrediente</button>
-                </div>
-                {err.recipe && <div style={{ fontSize: 11, color: S.red, marginBottom: 6 }}>{err.recipe}</div>}
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 80px 90px 28px", gap: 6, padding: "6px 8px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
-                  {["Ingrediente", "Quantità", "Unità", "Scarto %", "Costo riga", ""].map(h => <span key={h} style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>)}
-                </div>
-                <div style={{ border: S.bd, borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
-                  {recipe.map((row, idx) => {
-                    const ing = ings.find(i => i.id === row.ingId)
-                    const qty = parseFloat(row.qty) || 0
-                    const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
-                    const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : qty
-                    const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMult) : 0
-                    return (
-                      <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 70px 80px 90px 28px", gap: 6, padding: "8px 8px", borderBottom: idx < recipe.length - 1 ? S.bds : "none", alignItems: "center", background: idx % 2 === 0 ? "transparent" : S.el + "55" }}>
-                        <select style={inp({ padding: "7px 8px", fontSize: 12.5, appearance: "none", cursor: "pointer" })} value={row.ingId} onChange={e => updateRow(row.id, { ingId: e.target.value })}>
-                          <option value="">Seleziona...</option>
-                          {ings.map(i => <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>)}
-                        </select>
-                        <input style={inp({ padding: "7px 8px", fontSize: 12.5 })} type="number" step="0.001" min="0" placeholder="0" value={row.qty} onChange={e => updateRow(row.id, { qty: e.target.value })} />
-                        <select style={inp({ padding: "7px 8px", fontSize: 12.5, appearance: "none", cursor: "pointer" })} value={row.unit} onChange={e => updateRow(row.id, { unit: e.target.value })}>
-                          {UNITS.map(u => <option key={u}>{u}</option>)}
-                        </select>
-                        <div style={{ position: "relative" }}>
-                          <input style={inp({ padding: "7px 24px 7px 8px", fontSize: 12.5 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => updateRow(row.id, { waste: e.target.value })} />
-                          <span style={{ position: "absolute", right: 8, top: "50%", transform: "translateY(-50%)", fontSize: 11, color: S.t3, pointerEvents: "none" }}>%</span>
-                        </div>
-                        <div style={{ textAlign: "right" }}>
-                          {lineCost > 0 ? <span style={{ fontSize: 12.5, fontWeight: 600, color: S.ac, fontVariantNumeric: "tabular-nums" }}>{F(lineCost)}</span> : <span style={{ fontSize: 12, color: S.t3 }}>—</span>}
-                          {ing && qty > 0 && parseFloat(row.waste) > 0 && <div style={{ fontSize: 9.5, color: S.t3 }}>lordo: {r2(qty * wasteMult)}{row.unit}</div>}
-                        </div>
-                        <button onClick={() => removeRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 14, padding: 2 }}>x</button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-              {liveCost > 0 && (
-                <div style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: 14 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10 }}>
-                    {[{ l: "Costo ricetta", v: F(r2(liveCost)), c: S.t1 }, { l: "Prezzo consigliato", v: F(r2(suggestedPrice)), c: S.ac }, { l: "Food cost %", v: P(targetPct), c: FC_COLOR(targetPct, targetPct) }, { l: "Margine lordo", v: F(r2(suggestedPrice - liveCost)), c: S.green }].map((k, i) => (
-                      <div key={i} style={{ background: S.surf, border: S.bd, borderRadius: 6, padding: "10px 12px" }}>
-                        <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
-                        <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: k.c, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "12px 22px 18px", borderTop: S.bds, flexShrink: 0 }}>
-              <button style={btn("g")} onClick={() => setOpen(false)}>Annulla</button>
-              <button style={btn("p")} onClick={save}>{edit ? "Salva modifiche" : "Crea piatto"}</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirm />
     </div>
   )
 }
 
+
 function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Salumi", "Pasta & Cereali", "Olio & Grassi", "Scatolame", "Surgelati", "Bevande", "Spezie & Aromi", "Altro"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
   const GEMINI_KEY = "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"
 
   // step: "list" | "upload" | "loading" | "review"
@@ -816,21 +822,17 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         vat:   parsed.iva    ? String(parsed.iva)    : "",
       })
 
-      // Auto-categorizzazione ingrediente per nome
+      // Auto-categorizzazione ingrediente per nome (categorie aggiornate)
       function guessCat(nome) {
         const n = nome.toLowerCase()
-        if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia/.test(n)) return "Carni"
+        if (/detersiv|sapone|piatti|bucato|ammorbident|candegg|disinfett|multiuso|sgrassator|lavastoviglie|lavatrice|spugna|strofinaccio|carta igien|scottex|sacchetti/.test(n)) return "Detersivi"
+        if (/surgelat|gelo|gelato|congelat|misto mare surgelato|verdure surgelate|piselli surgelati|fagiolini surgelati|spinaci gelo|mais surgelato/.test(n)) return "Surgelati"
+        if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola|pomodori scatola|sugo pronto|legumi/.test(n)) return "Scatolame"
+        if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|prosciutto|salame|mortadella|bresaola|coppa|speck/.test(n)) return "Carni"
         if (/pesce|merluzzo|salmone|tonno|branzino|orata|sogliola|baccalà|acciuga|sarda|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
-        if (/spinaci gelo|piselli surgelati|fagiolini surgelati|mais surgelato|misto mare|surgelat/.test(n)) return "Surgelati"
-        if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado/.test(n)) return "Verdure"
+        if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado|verdura/.test(n)) return "Verdure"
         if (/parmigiano|mozzarella|grana|pecorino|burro|latte|panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|uova|uovo/.test(n)) return "Latticini"
-        if (/prosciutto|salame|mortadella|bresaola|coppa|speck|culatello|nduja|lonza|soppressata|finocchiona/.test(n)) return "Salumi"
-        if (/pasta|riso|farro|orzo|farina|semola|gnocchi|polenta|quinoa|couscous|bulgur|pane|grissini|crackers/.test(n)) return "Pasta & Cereali"
-        if (/olio|burro|strutto|margarina|lardo/.test(n)) return "Olio & Grassi"
-        if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola/.test(n)) return "Scatolame"
-        if (/vino|birra|acqua|succo|coca|aranciata|limonata|aperol|campari|gin|vodka|rum|whisky|grappa|amaro/.test(n)) return "Bevande"
-        if (/sale|pepe|zucchero|aceto|limone|rosmarino|timo|basilico|origano|prezzemolo|salvia|menta|curry|paprika|cannella|vaniglia|chiodi|noce moscata|curcuma/.test(n)) return "Spezie & Aromi"
-        return "Altro"
+        return "Scatolame" // default per fatture alimentari
       }
 
       // Analisi prodotti
@@ -1204,86 +1206,16 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
   )
 }
 
-function Sales({ sales, setSales, isMobile }) {
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState({ date: "", shift: "Cena", food: "", bev: "", cov: "", other: "", covers: "" })
-  const tR = sales.reduce((s, e) => s + e.total, 0)
-  const tC = sales.reduce((s, e) => s + e.covers, 0)
-  const tF = sales.reduce((s, e) => s + e.food, 0)
-  const tB = sales.reduce((s, e) => s + e.bev, 0)
-  const live = (parseFloat(form.food) || 0) + (parseFloat(form.bev) || 0) + (parseFloat(form.cov) || 0) + (parseFloat(form.other) || 0)
-  function save() {
-    if (live <= 0 || !form.date) return
-    setSales(prev => [{ id: "s" + uid(), date: form.date, shift: form.shift, food: parseFloat(form.food) || 0, bev: parseFloat(form.bev) || 0, cov: parseFloat(form.cov) || 0, other: parseFloat(form.other) || 0, total: live, covers: parseInt(form.covers) || 0 }, ...prev])
-    setOpen(false)
-  }
-  return (
-    <div>
-      <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", alignItems: "flex-start" })}>
-        <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Vendite</div><div style={{ fontSize: 12, color: S.t3 }}>{sales.length} registrazioni</div></div>
-        <button style={btn("p")} onClick={() => { setForm({ date: new Date().toISOString().slice(0, 10), shift: "Cena", food: "", bev: "", cov: "", other: "", covers: "" }); setOpen(true) }}>+ Registra incasso</button>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10, marginBottom: 14 }}>
-        {[{ l: "Incasso totale", v: F(tR) }, { l: "Cibo", v: F(tF) + " (" + P(tF / tR) + ")" }, { l: "Bevande", v: F(tB) + " (" + P(tB / tR) + ")" }, { l: "Ticket medio", v: F(tR / tC) }].map((k, i) => (
-          <div key={i} style={card({ padding: "12px 14px" })}><div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div><div style={{ fontFamily: "'Georgia',serif", fontSize: 19, color: S.t1 }}>{k.v}</div></div>
-        ))}
-      </div>
-      {isMobile ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {sales.map((s, i) => (
-            <div key={s.id || i} style={card({ padding: "16px" })}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{D(s.date)}</div>
-                <div style={{ fontSize: 18, fontWeight: 700, color: S.t1 }}>{F(s.total)}</div>
-              </div>
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <span style={badge("n")}>{s.shift}</span>
-                <span style={{ fontSize: 13, color: S.t3 }}>{s.covers} coperti</span>
-                <span style={{ fontSize: 13, color: S.t3, marginLeft: "auto" }}>Cibo {F(s.food)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead><tr>{["Data", "Turno", "Cibo", "Bevande", "Coperti", "Totale"].map(h => <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>)}</tr></thead>
-            <tbody>{sales.map((s, i) => (
-              <tr key={s.id || i}>
-                <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>{D(s.date)}</td>
-                <td style={{ padding: "11px 16px", borderBottom: S.bds }}><span style={badge("n")}>{s.shift}</span></td>
-                <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(s.food)}</td>
-                <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(s.bev)}</td>
-                <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds }}>{s.covers}</td>
-                <td style={{ padding: "11px 16px", fontWeight: 600, color: S.t1, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(s.total)}</td>
-              </tr>
-            ))}</tbody>
-          </table>
-        </div>
-      )}
-      <Modal open={open} onClose={() => setOpen(false)} title="Registra incasso"
-        footer={<><button style={btn("g")} onClick={() => setOpen(false)}>Annulla</button><button style={btn("p")} onClick={save}>Registra</button></>}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Fld label="Data *"><input style={inp()} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></Fld>
-          <Fld label="Turno"><select style={inp({ appearance: "none", cursor: "pointer" })} value={form.shift} onChange={e => setForm(f => ({ ...f, shift: e.target.value }))}><option>Cena</option><option>Pranzo</option></select></Fld>
-          <Fld label="Cibo / Cucina (euro)"><input style={inp()} type="number" step="0.01" value={form.food} onChange={e => setForm(f => ({ ...f, food: e.target.value }))} placeholder="0.00" /></Fld>
-          <Fld label="Bevande (euro)"><input style={inp()} type="number" step="0.01" value={form.bev} onChange={e => setForm(f => ({ ...f, bev: e.target.value }))} placeholder="0.00" /></Fld>
-          <Fld label="Coperto / Pane (euro)"><input style={inp()} type="number" step="0.01" value={form.cov} onChange={e => setForm(f => ({ ...f, cov: e.target.value }))} placeholder="0.00" /></Fld>
-          <Fld label="Numero coperti"><input style={inp()} type="number" value={form.covers} onChange={e => setForm(f => ({ ...f, covers: e.target.value }))} placeholder="0" /></Fld>
-          <div style={{ gridColumn: "1/-1", background: S.el, border: S.bd, borderRadius: S.r, padding: "11px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>Totale incasso</span>
-            <span style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, fontVariantNumeric: "tabular-nums" }}>{F(live)}</span>
-          </div>
-        </div>
-      </Modal>
-    </div>
-  )
-}
+function FoodCost({ dishes, setDishes, ings, isMobile }) {
+  const [tab, setTab] = useState("food") // "food" | "drink"
 
-function FoodCost({ dishes, ings, isMobile }) {
-  const [sel, setSel] = useState(null)
-  const [ov, setOv] = useState({})
-  const dish = dishes.find(d => d.id === sel)
+  // ── Shared ────────────────────────────────────
+  const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
+  const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const UNITS = ["kg", "g", "l", "ml", "pz"]
+  const r2 = n => Math.round(n * 100) / 100
+  const uid2 = () => Math.random().toString(36).slice(2, 7)
 
   function toIngUnit(qty, rowUnit, ingUnit) {
     if (rowUnit === ingUnit) return qty
@@ -1294,318 +1226,953 @@ function FoodCost({ dishes, ings, isMobile }) {
     return qty
   }
 
-  // Usa ricetta salvata nel piatto, fallback su RECIPES statici
-  const items = sel ? (
-    dish?.recipe?.length > 0
-      ? dish.recipe.map(r => {
-          const ing = ings.find(i => i.id === r.ingId)
-          return {
-            id: r.ingId,
-            name: ing ? ing.name : r.ingId,
-            qty: r.qty,
-            unit: r.unit,
-            price: ing ? ing.cur : 0,
-            ingUnit: ing ? ing.unit : r.unit,
-            waste: 1 + (parseFloat(r.waste) || 0) / 100
-          }
-        })
-      : (RECIPES[sel] || []).map(r => {
-          const ing = ings.find(i => i.id === r.id)
-          return { ...r, ingUnit: ing ? ing.unit : r.unit, price: ing ? ing.cur : r.price }
-        })
-  ) : []
+  // ── FOOD COST state ───────────────────────────
+  const [fForm, setFForm]     = useState({ name: "", cat: "Secondi", target: "33" })
+  const [fRecipe, setFRecipe] = useState([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
+  const [fErr, setFErr]       = useState({})
+  const [fSaved, setFSaved]   = useState(false)
 
-  const liveItems = items.map(it => {
-    const p = ov[it.id] !== undefined && ov[it.id] !== "" ? parseFloat(ov[it.id]) || it.price : it.price
-    const lineQty = toIngUnit(it.qty, it.unit, it.ingUnit || it.unit)
-    const lc = Math.round(lineQty * p * it.waste * 100) / 100
-    return { ...it, lp: p, lc }
+  const fLiveCost = fRecipe.reduce((sum, row) => {
+    const ing = ings.find(i => i.id === row.ingId)
+    if (!ing || !row.qty) return sum
+    const qty = parseFloat(row.qty) || 0
+    const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
+    return sum + toIngUnit(qty, row.unit, ing.unit) * ing.cur * wasteMult
+  }, 0)
+  const fTargetPct = (parseFloat(fForm.target) || 33) / 100
+  const fSugPrice  = fTargetPct > 0 ? fLiveCost / fTargetPct : 0
+  const fMargin    = fSugPrice - fLiveCost
+
+  function fAddRow()    { setFRecipe(r => [...r, { id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }]) }
+  function fRemoveRow(id) { setFRecipe(r => r.filter(x => x.id !== id)) }
+  function fUpdateRow(id, patch) { setFRecipe(r => r.map(x => x.id === id ? { ...x, ...patch } : x)) }
+
+  function fSave() {
+    const e = {}
+    if (!fForm.name.trim()) e.name = "Obbligatorio"
+    if (!fForm.target || +fForm.target <= 0 || +fForm.target > 100) e.target = "1–100"
+    if (fRecipe.every(r => !r.ingId)) e.recipe = "Almeno un ingrediente"
+    if (Object.keys(e).length) { setFErr(e); return }
+
+    const cost  = r2(fLiveCost)
+    const price = r2(fSugPrice)
+    const fc    = price > 0 ? r2(cost / price) : 0
+    const catMap = { Speciali: "speciale", Antipasti: "antipasto", Primi: "primo", Secondi: "secondo", Dolci: "dolce", Cocktail: "cocktail" }
+    const savedRecipe = fRecipe.filter(r => r.ingId).map(r => ({
+      ingId: r.ingId, qty: parseFloat(r.qty) || 0, unit: r.unit, waste: r.waste || "0"
+    }))
+    setDishes(prev => [...prev, {
+      id: "d" + uid2(), name: fForm.name.trim(),
+      cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
+      price, target: fTargetPct, cost, fc, margin: r2(fMargin),
+      recipe: savedRecipe, stagioni: []
+    }])
+    setFForm({ name: "", cat: "Secondi", target: "33" })
+    setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
+    setFErr({})
+    setFSaved(true)
+    setTimeout(() => setFSaved(false), 3000)
+  }
+
+  // ── DRINK COST state ──────────────────────────
+  const [dForm, setDForm] = useState({
+    name: "", tipo: "Rossi", regione: "Toscana",
+    bottlePrice: "", iva: "10", ricarico: "200",
+    calici: "6", isVino: true
   })
-  const total = liveItems.reduce((s, i) => s + i.lc, 0)
-  const fcPct = dish ? total / dish.price : 0
-  const margin = dish ? dish.price - total : 0
-  const isSim = Object.values(ov).some(v => v !== undefined && v !== "")
+  const [dErr, setDErr]   = useState({})
+  const [dSaved, setDSaved] = useState(false)
+
+  const dPriceNet  = dForm.bottlePrice ? (+dForm.bottlePrice / (1 + (+dForm.iva || 0) / 100)) : 0
+  const dSellBottle = r2(dPriceNet * (1 + (+dForm.ricarico || 0) / 100))
+  const dSellCalice = dForm.calici > 0 ? r2(dSellBottle / +dForm.calici) : 0
+
+  function dSave() {
+    const e = {}
+    if (!dForm.name.trim()) e.name = "Obbligatorio"
+    if (!dForm.bottlePrice || +dForm.bottlePrice <= 0) e.bottlePrice = "Prezzo > 0"
+    if (Object.keys(e).length) { setDErr(e); return }
+
+    const isVino = dForm.tipo !== "Cocktail"
+    setDishes(prev => [...prev, {
+      id: "d" + uid2(),
+      name: dForm.name.trim(),
+      cat: isVino ? "vino" : "cocktail",
+      price: isVino ? dSellCalice : dSellBottle,
+      priceBottle: dSellBottle,
+      priceCalice: dSellCalice,
+      target: 0, cost: r2(dPriceNet / (isVino ? +dForm.calici : 1)), fc: 0, margin: 0,
+      tipoVino: isVino ? dForm.tipo : null,
+      regioneVino: isVino ? dForm.regione : null,
+      stagioni: [],
+      bottlePrice: +dForm.bottlePrice,
+      iva: +dForm.iva,
+      ricarico: +dForm.ricarico,
+      calici: +dForm.calici,
+    }])
+    setDForm({ name: "", tipo: "Rossi", regione: "Toscana", bottlePrice: "", iva: "10", ricarico: "200", calici: "6", isVino: true })
+    setDErr({})
+    setDSaved(true)
+    setTimeout(() => setDSaved(false), 3000)
+  }
+
+  // ── RENDER ─────────────────────────────────────
   return (
     <div>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 6 }}>Food Cost — Simulatore</div>
-      <div style={{ fontSize: 12, color: S.t3, marginBottom: 16 }}>Clicca un piatto, poi modifica i prezzi nella colonna "Simula" per vedere l'impatto in tempo reale</div>
-      <div style={{ display: "grid", gridTemplateColumns: "240px 1fr", gap: 14 }}>
-        <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
-          <div style={{ padding: "9px 12px", borderBottom: S.bds, fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Seleziona piatto</div>
-          {dishes.map(d => (
-            <button key={d.id} onClick={() => { setSel(d.id === sel ? null : d.id); setOv({}) }} style={{ width: "100%", display: "flex", flexDirection: "column", gap: 4, padding: "10px 13px", background: sel === d.id ? S.acg : "none", border: "none", borderBottom: S.bds, cursor: "pointer", textAlign: "left" }}>
-              <span style={{ fontSize: 13, fontWeight: 500, color: S.t1 }}>{d.name}</span>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: 11, color: S.t3 }}>{F(d.price)}</span>
-                <span style={{ fontSize: 12, fontWeight: 600, color: FC_COLOR(d.fc, d.target) }}>{P(d.fc)}</span>
-              </div>
+      {/* Header + tabs */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 12 }}>Food & Drink Cost</div>
+        <div style={row({ gap: 0 })}>
+          {[["food", "Food Cost"], ["drink", "Drink Cost"]].map(([id, label]) => (
+            <button key={id} onClick={() => setTab(id)}
+              style={{ padding: "8px 20px", background: tab === id ? S.ac : S.el, color: tab === id ? "#0d0d0f" : S.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: tab === id ? 700 : 400, cursor: "pointer", borderRadius: id === "food" ? "8px 0 0 8px" : "0 8px 8px 0" }}>
+              {label}
             </button>
           ))}
         </div>
-        <div>
-          {!sel ? (
-            <div style={{ ...card({ padding: 40, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 280 }) }}><span style={{ color: S.t3, fontSize: 13 }}>Seleziona un piatto dalla lista</span></div>
-          ) : (
-            <div style={col({ gap: 12 })}>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8 }}>
-                {[{ l: "Prezzo", v: F(dish.price), c: S.t1, sim: false }, { l: "Costo ricetta", v: F(total), c: S.t1, sim: isSim }, { l: "Food cost %", v: P(fcPct), c: FC_COLOR(fcPct, dish.target), sim: isSim }, { l: "Margine lordo", v: F(margin), c: margin > 0 ? S.green : S.red, sim: isSim }].map((k, i) => (
-                  <div key={i} style={{ background: k.sim ? S.acg : S.el, border: "1px solid " + (k.sim ? S.acd : "#2a2a31"), borderRadius: 6, padding: "10px 12px", position: "relative" }}>
-                    <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: k.c, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
-                    {k.sim && <span style={{ position: "absolute", top: 5, right: 7, fontSize: 8.5, color: S.ac, fontWeight: 700 }}>sim</span>}
+      </div>
+
+      {/* ── TAB: FOOD COST ── */}
+      {tab === "food" && (
+        <div style={{ maxWidth: 600 }}>
+          {fSaved && (
+            <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
+              Piatto salvato e aggiunto alla sezione Piatti ✓
+            </div>
+          )}
+
+          {/* Info piatto */}
+          <div style={card({ padding: 16, marginBottom: 14 })}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Dati piatto</div>
+            <Fld label="Nome piatto *">
+              <input style={inp()} value={fForm.name} onChange={e => setFForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Filetto al pepe verde" />
+              {fErr.name && <span style={{ fontSize: 11, color: S.red }}>{fErr.name}</span>}
+            </Fld>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <Fld label="Categoria">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={fForm.cat} onChange={e => setFForm(f => ({ ...f, cat: e.target.value }))}>
+                  {FOOD_CATS.map(c => <option key={c}>{c}</option>)}
+                </select>
+              </Fld>
+              <Fld label="Food cost target %">
+                <input style={inp()} type="number" step="1" min="1" max="100" value={fForm.target} onChange={e => setFForm(f => ({ ...f, target: e.target.value }))} placeholder="33" />
+                {fErr.target && <span style={{ fontSize: 11, color: S.red }}>{fErr.target}</span>}
+              </Fld>
+              <div style={{ display: "flex", alignItems: "flex-end" }}>
+                <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "9px 12px", width: "100%" }}>
+                  <div style={{ fontSize: 9.5, textTransform: "uppercase", color: S.t3, fontWeight: 600, marginBottom: 3 }}>Prezzo consigliato</div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>{fLiveCost > 0 ? F(fSugPrice) : "—"}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Ricetta */}
+          <div style={card({ padding: 16, marginBottom: 14 })}>
+            <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Ingredienti ricetta</div>
+              <button style={btn("g", { fontSize: 12, padding: "4px 10px" })} onClick={fAddRow}>+ Aggiungi</button>
+            </div>
+            {fErr.recipe && <div style={{ fontSize: 11, color: S.red, marginBottom: 8 }}>{fErr.recipe}</div>}
+
+            {/* Header colonne */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
+              {["Ingrediente", "Qtà", "Um", "Scarto", "Costo", ""].map(h => (
+                <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
+              ))}
+            </div>
+            <div style={{ border: S.bd, borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
+              {fRecipe.map((row, idx) => {
+                const ing = ings.find(i => i.id === row.ingId)
+                const qty = parseFloat(row.qty) || 0
+                const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
+                const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : qty
+                const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMult) : 0
+                return (
+                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "center", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
+                    <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })} value={row.ingId} onChange={e => fUpdateRow(row.id, { ingId: e.target.value })}>
+                      <option value="">Seleziona...</option>
+                      {ings.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                    <input style={inp({ padding: "6px 6px", fontSize: 12 })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
+                    <select style={inp({ padding: "6px 4px", fontSize: 12, appearance: "none" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
+                      {UNITS.map(u => <option key={u}>{u}</option>)}
+                    </select>
+                    <div style={{ position: "relative" }}>
+                      <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
+                      <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: S.t3, pointerEvents: "none" }}>%</span>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      {lineCost > 0 ? <span style={{ fontSize: 12, fontWeight: 600, color: S.ac }}>{F(lineCost)}</span> : <span style={{ fontSize: 11, color: S.t3 }}>—</span>}
+                    </div>
+                    <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13, padding: 0 }}>×</button>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Calcolo automatico */}
+          {fLiveCost > 0 && (
+            <div style={card({ padding: 14, marginBottom: 16 })}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
+                {[
+                  { l: "Costo ricetta",    v: F(r2(fLiveCost)),   c: S.t1 },
+                  { l: "Prezzo consigliato", v: F(r2(fSugPrice)), c: S.ac },
+                  { l: "Food cost %",      v: P(fTargetPct),      c: S.green },
+                  { l: "Margine lordo",    v: F(r2(fMargin)),     c: S.green },
+                ].map((k, i) => (
+                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "10px 10px" }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
+                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: k.c }}>{k.v}</div>
                   </div>
                 ))}
               </div>
-              {fcPct > dish.target && <div style={{ display: "flex", gap: 9, padding: "10px 13px", background: S.rd, border: "1px solid rgba(248,113,113,0.25)", borderRadius: 6, fontSize: 13, color: S.t2 }}><span style={{ color: S.ac }}>!</span><span>Food cost <b style={{ color: S.t1 }}>{P(fcPct)}</b> sopra il target {P(dish.target)}. Per rientrare porta il prezzo a <b style={{ color: S.t1 }}>{F(Math.round(total / dish.target * 100) / 100)}</b>.</span></div>}
-              <div style={{ background: S.el, border: S.bd, borderRadius: S.r2, padding: 14 }}>
-                <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
-                  <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Ingredienti — modifica "Simula" per vedere l'impatto</span>
-                  {isSim && <button style={btn("g", { fontSize: 11, padding: "3px 8px" })} onClick={() => setOv({})}>Reset</button>}
-                </div>
-                {liveItems.map(it => {
-                  const hasOv = ov[it.id] !== undefined && ov[it.id] !== "" && parseFloat(ov[it.id]) !== it.price
-                  return (
-                    <div key={it.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 120px 90px 120px", gap: 10, padding: "8px 0", borderBottom: S.bds, alignItems: "center" }}>
-                      <div><div style={{ fontSize: 13, fontWeight: 500, color: S.t1 }}>{it.name}</div><div style={{ fontSize: 10.5, color: S.t3 }}>scarto x{it.waste} — {it.qty} {it.unit}</div></div>
-                      <span style={{ fontSize: 12, color: S.t2, fontVariantNumeric: "tabular-nums" }}>{it.qty} {it.unit}</span>
-                      <span style={{ fontSize: 12.5, color: hasOv ? S.ac : S.t2, fontVariantNumeric: "tabular-nums" }}>{F(it.lp)}/{it.unit}{hasOv && <span style={{ display: "block", fontSize: 10, color: S.t3, textDecoration: "line-through" }}>{F(it.price)}</span>}</span>
-                      <span style={{ fontSize: 12.5, fontWeight: hasOv ? 600 : 400, color: hasOv ? S.ac : S.t2, fontVariantNumeric: "tabular-nums" }}>{F(it.lc)}</span>
-                      <input type="number" step="0.01" min="0" placeholder={String(it.price)} value={ov[it.id] !== undefined ? ov[it.id] : ""} onChange={e => setOv(p => ({ ...p, [it.id]: e.target.value }))} style={{ ...inp({ fontSize: 12.5, padding: "5px 8px" }), borderColor: hasOv ? S.ac : "#2a2a31", color: hasOv ? S.ac : S.t2 }} />
-                    </div>
-                  )
-                })}
+            </div>
+          )}
+
+          <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={fSave}>
+            Salva piatto e invia a Piatti
+          </button>
+        </div>
+      )}
+
+      {/* ── TAB: DRINK COST ── */}
+      {tab === "drink" && (
+        <div style={{ maxWidth: 600 }}>
+          {dSaved && (
+            <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
+              Voce salvata e aggiunta alla sezione Piatti ✓
+            </div>
+          )}
+
+          <div style={card({ padding: 16, marginBottom: 14 })}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Dati voce</div>
+
+            <Fld label="Nome *">
+              <input style={inp()} value={dForm.name} onChange={e => setDForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Barolo Giacomo Conterno 2018" />
+              {dErr.name && <span style={{ fontSize: 11, color: S.red }}>{dErr.name}</span>}
+            </Fld>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+              <Fld label="Tipologia">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.tipo}
+                  onChange={e => setDForm(f => ({ ...f, tipo: e.target.value, isVino: e.target.value !== "Cocktail" }))}>
+                  {[...VINO_TIPI, "Cocktail"].map(t => <option key={t}>{t}</option>)}
+                </select>
+              </Fld>
+              {dForm.tipo !== "Cocktail" && (
+                <Fld label="Regione">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.regione} onChange={e => setDForm(f => ({ ...f, regione: e.target.value }))}>
+                    {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
+                  </select>
+                </Fld>
+              )}
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+              <Fld label="Prezzo bottiglia (€) *">
+                <input style={inp()} type="number" step="0.01" value={dForm.bottlePrice} onChange={e => setDForm(f => ({ ...f, bottlePrice: e.target.value }))} placeholder="0.00" />
+                {dErr.bottlePrice && <span style={{ fontSize: 11, color: S.red }}>{dErr.bottlePrice}</span>}
+              </Fld>
+              <Fld label="IVA %">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.iva} onChange={e => setDForm(f => ({ ...f, iva: e.target.value }))}>
+                  {["4", "10", "22"].map(v => <option key={v}>{v}</option>)}
+                </select>
+              </Fld>
+              <Fld label="Ricarico %">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.ricarico} onChange={e => setDForm(f => ({ ...f, ricarico: e.target.value }))}>
+                  {["100","150","200","250","300","350","400","450","500"].map(v => <option key={v}>{v}</option>)}
+                </select>
+              </Fld>
+            </div>
+
+            {dForm.tipo !== "Cocktail" && (
+              <Fld label="Calici per bottiglia">
+                <input style={inp()} type="number" step="1" min="1" value={dForm.calici} onChange={e => setDForm(f => ({ ...f, calici: e.target.value }))} />
+              </Fld>
+            )}
+          </div>
+
+          {/* Calcolo automatico drink */}
+          {dForm.bottlePrice && +dForm.bottlePrice > 0 && (
+            <div style={card({ padding: 14, marginBottom: 16 })}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
+              <div style={{ display: "grid", gridTemplateColumns: dForm.tipo !== "Cocktail" ? "1fr 1fr 1fr" : "1fr 1fr", gap: 8 }}>
+                {[
+                  { l: "Costo netto bottiglia", v: F(r2(dPriceNet)), c: S.t1 },
+                  { l: "Prezzo vendita bottiglia", v: F(dSellBottle), c: S.ac },
+                  ...(dForm.tipo !== "Cocktail" ? [{ l: "Prezzo al calice", v: F(dSellCalice), c: S.green }] : []),
+                ].map((k, i) => (
+                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "12px 12px" }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: k.c }}>{k.v}</div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
+
+          <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={dSave}>
+            Salva e invia a Piatti
+          </button>
         </div>
-      </div>
+      )}
     </div>
   )
 }
 
-function AIInsights({ dismissed, setDismissed, isMobile }) {
-  const visible = INSIGHTS.filter(i => !dismissed.includes(i.id))
-  const totalGain = visible.reduce((s, i) => s + i.gain, 0)
-  const sevColor = { critical: S.red, high: "#fb923c", medium: S.ac, low: S.t3 }
+
+function CreateMenu({ menus, setMenus, dishes, isMobile }) {
+  const TEMPLATES = [
+    { id: "classic",  label: "Classico",   desc: "Serif elegante, bordi sottili" },
+    { id: "modern",   label: "Moderno",    desc: "Sans-serif, minimalista" },
+    { id: "rustic",   label: "Rustico",    desc: "Testo grande, stile trattoria" },
+  ]
+  const FONT_SIZES = ["Piccolo", "Medio", "Grande"]
+  const ANNI = (() => {
+    const y = new Date().getFullYear()
+    return [y, y - 1, y - 2]
+  })()
+  const MESI_IT = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"]
+  const STAGIONE_MESI = {
+    Primavera: [2,3,4], Estate: [5,6,7], Autunno: [8,9,10], Inverno: [11,0,1]
+  }
+  const FOOD_CATS = ["Speciali","Antipasti","Primi","Secondi","Dolci","Cocktail"]
+  const VINO_TIPI = ["Rossi","Bianchi","Rosé","Bollicine"]
+  const VINO_REGIONI = ["Piemonte","Toscana","Veneto","Sicilia","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"]
+
+  // state
+  const [view, setView]           = useState("home") // home | create_menu | create_vini | open
+  const [selAnno, setSelAnno]     = useState(ANNI[0])
+  const [openItem, setOpenItem]   = useState(null)
+
+  // Crea menu state
+  const [step, setStep]           = useState(1) // 1=config, 2=selezione
+  const [counts, setCounts]       = useState({ Speciali:0, Antipasti:2, Primi:3, Secondi:3, Dolci:2, Cocktail:0 })
+  const [selDishes, setSelDishes] = useState({})
+
+  // Carta vini state
+  const [selVini, setSelVini]     = useState({})
+
+  // Print options
+  const [template, setTemplate]   = useState("classic")
+  const [fontSize, setFontSize]   = useState("Medio")
+
+  const uid2 = () => Math.random().toString(36).slice(2, 9)
+  const nowStr = () => {
+    const d = new Date()
+    return `${d.getDate()} ${MESI_IT[d.getMonth()]} ${d.getFullYear()}`
+  }
+  const nowISO = () => new Date().toISOString()
+
+  // Stagione corrente
+  const curMonth = new Date().getMonth()
+  const curStagione = Object.entries(STAGIONE_MESI).find(([,ms]) => ms.includes(curMonth))?.[0] || "Primavera"
+
+  function catMatch(d, cat) {
+    const c = (d.cat || "").toLowerCase()
+    if (cat === "Antipasti") return c === "antipasto" || c === "antipasti"
+    if (cat === "Primi")     return c === "primo"    || c === "primi"
+    if (cat === "Secondi")   return c === "secondo"  || c === "secondi"
+    if (cat === "Dolci")     return c === "dolce"    || c === "dolci"
+    if (cat === "Speciali")  return c === "speciale" || c === "speciali"
+    if (cat === "Cocktail")  return c === "cocktail"
+    return false
+  }
+
+  function getDishesForCat(cat) {
+    const all = dishes.filter(d => catMatch(d, cat))
+    const inSeason  = all.filter(d => (d.stagioni||[]).includes(curStagione)).sort((a,b) => (b.margin||0)-(a.margin||0))
+    const outSeason = all.filter(d => !(d.stagioni||[]).includes(curStagione)).sort((a,b) => (b.margin||0)-(a.margin||0))
+    return [...inSeason, ...outSeason]
+  }
+
+  // Anno filter
+  const menusAnno = menus.filter(m => new Date(m.date).getFullYear() === selAnno)
+
+  // Save menu
+  function saveMenu() {
+    const selected = {}
+    FOOD_CATS.forEach(cat => {
+      selected[cat] = (selDishes[cat] || []).map(id => dishes.find(d => d.id === id)).filter(Boolean)
+    })
+    setMenus(prev => [{
+      id: "m" + uid2(), type: "menu", label: "Menu del " + nowStr(),
+      date: nowISO(), template, fontSize, selected
+    }, ...prev])
+    setView("home"); setStep(1); setSelDishes({}); setSelVini({})
+  }
+
+  // Save carta vini
+  function saveVini() {
+    const selected = {}
+    VINO_TIPI.forEach(tipo => {
+      selected[tipo] = {}
+      VINO_REGIONI.forEach(reg => {
+        const key = tipo + "|" + reg
+        if (selVini[key]?.length > 0) {
+          selected[tipo][reg] = selVini[key].map(id => dishes.find(d => d.id === id)).filter(Boolean)
+        }
+      })
+    })
+    setMenus(prev => [{
+      id: "m" + uid2(), type: "vini", label: "Carta dei Vini — " + nowStr(),
+      date: nowISO(), template, fontSize, selected
+    }, ...prev])
+    setView("home"); setSelVini({})
+  }
+
+  function deleteMenu(id) {
+    if (!window.confirm("Eliminare questa voce?")) return
+    setMenus(prev => prev.filter(m => m.id !== id))
+  }
+
+  function shareWhatsApp(item) {
+    const text = encodeURIComponent(item.label + "\nCreato il " + new Date(item.date).toLocaleDateString("it-IT"))
+    window.open("https://wa.me/?text=" + text, "_blank")
+  }
+
+  function printItem(item) {
+    const win = window.open("", "_blank")
+    win.document.write(buildPrintHTML(item))
+    win.document.close()
+    win.print()
+  }
+
+  // ── Build print HTML ──────────────────────────
+  function buildPrintHTML(item) {
+    const fsMap = { Piccolo: "13px", Medio: "15px", Grande: "17px" }
+    const fs = fsMap[item.fontSize] || "15px"
+    const isClassic = item.template === "classic"
+    const isRustic  = item.template === "rustic"
+    const ff = isClassic ? "Georgia, serif" : isRustic ? "'Times New Roman', serif" : "system-ui, sans-serif"
+    const accent = isRustic ? "#8B4513" : "#1a1a1a"
+
+    let body = ""
+    if (item.type === "menu") {
+      Object.entries(item.selected || {}).forEach(([cat, piatti]) => {
+        if (!piatti || piatti.length === 0) return
+        body += `<div class="section"><h2>${cat}</h2>`
+        piatti.forEach(p => {
+          body += `<div class="item"><span class="name">${p.name}</span><span class="price">${p.price > 0 ? "€ " + p.price.toFixed(2).replace(".",",") : ""}</span></div>`
+        })
+        body += `</div>`
+      })
+    } else {
+      Object.entries(item.selected || {}).forEach(([tipo, regioni]) => {
+        const rows = Object.entries(regioni || {})
+        if (rows.length === 0) return
+        body += `<div class="section"><h2>${tipo}</h2>`
+        rows.forEach(([reg, vini]) => {
+          if (!vini || vini.length === 0) return
+          body += `<div class="regione">${reg}</div>`
+          vini.forEach(v => {
+            body += `<div class="item"><span class="name">${v.name}</span><span class="price">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") + " / cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+          })
+        })
+        body += `</div>`
+      })
+    }
+
+    return `<!DOCTYPE html><html><head><meta charset="UTF-8">
+<style>
+  @page { margin: 2cm; }
+  body { font-family: ${ff}; font-size: ${fs}; color: #1a1a1a; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+  h1 { text-align: center; font-size: 1.6em; letter-spacing: 0.15em; text-transform: uppercase; border-bottom: ${isClassic ? "2px solid #1a1a1a" : "1px solid #ccc"}; padding-bottom: 8px; margin-bottom: 24px; }
+  .date { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 32px; }
+  .section { margin-bottom: 28px; }
+  h2 { font-size: 1em; text-transform: uppercase; letter-spacing: 0.12em; color: ${accent}; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 12px; }
+  .regione { font-size: 0.8em; color: #888; font-style: italic; margin: 8px 0 4px; }
+  .item { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted #e0e0e0; }
+  .name { font-weight: ${isClassic ? "normal" : "500"}; }
+  .price { font-weight: 600; min-width: 80px; text-align: right; }
+  @media print { body { -webkit-print-color-adjust: exact; } }
+</style></head><body>
+<h1>${item.type === "menu" ? "Menu" : "Carta dei Vini"}</h1>
+<div class="date">${new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
+${body}
+</body></html>`
+  }
+
+  // ── HOME ───────────────────────────────────────
+  if (view === "home") return (
+    <div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 20 }}>Crea Menu</div>
+
+      {/* Action buttons */}
+      <div style={row({ gap: 10, marginBottom: 24, flexWrap: "wrap" })}>
+        <button style={btn("p")} onClick={() => { setView("create_menu"); setStep(1) }}>+ Crea Menu</button>
+        <button style={btn("s")} onClick={() => { setView("create_vini"); setSelVini({}) }}>+ Carta dei Vini</button>
+      </div>
+
+      {/* Anno selector */}
+      <div style={row({ gap: 8, marginBottom: 16, flexWrap: "wrap" })}>
+        {ANNI.map(a => (
+          <button key={a} onClick={() => setSelAnno(a)}
+            style={{ padding: "4px 14px", background: selAnno === a ? S.acg : "none", border: "1px solid " + (selAnno === a ? S.acd : "#2a2a31"), borderRadius: 999, color: selAnno === a ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+            {a}
+          </button>
+        ))}
+      </div>
+
+      {/* Lista menu anno */}
+      {menusAnno.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+          Nessun menu creato nel {selAnno}
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {menusAnno.map(m => (
+            <div key={m.id} style={{ background: S.surf, border: S.bds, borderRadius: S.r2, padding: "14px 16px" }}>
+              <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: S.t3 }}>
+                    {new Date(m.date).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
+                    {" · "}{m.template && TEMPLATES.find(t => t.id === m.template)?.label}
+                  </div>
+                </div>
+                <span style={{ ...badge("n"), textTransform: "uppercase", fontSize: 9 }}>{m.type === "menu" ? "Menu" : "Vini"}</span>
+              </div>
+              <div style={row({ gap: 6, flexWrap: "wrap" })}>
+                <button style={btn("s", { fontSize: 11, padding: "4px 10px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
+                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => shareWhatsApp(m)}>WhatsApp</button>
+                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => printItem(m)}>Stampa / PDF</button>
+                <button style={{ ...btn("g", { fontSize: 11, padding: "4px 10px" }), color: S.red }} onClick={() => deleteMenu(m.id)}>Elimina</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+
+  // ── OPEN / PREVIEW ─────────────────────────────
+  if (view === "open" && openItem) return (
+    <div>
+      <div style={row({ marginBottom: 16 })}>
+        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Menu</button>
+      </div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 4 }}>{openItem.label}</div>
+      <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>{new Date(openItem.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
+
+      {openItem.type === "menu" && Object.entries(openItem.selected || {}).map(([cat, piatti]) => {
+        if (!piatti || piatti.length === 0) return null
+        return (
+          <div key={cat} style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, borderBottom: S.bds, paddingBottom: 4 }}>{cat}</div>
+            {piatti.map((p, i) => (
+              <div key={i} style={row({ justifyContent: "space-between", padding: "7px 0", borderBottom: S.bds })}>
+                <span style={{ fontSize: 14, color: S.t1 }}>{p.name}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{p.price > 0 ? F(p.price) : "—"}</span>
+              </div>
+            ))}
+          </div>
+        )
+      })}
+
+      {openItem.type === "vini" && Object.entries(openItem.selected || {}).map(([tipo, regioni]) => {
+        const rows = Object.entries(regioni || {}).filter(([,v]) => v?.length > 0)
+        if (rows.length === 0) return null
+        return (
+          <div key={tipo} style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, borderBottom: S.bds, paddingBottom: 4 }}>{tipo}</div>
+            {rows.map(([reg, vini]) => (
+              <div key={reg} style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: S.t3, fontStyle: "italic", marginBottom: 4 }}>{reg}</div>
+                {vini.map((v, i) => (
+                  <div key={i} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: S.bds })}>
+                    <span style={{ fontSize: 13, color: S.t1 }}>{v.name}</span>
+                    <span style={{ fontSize: 12, color: S.t2 }}>{v.priceBottle ? F(v.priceBottle) + " / " + F(v.priceCalice) : "—"}</span>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        )
+      })}
+
+      <button style={{ ...btn("p"), marginTop: 12 }} onClick={() => printItem(openItem)}>Stampa / Esporta PDF</button>
+    </div>
+  )
+
+  // ── CREATE MENU STEP 1: config ─────────────────
+  if (view === "create_menu" && step === 1) return (
+    <div style={{ maxWidth: 500 }}>
+      <div style={row({ marginBottom: 16 })}>
+        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Annulla</button>
+      </div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>Configura il menu</div>
+
+      <div style={card({ padding: 16, marginBottom: 14 })}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Piatti per categoria</div>
+        {FOOD_CATS.map(cat => (
+          <div key={cat} style={row({ justifyContent: "space-between", padding: "8px 0", borderBottom: S.bds })}>
+            <span style={{ fontSize: 13, color: S.t1 }}>{cat}</span>
+            <div style={row({ gap: 8 })}>
+              <button onClick={() => setCounts(c => ({ ...c, [cat]: Math.max(0, (c[cat]||0)-1) }))}
+                style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>−</button>
+              <span style={{ width: 24, textAlign: "center", fontSize: 14, fontWeight: 600, color: S.t1 }}>{counts[cat]||0}</span>
+              <button onClick={() => setCounts(c => ({ ...c, [cat]: (c[cat]||0)+1 }))}
+                style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>+</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Template */}
+      <div style={card({ padding: 16, marginBottom: 16 })}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Template grafico</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
+          {TEMPLATES.map(t => (
+            <div key={t.id} onClick={() => setTemplate(t.id)}
+              style={{ padding: "10px 10px", background: template === t.id ? S.acg : S.el, border: "1px solid " + (template === t.id ? S.acd : "#2a2a31"), borderRadius: S.r, cursor: "pointer", textAlign: "center" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: template === t.id ? S.ac : S.t1, marginBottom: 3 }}>{t.label}</div>
+              <div style={{ fontSize: 10, color: S.t3 }}>{t.desc}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Dimensione testo</div>
+        <div style={row({ gap: 8 })}>
+          {FONT_SIZES.map(f => (
+            <button key={f} onClick={() => setFontSize(f)}
+              style={{ padding: "4px 14px", background: fontSize === f ? S.acg : "none", border: "1px solid " + (fontSize === f ? S.acd : "#2a2a31"), borderRadius: 999, color: fontSize === f ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }}
+        onClick={() => { setSelDishes({}); setStep(2) }}>
+        Continua — Selezione piatti
+      </button>
+    </div>
+  )
+
+  // ── CREATE MENU STEP 2: selezione piatti ───────
+  if (view === "create_menu" && step === 2) {
+    const activeCats = FOOD_CATS.filter(cat => (counts[cat]||0) > 0)
+    return (
+      <div style={{ maxWidth: 560 }}>
+        <div style={row({ marginBottom: 16, justifyContent: "space-between" })}>
+          <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Configura</button>
+          <span style={{ fontSize: 12, color: S.t3 }}>Stagione: {curStagione}</span>
+        </div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>Seleziona i piatti</div>
+
+        {activeCats.map(cat => {
+          const list = getDishesForCat(cat)
+          const max = counts[cat] || 0
+          const sel = selDishes[cat] || []
+          return (
+            <div key={cat} style={card({ padding: 16, marginBottom: 14 })}>
+              <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: S.t1 }}>{cat}</div>
+                <span style={{ fontSize: 11, color: sel.length >= max ? S.green : S.t3 }}>{sel.length}/{max} selezionati</span>
+              </div>
+              {list.length === 0 ? (
+                <div style={{ fontSize: 12, color: S.t3, padding: "8px 0" }}>Nessun piatto disponibile</div>
+              ) : list.map(d => {
+                const isSel = sel.includes(d.id)
+                const inSeason = (d.stagioni||[]).includes(curStagione)
+                return (
+                  <div key={d.id} onClick={() => {
+                    if (!isSel && sel.length >= max) return
+                    setSelDishes(prev => ({
+                      ...prev,
+                      [cat]: isSel ? sel.filter(x => x !== d.id) : [...sel, d.id]
+                    }))
+                  }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: S.bds, cursor: sel.length >= max && !isSel ? "not-allowed" : "pointer", opacity: sel.length >= max && !isSel ? 0.4 : 1 }}>
+                    <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>✓</span>}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={row({ gap: 6 })}>
+                        <span style={{ fontSize: 13, color: S.t1 }}>{d.name}</span>
+                        {inSeason && <span style={{ fontSize: 9, color: S.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>stagione</span>}
+                      </div>
+                      {d.margin > 0 && <span style={{ fontSize: 10, color: S.t3 }}>margine {F(d.margin)}</span>}
+                    </div>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : "—"}</span>
+                  </div>
+                )
+              })}
+            </div>
+          )
+        })}
+
+        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={saveMenu}>
+          Salva Menu
+        </button>
+      </div>
+    )
+  }
+
+  // ── CREATE CARTA VINI ──────────────────────────
+  if (view === "create_vini") {
+    const allVini = dishes.filter(d => (d.cat||"").toLowerCase() === "vino")
+    return (
+      <div style={{ maxWidth: 560 }}>
+        <div style={row({ marginBottom: 16, justifyContent: "space-between" })}>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Annulla</button>
+        </div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 8 }}>Seleziona i vini</div>
+        <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>Organizzati per tipologia e regione</div>
+
+        {/* Template */}
+        <div style={card({ padding: 14, marginBottom: 16 })}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Template</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {TEMPLATES.map(t => (
+              <div key={t.id} onClick={() => setTemplate(t.id)}
+                style={{ padding: "8px 8px", background: template === t.id ? S.acg : S.el, border: "1px solid " + (template === t.id ? S.acd : "#2a2a31"), borderRadius: S.r, cursor: "pointer", textAlign: "center" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: template === t.id ? S.ac : S.t1 }}>{t.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {allVini.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+            Nessun vino presente — aggiungili dalla sezione Drink Cost
+          </div>
+        ) : (
+          VINO_TIPI.map(tipo => {
+            const byTipo = allVini.filter(v => v.tipoVino === tipo)
+            if (byTipo.length === 0) return null
+            return (
+              <div key={tipo} style={card({ padding: 16, marginBottom: 12 })}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>{tipo}</div>
+                {VINO_REGIONI.map(reg => {
+                  const byReg = byTipo.filter(v => v.regioneVino === reg)
+                  if (byReg.length === 0) return null
+                  const key = tipo + "|" + reg
+                  const sel = selVini[key] || []
+                  return (
+                    <div key={reg} style={{ marginBottom: 10 }}>
+                      <div style={{ fontSize: 11, color: S.t3, fontStyle: "italic", marginBottom: 6 }}>{reg}</div>
+                      {byReg.map(v => {
+                        const isSel = sel.includes(v.id)
+                        return (
+                          <div key={v.id} onClick={() => setSelVini(prev => ({
+                            ...prev,
+                            [key]: isSel ? sel.filter(x => x !== v.id) : [...sel, v.id]
+                          }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: S.bds, cursor: "pointer" }}>
+                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>✓</span>}
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 13, color: S.t1 }}>{v.name}</div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              {v.priceBottle && <div style={{ fontSize: 12, color: S.t1, fontWeight: 600 }}>{F(v.priceBottle)}</div>}
+                              {v.priceCalice && <div style={{ fontSize: 10, color: S.t3 }}>cal. {F(v.priceCalice)}</div>}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          })
+        )}
+
+        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px", marginTop: 8 }} onClick={saveVini}>
+          Salva Carta dei Vini
+        </button>
+      </div>
+    )
+  }
+
+  return null
+}
+
+
+function AIInsights({ dishes, ings, isMobile }) {
+  const MAX_CALLS_MONTH = 10
+  const STORAGE_KEY = "fm_ai_calls"
+
+  const [insights, setInsights]   = useState([])
+  const [loading, setLoading]     = useState(false)
+  const [error, setError]         = useState(null)
+  const [callsUsed, setCallsUsed] = useState(0)
+
+  // Carica contatore chiamate dal localStorage
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{"month":"","count":0}')
+      const thisMonth = new Date().toISOString().slice(0, 7) // "2025-11"
+      if (stored.month === thisMonth) setCallsUsed(stored.count)
+      else { localStorage.setItem(STORAGE_KEY, JSON.stringify({ month: thisMonth, count: 0 })); setCallsUsed(0) }
+    } catch(e) { setCallsUsed(0) }
+  }, [])
+
+  function incrementCalls() {
+    const thisMonth = new Date().toISOString().slice(0, 7)
+    const newCount = callsUsed + 1
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ month: thisMonth, count: newCount }))
+    setCallsUsed(newCount)
+  }
+
+  async function generate() {
+    if (callsUsed >= MAX_CALLS_MONTH) return
+    setLoading(true); setError(null)
+
+    try {
+      // Prepara contesto: piatti con food cost + ingredienti con variazioni prezzo
+      const dishData = dishes
+        .filter(d => d.cost > 0 && d.price > 0)
+        .map(d => ({
+          nome: d.name,
+          cat: d.cat,
+          prezzo: d.price,
+          costo: d.cost,
+          foodCost: Math.round(d.fc * 1000) / 10,
+          target: Math.round(d.target * 100),
+          margine: d.margin,
+        }))
+
+      const ingData = ings.map(i => {
+        const var_pct = i.avg > 0 ? Math.round(((i.cur - i.avg) / i.avg) * 1000) / 10 : 0
+        return { nome: i.name, cat: i.cat, prezzoAttuale: i.cur, media: i.avg, variazione: var_pct, unita: i.unit }
+      }).filter(i => Math.abs(i.variazione) > 0.5)
+
+      const prompt = `Sei un consulente di ristorazione esperto in food cost e gestione del menu.
+
+DATI PIATTI (food cost %):
+${JSON.stringify(dishData, null, 2)}
+
+INGREDIENTI CON VARIAZIONI DI PREZZO RECENTI:
+${JSON.stringify(ingData, null, 2)}
+
+Analizza i dati e genera esattamente 5 insights pratici e concreti per aiutare il ristoratore a mantenere o migliorare i margini. Per ogni insight:
+- Identifica un problema specifico (piatto sopra target, ingrediente aumentato, ecc.)
+- Dai 2-3 azioni concrete e alternative (es: aumentare prezzo di €X, ridurre grammatura di Yg, sostituire ingrediente Z con W più economico)
+- Stima il guadagno mensile potenziale in euro (assumendo 30-50 porzioni/mese)
+
+Rispondi SOLO con JSON valido senza markdown:
+[{"titolo":"...","problema":"...","azioni":["...","...","..."],"guadagno":0,"priorita":"alta|media|bassa"}]`
+
+      const GROQ_KEY = "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"
+      const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_KEY },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          max_tokens: 1000,
+          messages: [{ role: "user", content: prompt }]
+        })
+      })
+
+      const data = await response.json()
+      if (data.error) throw new Error(data.error.message || "Errore Groq")
+      const raw = data.choices?.[0]?.message?.content || ""
+      const jsonMatch = raw.match(/\[[\s\S]*\]/)
+      if (!jsonMatch) throw new Error("Risposta non valida")
+      const parsed = JSON.parse(jsonMatch[0])
+      setInsights(parsed)
+      incrementCalls()
+
+    } catch(e) {
+      setError("Errore generazione insights: " + e.message)
+    }
+    setLoading(false)
+  }
+
+  const priColor = { alta: S.red, media: S.ac, bassa: S.t3 }
+  const rimanenti = MAX_CALLS_MONTH - callsUsed
+
   return (
     <div>
-      <div style={row({ justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", alignItems: "flex-start" })}>
-        <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>AI Insights</div><div style={{ fontSize: 12, color: S.t3 }}>{visible.length} insight — risparmio potenziale <span style={{ color: S.green, fontWeight: 600 }}>{F(totalGain)}/mese</span></div></div>
-        <button style={btn("p")}>Genera nuovi insight</button>
+      <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", alignItems: "flex-start" })}>
+        <div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 2 }}>AI Insights</div>
+          <div style={{ fontSize: 12, color: S.t3 }}>
+            Consigli per proteggere i margini — {rimanenti} analisi rimaste questo mese
+          </div>
+        </div>
+        <button style={btn(rimanenti > 0 ? "p" : "s", { opacity: rimanenti > 0 ? 1 : 0.5 })}
+          onClick={generate} disabled={loading || rimanenti <= 0}>
+          {loading ? "Analisi in corso..." : rimanenti > 0 ? "Genera analisi" : "Limite mensile raggiunto"}
+        </button>
       </div>
-      {visible.map(ins => (
-        <div key={ins.id} style={{ background: S.surf, border: S.bds, borderLeft: "3px solid " + sevColor[ins.sev], borderRadius: S.r2, padding: "14px 16px", marginBottom: 9 }}>
-          <div style={row({ justifyContent: "space-between", marginBottom: 6 })}>
+
+      {/* Barra utilizzo */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={row({ justifyContent: "space-between", fontSize: 11, color: S.t3, marginBottom: 5 })}>
+          <span>Analisi utilizzate questo mese</span>
+          <span>{callsUsed}/{MAX_CALLS_MONTH}</span>
+        </div>
+        <div style={{ height: 4, background: S.el, borderRadius: 999, overflow: "hidden" }}>
+          <div style={{ height: "100%", width: (callsUsed / MAX_CALLS_MONTH * 100) + "%", background: callsUsed >= MAX_CALLS_MONTH ? S.red : S.ac, borderRadius: 999, transition: "width 0.4s" }} />
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ marginBottom: 16, padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 13, color: S.red }}>{error}</div>
+      )}
+
+      {loading && (
+        <div style={card({ padding: 32, textAlign: "center" })}>
+          <div style={{ fontSize: 13, color: S.t3, marginBottom: 8 }}>Claude sta analizzando i tuoi dati...</div>
+          <div style={{ fontSize: 11, color: S.t3 }}>Piatti, food cost, variazioni prezzi ingredienti</div>
+        </div>
+      )}
+
+      {!loading && insights.length === 0 && !error && (
+        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+          Clicca "Genera analisi" per ricevere consigli personalizzati sui tuoi margini
+        </div>
+      )}
+
+      {!loading && insights.map((ins, i) => (
+        <div key={i} style={{ background: S.surf, border: S.bds, borderLeft: "3px solid " + (priColor[ins.priorita] || S.t3), borderRadius: S.r2, padding: "16px 18px", marginBottom: 10 }}>
+          <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
             <div style={row({ gap: 8 })}>
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: sevColor[ins.sev], display: "inline-block", boxShadow: "0 0 5px " + sevColor[ins.sev] }} />
-              <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3 }}>{ins.sev}</span>
+              <div style={{ width: 6, height: 6, borderRadius: "50%", background: priColor[ins.priorita] || S.t3, boxShadow: "0 0 6px " + (priColor[ins.priorita] || S.t3), flexShrink: 0 }} />
+              <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3 }}>{ins.priorita}</span>
             </div>
-            <button onClick={() => setDismissed(d => [...d, ins.id])} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 12 }}>x</button>
+            {ins.guadagno > 0 && (
+              <span style={{ fontSize: 11.5, fontWeight: 600, color: S.green, background: S.gd, padding: "2px 10px", borderRadius: 999, border: "1px solid rgba(74,222,128,0.2)" }}>
+                +{F(ins.guadagno)}/mese
+              </span>
+            )}
           </div>
-          <div style={{ fontSize: 14.5, fontWeight: 600, color: S.t1, marginBottom: 5 }}>{ins.title}</div>
-          <div style={{ fontSize: 13, color: S.t2, lineHeight: 1.6, marginBottom: 12 }}>{ins.body}</div>
-          <div style={row({ justifyContent: "space-between" })}>
-            <button style={btn("s", { fontSize: 12, padding: "5px 12px" })}>{ins.action}</button>
-            <span style={{ fontSize: 11.5, fontWeight: 600, color: S.green, background: S.gd, padding: "2px 10px", borderRadius: 999, border: "1px solid rgba(74,222,128,0.2)" }}>+{F(ins.gain)}/mese</span>
-          </div>
+
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: S.t1, marginBottom: 6 }}>{ins.titolo}</div>
+          <div style={{ fontSize: 13, color: S.t2, lineHeight: 1.6, marginBottom: 12 }}>{ins.problema}</div>
+
+          {ins.azioni && ins.azioni.length > 0 && (
+            <div style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "10px 12px" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Azioni consigliate</div>
+              {ins.azioni.map((a, j) => (
+                <div key={j} style={row({ gap: 8, marginBottom: j < ins.azioni.length - 1 ? 6 : 0, alignItems: "flex-start" })}>
+                  <span style={{ fontSize: 10, color: S.ac, fontWeight: 700, marginTop: 2, flexShrink: 0 }}>{j + 1}.</span>
+                  <span style={{ fontSize: 12.5, color: S.t2, lineHeight: 1.5 }}>{a}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>
   )
 }
 
-// ── Traduzioni ───────────────────────────────────────────────────
-const T = {
-  it: {
-    login: "Accedi", register: "Registrati", logout: "Esci",
-    email: "Email", password: "Password", confirmPwd: "Conferma password",
-    forgotPwd: "Password dimenticata?", resetPwd: "Reimposta password",
-    resetSent: "Email di reset inviata! Controlla la casella.",
-    loginGoogle: "Continua con Google",
-    noAccount: "Non hai un account?", haveAccount: "Hai già un account?",
-    appDesc: "Gestione costi e margini per ristoratori",
-    errEmail: "Email non valida", errPwd: "Minimo 6 caratteri",
-    errPwdMatch: "Le password non coincidono",
-    errLogin: "Email o password errati",
-    errRegister: "Errore durante la registrazione",
-    language: "Lingua",
-  },
-  en: {
-    login: "Sign in", register: "Sign up", logout: "Sign out",
-    email: "Email", password: "Password", confirmPwd: "Confirm password",
-    forgotPwd: "Forgot password?", resetPwd: "Reset password",
-    resetSent: "Reset email sent! Check your inbox.",
-    loginGoogle: "Continue with Google",
-    noAccount: "Don't have an account?", haveAccount: "Already have an account?",
-    appDesc: "Cost and margin management for restaurants",
-    errEmail: "Invalid email", errPwd: "Minimum 6 characters",
-    errPwdMatch: "Passwords don't match",
-    errLogin: "Wrong email or password",
-    errRegister: "Registration error",
-    language: "Language",
-  }
-}
-
-// ── Login Page ────────────────────────────────────────────────────
-function LoginPage({ lang, setLang }) {
-  const t = T[lang]
-  const [mode, setMode] = useState("login") // login | register | reset
-  const [form, setForm] = useState({ email: "", password: "", confirm: "" })
-  const [err, setErr] = useState("")
-  const [info, setInfo] = useState("")
-  const [loading, setLoading] = useState(false)
-
-  function validate() {
-    if (!form.email.includes("@")) { setErr(t.errEmail); return false }
-    if (mode !== "reset" && form.password.length < 6) { setErr(t.errPwd); return false }
-    if (mode === "register" && form.password !== form.confirm) { setErr(t.errPwdMatch); return false }
-    return true
-  }
-
-  async function handleSubmit() {
-    setErr(""); setInfo("")
-    if (!validate()) return
-    setLoading(true)
-    try {
-      if (mode === "login") {
-        await signInWithEmailAndPassword(auth, form.email, form.password)
-      } else if (mode === "register") {
-        await createUserWithEmailAndPassword(auth, form.email, form.password)
-      } else if (mode === "reset") {
-        await sendPasswordResetEmail(auth, form.email)
-        setInfo(t.resetSent)
-        setMode("login")
-      }
-    } catch(e) {
-      setErr(mode === "login" ? t.errLogin : t.errRegister)
-    }
-    setLoading(false)
-  }
-
-  async function handleGoogle() {
-    setErr(""); setLoading(true)
-    try {
-      await signInWithPopup(auth, googleProvider)
-    } catch(e) {
-      setErr(e.message)
-    }
-    setLoading(false)
-  }
-
-  return (
-    <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "system-ui, sans-serif" }}>
-
-      {/* Language switcher */}
-      <div style={{ position: "fixed", top: 16, right: 16, display: "flex", gap: 6 }}>
-        {["it","en"].map(l => (
-          <button key={l} onClick={() => setLang(l)} style={{ padding: "4px 10px", background: lang === l ? S.acg : "none", border: `1px solid ${lang === l ? S.acd : "#2a2a31"}`, borderRadius: 999, color: lang === l ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}>{l}</button>
-        ))}
-      </div>
-
-      {/* Logo */}
-      <div style={{ marginBottom: 32, textAlign: "center" }}>
-        <div style={{ width: 72, height: 72, background: S.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-          <FMPercentIcon size={44} />
-        </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: S.t1, letterSpacing: "-0.02em" }}>FoodMargin</div>
-        <div style={{ fontSize: 13, color: S.t3, marginTop: 4 }}>{t.appDesc}</div>
-      </div>
-
-      {/* Card */}
-      <div style={{ width: "100%", maxWidth: 380, background: S.surf, border: S.bd, borderRadius: 16, padding: "28px 24px" }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>
-          {mode === "login" ? t.login : mode === "register" ? t.register : t.resetPwd}
-        </div>
-
-        {info && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: S.green }}>{info}</div>}
-        {err && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.25)", borderRadius: 8, fontSize: 13, color: S.red }}>{err}</div>}
-
-        {/* Email */}
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.email}</label>
-          <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-            style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-            placeholder="nome@email.com" />
-        </div>
-
-        {/* Password */}
-        {mode !== "reset" && (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.password}</label>
-            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-              placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleSubmit()} />
-          </div>
-        )}
-
-        {/* Confirm password */}
-        {mode === "register" && (
-          <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.confirmPwd}</label>
-            <input type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-              style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-              placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleSubmit()} />
-          </div>
-        )}
-
-        {/* Forgot password */}
-        {mode === "login" && (
-          <div style={{ textAlign: "right", marginBottom: 16 }}>
-            <button onClick={() => { setMode("reset"); setErr("") }} style={{ background: "none", border: "none", color: S.t3, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t.forgotPwd}</button>
-          </div>
-        )}
-
-        {/* Submit */}
-        <button onClick={handleSubmit} disabled={loading}
-          style={{ width: "100%", padding: "12px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 8, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12, opacity: loading ? 0.7 : 1 }}>
-          {loading ? "..." : mode === "login" ? t.login : mode === "register" ? t.register : t.resetPwd}
-        </button>
-
-        {/* Google */}
-        {mode !== "reset" && (
-          <button onClick={handleGoogle} disabled={loading}
-            style={{ width: "100%", padding: "12px", background: S.el, color: S.t1, border: S.bd, borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <span style={{ fontSize: 16 }}>G</span> {t.loginGoogle}
-          </button>
-        )}
-
-        {/* Switch mode */}
-        <div style={{ textAlign: "center", fontSize: 13, color: S.t3 }}>
-          {mode === "login" && <>{t.noAccount} <button onClick={() => { setMode("register"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.register}</button></>}
-          {mode === "register" && <>{t.haveAccount} <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.login}</button></>}
-          {mode === "reset" && <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>← {t.login}</button>}
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ── FM% Icon ──────────────────────────────────────────────────────
-function FMPercentIcon({ size = 44 }) {
-  const black = "#0d0d0f"
-  const circleSize = size * 0.38
-  const lw = size * 0.04
-  return (
-    <div style={{ position: "relative", width: size, height: size }}>
-      <div style={{ position: "absolute", top: 0, left: 0, width: circleSize, height: circleSize, borderRadius: "50%", border: `${lw}px solid ${black}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "Georgia,serif", fontWeight: 700, fontSize: circleSize * 0.6, color: black, lineHeight: 1 }}>F</span>
-      </div>
-      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-30deg)", width: size * 0.9, height: lw, background: black, borderRadius: 999 }} />
-      <div style={{ position: "absolute", bottom: 0, right: 0, width: circleSize, height: circleSize, borderRadius: "50%", border: `${lw}px solid ${black}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <span style={{ fontFamily: "Georgia,serif", fontWeight: 700, fontSize: circleSize * 0.6, color: black, lineHeight: 1 }}>M</span>
-      </div>
-    </div>
-  )
-}
 
 const NAV = [
-  { id: "dash", label: "Dashboard", icon: "◈", group: "Gestione" },
-  { id: "ing", label: "Ingredienti", icon: "⬡", group: "Gestione" },
-  { id: "dishes", label: "Piatti", icon: "◎", group: "Gestione" },
-  { id: "inv", label: "Fatture", icon: "▤", group: "Gestione" },
-  { id: "sales", label: "Vendite", icon: "◫", group: "Gestione" },
-  { id: "fc", label: "Food Cost", icon: "◬", group: "Analisi" },
-  { id: "ai", label: "AI Insights", icon: "✦", group: "AI", badge: "5" },
+  { id: "dash",   label: "Dashboard",   icon: "◈", group: "Gestione" },
+  { id: "ing",    label: "Ingredienti", icon: "⬡", group: "Gestione" },
+  { id: "dishes", label: "Piatti",      icon: "◎", group: "Gestione" },
+  { id: "inv",    label: "Fatture",     icon: "▤", group: "Gestione" },
+  { id: "fc",     label: "F&D Cost",    icon: "◬", group: "Gestione" },
+  { id: "menu",   label: "Crea Menu",   icon: "❑", group: "Gestione" },
+  { id: "ai",     label: "AI Insights", icon: "✦", group: "Gestione" },
 ]
 
 export default function App() {
@@ -1623,8 +2190,8 @@ export default function App() {
   const [ings,      setIngs]      = useState(INIT_ING)
   const [dishes,    setDishes]    = useState(DISHES)
   const [invs,      setInvs]      = useState(INIT_INV)
-  const [sales,     setSales]     = useState(INIT_SALES)
   const [dismissed, setDismissed] = useState([])
+  const [menus, setMenus] = useState([])
 
   // Auth listener
   useEffect(() => {
@@ -1648,8 +2215,8 @@ export default function App() {
           if (d.ings)      setIngs(d.ings)
           if (d.dishes)    setDishes(d.dishes)
           if (d.invs)      setInvs(d.invs)
-          if (d.sales)     setSales(d.sales)
           if (d.dismissed) setDismissed(d.dismissed)
+          if (d.menus)     setMenus(d.menus)
         }
       } catch (e) { console.log("Load error:", e) }
       setReady(true)
@@ -1660,9 +2227,9 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, sales, dismissed }, { merge: true })
+    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, dismissed }, { merge: true })
       .catch(e => console.log("Save error:", e))
-  }, [ings, dishes, invs, sales, dismissed, ready, user])
+  }, [ings, dishes, invs, dismissed, menus, ready, user])
 
   if (!authReady) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
@@ -1682,13 +2249,13 @@ export default function App() {
 
   const isMobile = w < 700
   const pages = {
-    dash:   <Dashboard sales={sales} dishes={dishes} isMobile={isMobile} />,
+    dash:   <Dashboard ings={ings} isMobile={isMobile} />,
     ing:    <Ingredients ings={ings} setIngs={setIngs} isMobile={isMobile} />,
     dishes: <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />,
     inv:    <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} isMobile={isMobile} />,
-    sales:  <Sales sales={sales} setSales={setSales} isMobile={isMobile} />,
-    fc:     <FoodCost dishes={dishes} ings={ings} isMobile={isMobile} />,
-    ai:     <AIInsights dismissed={dismissed} setDismissed={setDismissed} isMobile={isMobile} />,
+    fc:     <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />,
+    ai:     <AIInsights dishes={dishes} ings={ings} isMobile={isMobile} />,
+    menu:   <CreateMenu menus={menus} setMenus={setMenus} dishes={dishes} isMobile={isMobile} />,
   }
   const groups = [...new Set(NAV.map(n => n.group))]
   const sideW = collapsed ? 52 : 160
