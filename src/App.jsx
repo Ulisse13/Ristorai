@@ -85,8 +85,9 @@ function Fld({ label, children }) {
 function Dashboard({ ings, isMobile }) {
   // Calcola variazione % tra prezzo attuale e media storica (proxy dell'acquisto precedente)
   function variation(ing) {
-    if (!ing.avg || ing.avg === 0) return 0
-    return Math.round(((ing.cur - ing.avg) / ing.avg) * 1000) / 10
+    const ref = ing.prev !== undefined ? ing.prev : ing.avg
+    if (!ref || ref === 0) return 0
+    return Math.round(((ing.cur - ref) / ref) * 1000) / 10
   }
 
   const withVar = ings.map(ing => ({ ...ing, var: variation(ing) }))
@@ -163,7 +164,7 @@ function Dashboard({ ings, isMobile }) {
                   {F(ing.cur)}<span style={{ fontSize: 10, color: S.t3, fontWeight: 400 }}>/{ing.unit}</span>
                 </div>
                 <div style={{ fontSize: 10, color: S.t3, fontVariantNumeric: "tabular-nums" }}>
-                  prec. {F(ing.avg)}/{ing.unit}
+                  prec. {F(ing.prev !== undefined ? ing.prev : ing.avg)}/{ing.unit}
                 </div>
               </div>
             </div>
@@ -181,20 +182,24 @@ function Dashboard({ ings, isMobile }) {
 }
 
 function Ingredients({ ings, setIngs, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
+  const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const [selTipo, setSelTipo] = useState(null)
+  const [selRegione, setSelRegione] = useState(null)
 
   const [selCat, setSelCat]     = useState(null) // null = category view
   const [open, setOpen]         = useState(false)
   const [delTarget, setDelTarget] = useState(null)
   const [edit, setEdit]         = useState(null)
-  const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "" })
+  const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
   const [err, setErr]           = useState({})
 
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
 
   function openAdd() {
     setEdit(null)
-    setForm({ name: "", cat: selCat || "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "" })
+    setForm({ name: "", cat: selCat || "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
     setErr({})
     setOpen(true)
   }
@@ -229,7 +234,8 @@ function Ingredients({ ings, setIngs, isMobile }) {
       unitBase = "kg" // default — utente può cambiarlo in futuro
     } else {
       cur = +form.cur
-      unitBase = form.unit
+      // Normalizza: salva sempre "l" internamente, non "litri"
+      unitBase = form.unit === "litri" ? "l" : form.unit
     }
 
     const oldAvg = edit ? edit.avg : cur
@@ -237,7 +243,9 @@ function Ingredients({ ings, setIngs, isMobile }) {
     const d = {
       name: form.name.trim(), cat: form.cat,
       unit: unitBase, cur, avg: newAvg,
-      ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {})
+      prev: edit ? edit.cur : cur,
+      ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {}),
+      ...(form.cat === "Vini" ? { tipoVino: form.tipoVino, regioneVino: form.regioneVino } : {})
     }
     if (edit) setIngs(prev => prev.map(i => i.id === edit.id ? { ...i, ...d } : i))
     else      setIngs(prev => [...prev, { ...d, id: "i" + uid() }])
@@ -299,10 +307,24 @@ function Ingredients({ ings, setIngs, isMobile }) {
                 </Fld>
                 <Fld label="Unità di misura">
                   <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
-                    {["kg", "litri", "confezione"].map(u => <option key={u}>{u}</option>)}
+                    {["kg", "litri", "confezione", "bottiglia"].map(u => <option key={u}>{u}</option>)}
                   </select>
                 </Fld>
               </div>
+              {form.cat === "Vini" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Fld label="Tipologia">
+                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.tipoVino} onChange={e => setForm(f => ({ ...f, tipoVino: e.target.value }))}>
+                      {VINO_TIPI.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </Fld>
+                  <Fld label="Regione">
+                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.regioneVino} onChange={e => setForm(f => ({ ...f, regioneVino: e.target.value }))}>
+                      {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </Fld>
+                </div>
+              )}
               {form.unit !== "confezione" ? (
                 <Fld label={"Prezzo (€/" + form.unit + ") *"}>
                   <input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
@@ -341,6 +363,83 @@ function Ingredients({ ings, setIngs, isMobile }) {
       )}
     </div>
   )
+
+  // ── VINI VIEW ──────────────────────────────────
+  if (selCat === "Vini") {
+    const vini = ingsByCat("Vini")
+    // If no tipo selected, show tipo cards
+    if (!selTipo) return (
+      <div>
+        <div style={row({ marginBottom: 16 })}>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Ingredienti</button>
+          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>Vini</span>
+        </div>
+        <div style={{ fontSize: 12, color: S.t3, marginBottom: 16 }}>{vini.length} vini totali</div>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
+          {VINO_TIPI.map(tipo => {
+            const count = vini.filter(v => v.tipoVino === tipo).length
+            return (
+              <div key={tipo} onClick={() => setSelTipo(tipo)}
+                style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
+                <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{tipo}</div>
+                <div style={{ fontSize: 12, color: S.t3 }}>{count} vini</div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+    // Tipo selected — show by regione
+    const byTipo = vini.filter(v => v.tipoVino === selTipo)
+    return (
+      <div>
+        <div style={row({ marginBottom: 16 })}>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Ingredienti</button>
+          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+          <button onClick={() => setSelTipo(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
+          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selTipo}</span>
+        </div>
+        {byTipo.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun vino in questa tipologia</div>
+        ) : (
+          VINO_REGIONI.map(reg => {
+            const byReg = byTipo.filter(v => v.regioneVino === reg)
+            if (byReg.length === 0) return null
+            return (
+              <div key={reg} style={{ marginBottom: 20 }}>
+                <div style={{ fontSize: 11, color: S.t3, fontStyle: "italic", marginBottom: 8, paddingBottom: 4, borderBottom: S.bds }}>{reg}</div>
+                {byReg.map(ing => (
+                  <div key={ing.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }), display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{ing.name}</div>
+                      <div style={{ fontSize: 11, color: S.t3 }}>{F(ing.cur)}/{ing.unit}</div>
+                    </div>
+                    <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
+                  </div>
+                ))}
+              </div>
+            )
+          })
+        )}
+        {delTarget && (
+          <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
+            <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina ingrediente</div>
+              <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>?</div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
+                <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={() => { setIngs(prev => prev.filter(i => i.id !== delTarget.id)); setDelTarget(null) }}>Elimina</button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+  }
 
   // ── INGREDIENT LIST VIEW ───────────────────────
   const list = ingsByCat(selCat)
@@ -753,7 +852,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                 },
                 {
                   type: "text",
-                  text: 'Sei un esperto contabile italiano. Analizza questa fattura ed estrai TUTTI i dati. Rispondi SOLO con JSON valido senza markdown ne backtick. Formato esatto: {"fornitore":"nome fornitore","numero":"numero fattura","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}. Per ogni prodotto calcola il prezzo unitario per kg o litro. Se un campo non e presente usa stringa vuota o 0.'
+                  text: 'Sei un esperto contabile italiano. Analizza questo documento — potrebbe contenere UNA o PIU fatture/bolle sullo stesso foglio (es. Documento 1, Documento 2 ecc.). Estrai TUTTI i prodotti da TUTTI i documenti presenti. Somma tutti i totali imponibili e IVA. Usa il fornitore e la data del primo documento. Rispondi SOLO con JSON valido senza markdown ne backtick. Formato esatto: {"fornitore":"nome fornitore","numero":"numero documento","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}. Regole importanti: 1) Per ogni prodotto calcola il prezzo unitario per kg, litro o bottiglia. 2) Includi TUTTI i prodotti da tutti i sotto-documenti senza escludere nulla. 3) Somma tutti i TOTALE DOCUMENTO per ottenere il totale finale. 4) Somma tutte le IVA. 5) Se unita di misura non e chiara usa kg. 6) Se campo non presente usa stringa vuota o 0.'
                 }
               ]
             }],
@@ -795,14 +894,38 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
       // Auto-categorizzazione ingrediente per nome (categorie aggiornate)
       function guessCat(nome) {
         const n = nome.toLowerCase()
-        if (/detersiv|sapone|piatti|bucato|ammorbident|candegg|disinfett|multiuso|sgrassator|lavastoviglie|lavatrice|spugna|strofinaccio|carta igien|scottex|sacchetti/.test(n)) return "Detersivi"
+        if (/detersiv|sapone|piatti|bucato|ammorbident|candegg|disinfett|multiuso|sgrassator|lavastoviglie|lavatrice|spugna|strofinaccio|carta igien|scottex|sacchetti|brillantante|wc gel|disincrost|panno|bobina|guanti nitr|tovaglioli/.test(n)) return "Detersivi"
         if (/surgelat|gelo|gelato|congelat|misto mare surgelato|verdure surgelate|piselli surgelati|fagiolini surgelati|spinaci gelo|mais surgelato/.test(n)) return "Surgelati"
         if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola|pomodori scatola|sugo pronto|legumi/.test(n)) return "Scatolame"
-        if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|prosciutto|salame|mortadella|bresaola|coppa|speck/.test(n)) return "Carni"
+        if (/vino |vini |barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|montepulciano|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|côtes|chablis|rosso di|bianco di|bollicine|spumante|cava/.test(n)) return "Vini"
+        if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|prosciutto|salame|mortadella|bresaola|coppa|speck|roast.beef|noce b/.test(n)) return "Carni"
         if (/pesce|merluzzo|salmone|tonno|branzino|orata|sogliola|baccalà|acciuga|sarda|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
-        if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado|verdura/.test(n)) return "Verdure"
-        if (/parmigiano|mozzarella|grana|pecorino|burro|latte|panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|uova|uovo/.test(n)) return "Latticini"
-        return "Scatolame" // default per fatture alimentari
+        if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado|verdura|fave/.test(n)) return "Verdure"
+        if (/parmigiano|mozzarella|grana|pecorino|burro|latte|panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|uova|uovo|toma|tuorlo/.test(n)) return "Latticini"
+        return "Scatolame"
+      }
+
+      function guessTipoVino(nome) {
+        const n = nome.toLowerCase()
+        if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|perlage/.test(n)) return "Bollicine"
+        if (/rosato|rosé|cerasuolo|ramato/.test(n)) return "Rosé"
+        if (/bianco|pinot grigio|vermentino|soave|lugana|chardonnay|sauvignon|gewurz|riesling|chablis|borgogna blanc|vernaccia|trebbiano|greco di|fiano|pecorino/.test(n)) return "Bianchi"
+        return "Rossi"
+      }
+
+      function guessRegioneVino(nome) {
+        const n = nome.toLowerCase()
+        if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte/.test(n)) return "Piemonte"
+        if (/chianti|brunello|vernaccia|bolgheri|morellino|toscana|supertuscan/.test(n)) return "Toscana"
+        if (/prosecco|soave|amarone|valpolicella|bardolino|lugana|veneto/.test(n)) return "Veneto"
+        if (/nero d.avola|nerello|etna|sicilia/.test(n)) return "Sicilia"
+        if (/aglianico|greco di tufo|fiano|campania|taurasi/.test(n)) return "Campania"
+        if (/vermentino|cannonau|sardegna|carignano/.test(n)) return "Sardegna"
+        if (/franciacorta|oltrepò|lombardia/.test(n)) return "Lombardia"
+        if (/primitivo|negroamaro|puglia|salice/.test(n)) return "Puglia"
+        if (/cirò|calabria|gaglioppo/.test(n)) return "Calabria"
+        if (/champagne|bordeaux|borgogna|alsace|côtes|chablis|france|loire|rhône/.test(n)) return "Francia"
+        return "Altre regioni"
       }
 
       // Analisi prodotti
@@ -821,11 +944,13 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
             cat: existing.cat, include: true
           }
         } else {
+          const cat = guessCat(p.nome)
           return {
             nome: p.nome, quantita: p.quantita, unita: p.unita,
             prezzoUnitario: p.prezzoUnitario,
             tipo: "new", ingId: null, ingName: null,
-            cat: guessCat(p.nome), include: true
+            cat, include: true,
+            ...(cat === "Vini" ? { tipoVino: guessTipoVino(p.nome), regioneVino: guessRegioneVino(p.nome) } : {})
           }
         }
       })
@@ -862,7 +987,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         if (!match) return ing
         const newCur = match.prezzoUnitario
         const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-        return { ...ing, cur: newCur, avg: newAvg }
+        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg }
       }))
     }
 
@@ -873,9 +998,10 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         id: "i" + uid(),
         name: p.nome,
         cat: p.cat,
-        unit: p.unita || "kg",
+        unit: p.cat === "Vini" ? "bottiglia" : (p.unita || "kg"),
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
+        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni" } : {})
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
@@ -1188,16 +1314,27 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
   const uid2 = () => Math.random().toString(36).slice(2, 7)
 
   function toIngUnit(qty, rowUnit, ingUnit) {
-    if (rowUnit === ingUnit) return qty
-    if (rowUnit === "g"  && ingUnit === "kg") return qty / 1000
-    if (rowUnit === "kg" && ingUnit === "g")  return qty * 1000
-    if (rowUnit === "ml" && ingUnit === "l")  return qty / 1000
-    if (rowUnit === "l"  && ingUnit === "ml") return qty * 1000
+    // Normalizza unità
+    const norm = u => {
+      if (!u) return "kg"
+      const s = u.toLowerCase().trim()
+      if (s === "litri" || s === "liter" || s === "litre") return "l"
+      if (s === "bottiglia") return "bottiglia"
+      return s
+    }
+    const ru = norm(rowUnit)
+    const iu = norm(ingUnit)
+    if (ru === iu) return qty
+    if (ru === "g"  && iu === "kg") return qty / 1000
+    if (ru === "kg" && iu === "g")  return qty * 1000
+    if (ru === "ml" && iu === "l")  return qty / 1000
+    if (ru === "l"  && iu === "ml") return qty * 1000
+    // Se unità incompatibili (es. g vs l) restituisce qty senza conversione
     return qty
   }
 
   // ── FOOD COST state ───────────────────────────
-  const [fForm, setFForm]     = useState({ name: "", cat: "Secondi", target: "33" })
+  const [fForm, setFForm]     = useState({ name: "", cat: "Secondi", ricarico: "300" })
   const [fRecipe, setFRecipe] = useState([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
   const [fErr, setFErr]       = useState({})
   const [fSaved, setFSaved]   = useState(false)
@@ -1209,9 +1346,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
     const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
     return sum + toIngUnit(qty, row.unit, ing.unit) * ing.cur * wasteMult
   }, 0)
-  const fTargetPct = (parseFloat(fForm.target) || 33) / 100
-  const fSugPrice  = fTargetPct > 0 ? fLiveCost / fTargetPct : 0
+  const fRicarico  = parseFloat(fForm.ricarico) || 300
+  const fSugPrice  = fLiveCost * (1 + fRicarico / 100)
   const fMargin    = fSugPrice - fLiveCost
+  const fFoodCostPct = fSugPrice > 0 ? fLiveCost / fSugPrice : 0
 
   function fAddRow()    { setFRecipe(r => [...r, { id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }]) }
   function fRemoveRow(id) { setFRecipe(r => r.filter(x => x.id !== id)) }
@@ -1220,7 +1358,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
   function fSave() {
     const e = {}
     if (!fForm.name.trim()) e.name = "Obbligatorio"
-    if (!fForm.target || +fForm.target <= 0 || +fForm.target > 100) e.target = "1–100"
+    if (!fForm.ricarico || +fForm.ricarico <= 0) e.ricarico = "Ricarico > 0"
     if (fRecipe.every(r => !r.ingId)) e.recipe = "Almeno un ingrediente"
     if (Object.keys(e).length) { setFErr(e); return }
 
@@ -1234,10 +1372,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
     setDishes(prev => [...prev, {
       id: "d" + uid2(), name: fForm.name.trim(),
       cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
-      price, target: fTargetPct, cost, fc, margin: r2(fMargin),
+      price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
       recipe: savedRecipe, stagioni: []
     }])
-    setFForm({ name: "", cat: "Secondi", target: "33" })
+    setFForm({ name: "", cat: "Secondi", ricarico: "300" })
     setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
     setFErr({})
     setFSaved(true)
@@ -1248,10 +1386,26 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
   const [dForm, setDForm] = useState({
     name: "", tipo: "Rossi", regione: "Toscana",
     bottlePrice: "", iva: "10", ricarico: "200",
-    calici: "6", isVino: true
+    calici: "6", isVino: true, selIngId: ""
   })
   const [dErr, setDErr]   = useState({})
   const [dSaved, setDSaved] = useState(false)
+
+  const viniIng = ings.filter(i => i.cat === "Vini")
+
+  // When an ingredient vino is selected, auto-fill price, tipo, regione
+  function onSelIngVino(ingId) {
+    const ing = ings.find(i => i.id === ingId)
+    if (!ing) { setDForm(f => ({ ...f, selIngId: "", bottlePrice: "", name: "" })); return }
+    setDForm(f => ({
+      ...f,
+      selIngId: ingId,
+      name: ing.name,
+      bottlePrice: String(ing.cur),
+      tipo: ing.tipoVino || "Rossi",
+      regione: ing.regioneVino || "Altre regioni",
+    }))
+  }
 
   const dPriceNet  = dForm.bottlePrice ? (+dForm.bottlePrice / (1 + (+dForm.iva || 0) / 100)) : 0
   const dSellBottle = r2(dPriceNet * (1 + (+dForm.ricarico || 0) / 100))
@@ -1280,7 +1434,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
       ricarico: +dForm.ricarico,
       calici: +dForm.calici,
     }])
-    setDForm({ name: "", tipo: "Rossi", regione: "Toscana", bottlePrice: "", iva: "10", ricarico: "200", calici: "6", isVino: true })
+    setDForm({ name: "", tipo: "Rossi", regione: "Toscana", bottlePrice: "", iva: "10", ricarico: "200", calici: "6", isVino: true, selIngId: "" })
     setDErr({})
     setDSaved(true)
     setTimeout(() => setDSaved(false), 3000)
@@ -1324,9 +1478,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
                   {FOOD_CATS.map(c => <option key={c}>{c}</option>)}
                 </select>
               </Fld>
-              <Fld label="Food cost target %">
-                <input style={inp()} type="number" step="1" min="1" max="100" value={fForm.target} onChange={e => setFForm(f => ({ ...f, target: e.target.value }))} placeholder="33" />
-                {fErr.target && <span style={{ fontSize: 11, color: S.red }}>{fErr.target}</span>}
+              <Fld label="Ricarico %">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={fForm.ricarico} onChange={e => setFForm(f => ({ ...f, ricarico: e.target.value }))}>
+                  {["100","150","200","250","300","350","400","450","500","600","700"].map(v => <option key={v}>{v}</option>)}
+                </select>
               </Fld>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "9px 12px", width: "100%" }}>
@@ -1390,7 +1545,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
                 {[
                   { l: "Costo ricetta",    v: F(r2(fLiveCost)),   c: S.t1 },
                   { l: "Prezzo consigliato", v: F(r2(fSugPrice)), c: S.ac },
-                  { l: "Food cost %",      v: P(fTargetPct),      c: S.green },
+                  { l: "Food cost %",      v: P(fFoodCostPct),    c: S.green },
                   { l: "Margine lordo",    v: F(r2(fMargin)),     c: S.green },
                 ].map((k, i) => (
                   <div key={i} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "10px 10px" }}>
@@ -1441,9 +1596,19 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
               )}
             </div>
 
+            {/* Collegamento a ingrediente vino */}
+            {dForm.tipo !== "Cocktail" && viniIng.length > 0 && (
+              <Fld label="Seleziona da magazzino vini">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngVino(e.target.value)}>
+                  <option value="">— oppure inserisci manualmente —</option>
+                  {viniIng.map(i => <option key={i.id} value={i.id}>{i.name} · {F(i.cur)}/bottiglia</option>)}
+                </select>
+              </Fld>
+            )}
+
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <Fld label="Prezzo bottiglia (€) *">
-                <input style={inp()} type="number" step="0.01" value={dForm.bottlePrice} onChange={e => setDForm(f => ({ ...f, bottlePrice: e.target.value }))} placeholder="0.00" />
+                <input style={inp()} type="number" step="0.01" value={dForm.bottlePrice} onChange={e => setDForm(f => ({ ...f, bottlePrice: e.target.value, selIngId: "" }))} placeholder="0.00" />
                 {dErr.bottlePrice && <span style={{ fontSize: 11, color: S.red }}>{dErr.bottlePrice}</span>}
               </Fld>
               <Fld label="IVA %">
@@ -1599,9 +1764,37 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     setMenus(prev => prev.filter(m => m.id !== id))
   }
 
-  function shareWhatsApp(item) {
-    const text = encodeURIComponent(item.label + "\nCreato il " + new Date(item.date).toLocaleDateString("it-IT"))
-    window.open("https://wa.me/?text=" + text, "_blank")
+  async function shareMenu(item) {
+    const html = buildPrintHTML(item)
+    // Try Web Share API with file (supported on Android Chrome, iOS Safari)
+    if (navigator.share && navigator.canShare) {
+      try {
+        const blob = new Blob([html], { type: "text/html" })
+        const file = new File([blob], item.label.replace(/[^a-z0-9]/gi, "_") + ".html", { type: "text/html" })
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: item.label })
+          return
+        }
+      } catch(e) { /* fallback below */ }
+    }
+    // Fallback: Web Share API text only
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: item.label,
+          text: item.label + "\nCreato il " + new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"}),
+        })
+        return
+      } catch(e) { /* fallback below */ }
+    }
+    // Final fallback: download HTML file
+    const blob = new Blob([html], { type: "text/html" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = item.label.replace(/[^a-z0-9]/gi, "_") + ".html"
+    a.click()
+    URL.revokeObjectURL(url)
   }
 
   function printItem(item) {
@@ -1708,7 +1901,7 @@ ${body}
               </div>
               <div style={row({ gap: 6, flexWrap: "wrap" })}>
                 <button style={btn("s", { fontSize: 11, padding: "4px 10px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
-                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => shareWhatsApp(m)}>WhatsApp</button>
+                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => shareMenu(m)}>Condividi</button>
                 <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => printItem(m)}>Stampa / PDF</button>
                 <button style={{ ...btn("g", { fontSize: 11, padding: "4px 10px" }), color: S.red }} onClick={() => deleteMenu(m.id)}>Elimina</button>
               </div>
@@ -1967,7 +2160,9 @@ function AIInsights({ dishes, ings, isMobile }) {
   const MAX_CALLS_MONTH = 10
   const STORAGE_KEY = "fm_ai_calls"
 
-  const [insights, setInsights]   = useState([])
+  const [insights, setInsights]   = useState(() => {
+    try { return JSON.parse(localStorage.getItem("fm_insights") || "[]") } catch(e) { return [] }
+  })
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
   const [callsUsed, setCallsUsed] = useState(0)
@@ -2046,6 +2241,7 @@ Rispondi SOLO con JSON valido senza markdown:
       if (!jsonMatch) throw new Error("Risposta non valida")
       const parsed = JSON.parse(jsonMatch[0])
       setInsights(parsed)
+      localStorage.setItem("fm_insights", JSON.stringify(parsed))
       incrementCalls()
 
     } catch(e) {
