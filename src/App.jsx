@@ -1764,44 +1764,27 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     setMenus(prev => prev.filter(m => m.id !== id))
   }
 
-  async function shareMenu(item) {
+  function openPrintPreview(item) {
+    // Apre il menu in una nuova tab — da lì si può stampare o salvare come PDF
+    // e poi condividere il PDF via WhatsApp
     const html = buildPrintHTML(item)
-    // Try Web Share API with file (supported on Android Chrome, iOS Safari)
-    if (navigator.share && navigator.canShare) {
-      try {
-        const blob = new Blob([html], { type: "text/html" })
-        const file = new File([blob], item.label.replace(/[^a-z0-9]/gi, "_") + ".html", { type: "text/html" })
-        if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: item.label })
-          return
-        }
-      } catch(e) { /* fallback below */ }
-    }
-    // Fallback: Web Share API text only
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: item.label,
-          text: item.label + "\nCreato il " + new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"}),
-        })
-        return
-      } catch(e) { /* fallback below */ }
-    }
-    // Final fallback: download HTML file
-    const blob = new Blob([html], { type: "text/html" })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement("a")
-    a.href = url
-    a.download = item.label.replace(/[^a-z0-9]/gi, "_") + ".html"
-    a.click()
-    URL.revokeObjectURL(url)
+    const win = window.open("", "_blank")
+    if (!win) { alert("Abilita i popup per questo sito"); return }
+    win.document.write(html)
+    win.document.close()
+    // Su mobile mostra istruzioni per salvare come PDF
+    setTimeout(() => {
+      win.print()
+    }, 800)
+  }
+
+  async function shareMenu(item) {
+    // Apre anteprima di stampa — l'utente salva come PDF e condivide
+    openPrintPreview(item)
   }
 
   function printItem(item) {
-    const win = window.open("", "_blank")
-    win.document.write(buildPrintHTML(item))
-    win.document.close()
-    win.print()
+    openPrintPreview(item)
   }
 
   // ── Build print HTML ──────────────────────────
@@ -1843,6 +1826,9 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 <style>
   @page { margin: 2cm; }
   body { font-family: ${ff}; font-size: ${fs}; color: #1a1a1a; max-width: 600px; margin: 0 auto; line-height: 1.6; }
+  .print-tip { background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: #555; text-align: center; }
+  .print-tip strong { color: #333; }
+  @media print { .print-tip { display: none; } }
   h1 { text-align: center; font-size: 1.6em; letter-spacing: 0.15em; text-transform: uppercase; border-bottom: ${isClassic ? "2px solid #1a1a1a" : "1px solid #ccc"}; padding-bottom: 8px; margin-bottom: 24px; }
   .date { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 32px; }
   .section { margin-bottom: 28px; }
@@ -1853,6 +1839,10 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   .price { font-weight: 600; min-width: 80px; text-align: right; }
   @media print { body { -webkit-print-color-adjust: exact; } }
 </style></head><body>
+<div class="print-tip">
+  Per salvare come PDF: tocca i <strong>tre puntini</strong> del browser → <strong>Stampa</strong> → seleziona <strong>Salva come PDF</strong>.<br>
+  Poi condividi il PDF via WhatsApp.
+</div>
 <h1>${item.type === "menu" ? "Menu" : "Carta dei Vini"}</h1>
 <div class="date">${new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
 ${body}
@@ -1901,8 +1891,8 @@ ${body}
               </div>
               <div style={row({ gap: 6, flexWrap: "wrap" })}>
                 <button style={btn("s", { fontSize: 11, padding: "4px 10px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
-                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => shareMenu(m)}>Condividi</button>
-                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => printItem(m)}>Stampa / PDF</button>
+                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => shareMenu(m)}>PDF / Stampa</button>
+                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => printItem(m)}>PDF / Stampa</button>
                 <button style={{ ...btn("g", { fontSize: 11, padding: "4px 10px" }), color: S.red }} onClick={() => deleteMenu(m.id)}>Elimina</button>
               </div>
             </div>
@@ -1957,7 +1947,7 @@ ${body}
         )
       })}
 
-      <button style={{ ...btn("p"), marginTop: 12 }} onClick={() => printItem(openItem)}>Stampa / Esporta PDF</button>
+      <button style={{ ...btn("p"), marginTop: 12 }} onClick={() => printItem(openItem)}>PDF / Stampa</button>
     </div>
   )
 
