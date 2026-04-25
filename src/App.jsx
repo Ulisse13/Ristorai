@@ -21,14 +21,6 @@ const DISHES = [
   { id: "d5", name: "Antipasto Misto", cat: "antipasto", price: 16, target: 0.25, cost: 3.20, fc: 0.200, margin: 12.80 },
   { id: "d6", name: "Tiramisù", cat: "dolce", price: 7, target: 0.25, cost: 1.60, fc: 0.229, margin: 5.40 },
 ]
-const RECIPES = {
-  d1: [{ id: "i1", name: "Pollo", qty: 0.22, unit: "kg", price: 8.50, waste: 1.1 }, { id: "i4", name: "Olio EVO", qty: 0.02, unit: "l", price: 9.50, waste: 1.0 }],
-  d2: [{ id: "i3", name: "Pasta", qty: 0.12, unit: "kg", price: 1.80, waste: 1.0 }, { id: "i5", name: "Pomodori", qty: 0.15, unit: "kg", price: 1.20, waste: 1.0 }],
-  d3: [{ id: "i6", name: "Branzino", qty: 0.35, unit: "kg", price: 18.00, waste: 1.25 }, { id: "i7", name: "Burro", qty: 0.02, unit: "kg", price: 7.50, waste: 1.0 }],
-  d4: [{ id: "i3", name: "Pasta", qty: 0.10, unit: "kg", price: 1.80, waste: 1.0 }, { id: "i2", name: "Parmigiano", qty: 0.04, unit: "kg", price: 28.00, waste: 1.0 }],
-  d5: [{ id: "i8", name: "Prosciutto", qty: 0.08, unit: "kg", price: 32.00, waste: 1.0 }],
-  d6: [{ id: "i7", name: "Burro", qty: 0.05, unit: "kg", price: 7.50, waste: 1.0 }, { id: "i2", name: "Parmigiano", qty: 0.01, unit: "kg", price: 28.00, waste: 1.0 }],
-}
 const INIT_ING = [
   { id: "i1", name: "Petto di Pollo", cat: "Carni", unit: "kg", cur: 8.50, avg: 7.80 },
   { id: "i2", name: "Parmigiano Reg.", cat: "Latticini", unit: "kg", cur: 28.00, avg: 24.00 },
@@ -43,19 +35,6 @@ const INIT_INV = [
   { id: "v1", sup: "Carni Rossi srl", num: "2024/041", date: "2024-11-20", total: 480, vat: 43.6, net: 436.4, ok: true },
   { id: "v2", sup: "Pescheria Azzurra", num: "2024/089", date: "2024-11-18", total: 312, vat: 28.4, net: 283.6, ok: true },
   { id: "v3", sup: "Oleificio Toscano", num: "2024/012", date: "2024-11-22", total: 228, vat: 20.7, net: 207.3, ok: false },
-]
-const INIT_SALES = [
-  { id: "s1", date: "2024-11-22", shift: "Cena", food: 1840, bev: 420, cov: 180, other: 60, total: 2500, covers: 62 },
-  { id: "s2", date: "2024-11-22", shift: "Pranzo", food: 1120, bev: 280, cov: 100, other: 0, total: 1500, covers: 38 },
-  { id: "s3", date: "2024-11-21", shift: "Cena", food: 2180, bev: 510, cov: 210, other: 100, total: 3000, covers: 74 },
-  { id: "s4", date: "2024-11-20", shift: "Cena", food: 1960, bev: 460, cov: 180, other: 0, total: 2600, covers: 66 },
-]
-const INSIGHTS = [
-  { id: "a1", sev: "critical", title: "Branzino al Forno in perdita", body: "Food cost 41.8% — sopra target 30%. Con 45 porzioni/mese perdi ~108 euro. Porta il prezzo a 28 euro.", action: "Porta a 28 euro", gain: 108 },
-  { id: "a2", sev: "high", title: "Aumento prezzi: Parmigiano Reg.", body: "+16.7% rispetto alla media 3 mesi. Impatta Cacio e Pepe e Tiramisù. Verifica fornitori alternativi.", action: "Verifica fornitori", gain: 64 },
-  { id: "a3", sev: "high", title: "Consumo anomalo: Branzino", body: "22% oltre il previsto dalle ricette. Costo extra stimato 95 euro/mese. Verifica porzioni e scarti.", action: "Verifica stock", gain: 95 },
-  { id: "a4", sev: "medium", title: "Aumenta prezzo: Cacio e Pepe", body: "Da 13 a 15 euro rientri nel target food cost. Guadagno aggiuntivo stimato 76 euro/mese.", action: "Porta a 15 euro", gain: 76 },
-  { id: "a5", sev: "low", title: "Promuovi: Antipasto Misto", body: "Margine 80% ma solo 28 vendite/mese. Consigliarlo come piatto del giorno potrebbe portare +38 euro.", action: "Promuovi", gain: 38 },
 ]
 
 const S = {
@@ -98,24 +77,6 @@ function Modal({ open, onClose, title, children, footer }) {
     </div>
   )
 }
-
-function Sheet({ open, onClose, title, children, footer }) {
-  if (!open) return null
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", flexDirection: "column", justifyContent: "flex-end", zIndex: 999 }}>
-      <div style={{ background: S.surf, borderRadius: "22px 22px 0 0", maxHeight: "94vh", display: "flex", flexDirection: "column" }}>
-        <div style={{ width: 40, height: 4, background: S.el, borderRadius: 999, margin: "12px auto 0", flexShrink: 0 }} />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 20px 0", flexShrink: 0 }}>
-          <span style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>{title}</span>
-          <button onClick={onClose} style={{ background: S.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: S.t3, fontSize: 18 }}>x</button>
-        </div>
-        <div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>{children}</div>
-        {footer && <div style={{ display: "flex", flexDirection: "column", gap: 10, padding: "12px 20px 32px", borderTop: "1px solid #1f1f25", flexShrink: 0 }}>{footer}</div>}
-      </div>
-    </div>
-  )
-}
-
 
 function Fld({ label, children }) {
   return <div style={col({ marginBottom: 12 })}><label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2 }}>{label}</label>{children}</div>
