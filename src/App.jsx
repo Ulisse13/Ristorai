@@ -221,7 +221,6 @@ function Dashboard({ ings, isMobile }) {
 
 function Ingredients({ ings, setIngs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
-  const CAT_ICONS = { Carni: "🥩", Pesce: "🐟", Verdure: "🥦", Latticini: "🧀", Surgelati: "❄️", Scatolame: "🥫", Detersivi: "🧴" }
 
   const [selCat, setSelCat]     = useState(null) // null = category view
   const [open, setOpen]         = useState(false)
@@ -309,7 +308,6 @@ function Ingredients({ ings, setIngs, isMobile }) {
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
                 transition: "transform 0.1s", borderColor: spiked > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: spiked > 0 ? "linear-gradient(90deg," + S.red + ",transparent)" : "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
-              <div style={{ fontSize: 28, marginBottom: 8 }}>{CAT_ICONS[cat] || "📦"}</div>
               <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
               <div style={{ fontSize: 12, color: S.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
               {spiked > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>↑ {spiked} prezzi aumentati</div>}
@@ -412,7 +410,7 @@ function Ingredients({ ings, setIngs, isMobile }) {
               <div key={ing.id} style={card({ padding: "14px 16px" })}>
                 <div style={row({ justifyContent: "space-between", marginBottom: 6 })}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{ing.name}</div>
-                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>🗑</button>
+                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                 </div>
                 <div style={row({ justifyContent: "space-between" })}>
                   <span style={{ fontSize: 14, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>
@@ -453,7 +451,7 @@ function Ingredients({ ings, setIngs, isMobile }) {
                       {F(ing.avg)}/{ing.unit}
                     </td>
                     <td style={{ padding: "11px 16px", borderBottom: S.bds, textAlign: "right" }}>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">🗑</button>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">✕</button>
                     </td>
                   </tr>
                 )
@@ -485,9 +483,7 @@ function Ingredients({ ings, setIngs, isMobile }) {
 
 function Dishes({ dishes, setDishes, ings, isMobile }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail"]
-  const CAT_ICONS = { Speciali: "⭐", Antipasti: "🫒", Primi: "🍝", Secondi: "🥩", Dolci: "🍮", Vini: "🍷", Cocktail: "🍹" }
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
-  const STAGIONE_ICONS = { Primavera: "🌸", Estate: "☀️", Autunno: "🍂", Inverno: "❄️" }
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
 
@@ -543,7 +539,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
               
               <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
               <div style={{ fontSize: 12, color: S.t3 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
-              {overTarget > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>⚠ {overTarget} sopra target</div>}
+              {overTarget > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>! {overTarget} sopra target</div>}
             </div>
           )
         })}
@@ -585,7 +581,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
                               <div style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{v.name}</div>
                               <div style={{ fontSize: 12, color: S.t3 }}>{v.price > 0 ? F(v.price) : "—"}</div>
                             </div>
-                            <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>🗑</button>
+                            <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                           </div>
                           <div style={row({ flexWrap: "wrap", gap: 4 })}>
                             {STAGIONI.map(s => (
@@ -651,7 +647,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
                     {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
                   </div>
                 </div>
-                <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>🗑</button>
+                <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
               </div>
               {/* Food cost bar */}
               {d.fc > 0 && (
@@ -966,7 +962,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
                 style={{ display: "none" }}
               />
-              <div style={{ fontSize: 32, marginBottom: 8 }}>📷</div>
+              <div style={{ fontSize: 32, marginBottom: 8 }}></div>
               <div style={{ fontSize: 15, fontWeight: 600, color: S.t1, marginBottom: 4 }}>Scatta una foto</div>
               <div style={{ fontSize: 12, color: S.t3 }}>Apre direttamente la fotocamera</div>
             </label>
@@ -975,7 +971,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
                 style={{ display: "none" }}
               />
-              <div style={{ fontSize: 22, marginBottom: 6 }}>📁</div>
+              <div style={{ fontSize: 22, marginBottom: 6 }}></div>
               <div style={{ fontSize: 13, fontWeight: 600, color: S.t2, marginBottom: 2 }}>Scegli dalla galleria o PDF</div>
               <div style={{ fontSize: 11, color: S.t3 }}>JPG, PNG o PDF</div>
             </label>
