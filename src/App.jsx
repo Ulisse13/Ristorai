@@ -2135,6 +2135,166 @@ Rispondi SOLO con JSON valido senza markdown:
 }
 
 
+
+// ── Traduzioni ───────────────────────────────────────────────────
+const T = {
+  it: {
+    login: "Accedi", register: "Registrati", logout: "Esci",
+    email: "Email", password: "Password", confirmPwd: "Conferma password",
+    forgotPwd: "Password dimenticata?", resetPwd: "Reimposta password",
+    resetSent: "Email di reset inviata! Controlla la casella.",
+    loginGoogle: "Continua con Google",
+    noAccount: "Non hai un account?", haveAccount: "Hai già un account?",
+    appDesc: "Gestione costi e margini per ristoratori",
+    errEmail: "Email non valida", errPwd: "Minimo 6 caratteri",
+    errPwdMatch: "Le password non coincidono",
+    errLogin: "Email o password errati",
+    errRegister: "Errore durante la registrazione",
+  },
+  en: {
+    login: "Sign in", register: "Sign up", logout: "Sign out",
+    email: "Email", password: "Password", confirmPwd: "Confirm password",
+    forgotPwd: "Forgot password?", resetPwd: "Reset password",
+    resetSent: "Reset email sent! Check your inbox.",
+    loginGoogle: "Continue with Google",
+    noAccount: "Don't have an account?", haveAccount: "Already have an account?",
+    appDesc: "Cost and margin management for restaurants",
+    errEmail: "Invalid email", errPwd: "Minimum 6 characters",
+    errPwdMatch: "Passwords don't match",
+    errLogin: "Wrong email or password",
+    errRegister: "Registration error",
+  }
+}
+
+function FMPercentIcon({ size = 44 }) {
+  const black = "#0d0d0f"
+  const circleSize = size * 0.38
+  const lw = size * 0.04
+  return (
+    <div style={{ position: "relative", width: size, height: size }}>
+      <div style={{ position: "absolute", top: 0, left: 0, width: circleSize, height: circleSize, borderRadius: "50%", border: `${lw}px solid ${black}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: "Georgia,serif", fontWeight: 700, fontSize: circleSize * 0.6, color: black, lineHeight: 1 }}>F</span>
+      </div>
+      <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%) rotate(-30deg)", width: size * 0.9, height: lw, background: black, borderRadius: 999 }} />
+      <div style={{ position: "absolute", bottom: 0, right: 0, width: circleSize, height: circleSize, borderRadius: "50%", border: `${lw}px solid ${black}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontFamily: "Georgia,serif", fontWeight: 700, fontSize: circleSize * 0.6, color: black, lineHeight: 1 }}>M</span>
+      </div>
+    </div>
+  )
+}
+
+function LoginPage({ lang, setLang }) {
+  const t = T[lang]
+  const [mode, setMode] = useState("login")
+  const [form, setForm] = useState({ email: "", password: "", confirm: "" })
+  const [err, setErr] = useState("")
+  const [info, setInfo] = useState("")
+  const [loading, setLoading] = useState(false)
+
+  function validate() {
+    if (!form.email.includes("@")) { setErr(t.errEmail); return false }
+    if (mode !== "reset" && form.password.length < 6) { setErr(t.errPwd); return false }
+    if (mode === "register" && form.password !== form.confirm) { setErr(t.errPwdMatch); return false }
+    return true
+  }
+
+  async function handleSubmit() {
+    setErr(""); setInfo("")
+    if (!validate()) return
+    setLoading(true)
+    try {
+      if (mode === "login") {
+        await signInWithEmailAndPassword(auth, form.email, form.password)
+      } else if (mode === "register") {
+        await createUserWithEmailAndPassword(auth, form.email, form.password)
+      } else if (mode === "reset") {
+        await sendPasswordResetEmail(auth, form.email)
+        setInfo(t.resetSent)
+        setMode("login")
+      }
+    } catch(e) {
+      setErr(mode === "login" ? t.errLogin : t.errRegister)
+    }
+    setLoading(false)
+  }
+
+  async function handleGoogle() {
+    setErr(""); setLoading(true)
+    try {
+      await signInWithPopup(auth, googleProvider)
+    } catch(e) {
+      setErr(e.message)
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "system-ui, sans-serif" }}>
+      <div style={{ position: "fixed", top: 16, right: 16, display: "flex", gap: 6 }}>
+        {["it","en"].map(l => (
+          <button key={l} onClick={() => setLang(l)} style={{ padding: "4px 10px", background: lang === l ? S.acg : "none", border: `1px solid ${lang === l ? S.acd : "#2a2a31"}`, borderRadius: 999, color: lang === l ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}>{l}</button>
+        ))}
+      </div>
+      <div style={{ marginBottom: 32, textAlign: "center" }}>
+        <div style={{ width: 72, height: 72, background: S.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+          <FMPercentIcon size={44} />
+        </div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: S.t1, letterSpacing: "-0.02em" }}>FoodMargin</div>
+        <div style={{ fontSize: 13, color: S.t3, marginTop: 4 }}>{t.appDesc}</div>
+      </div>
+      <div style={{ width: "100%", maxWidth: 380, background: S.surf, border: S.bd, borderRadius: 16, padding: "28px 24px" }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>
+          {mode === "login" ? t.login : mode === "register" ? t.register : t.resetPwd}
+        </div>
+        {info && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: S.green }}>{info}</div>}
+        {err && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.25)", borderRadius: 8, fontSize: 13, color: S.red }}>{err}</div>}
+        <div style={{ marginBottom: 12 }}>
+          <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.email}</label>
+          <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
+            style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+            placeholder="nome@email.com" />
+        </div>
+        {mode !== "reset" && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.password}</label>
+            <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
+              style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+              placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+          </div>
+        )}
+        {mode === "register" && (
+          <div style={{ marginBottom: 12 }}>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.confirmPwd}</label>
+            <input type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
+              style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+              placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+          </div>
+        )}
+        {mode === "login" && (
+          <div style={{ textAlign: "right", marginBottom: 16 }}>
+            <button onClick={() => { setMode("reset"); setErr("") }} style={{ background: "none", border: "none", color: S.t3, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t.forgotPwd}</button>
+          </div>
+        )}
+        <button onClick={handleSubmit} disabled={loading}
+          style={{ width: "100%", padding: "12px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 8, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12, opacity: loading ? 0.7 : 1 }}>
+          {loading ? "..." : mode === "login" ? t.login : mode === "register" ? t.register : t.resetPwd}
+        </button>
+        {mode !== "reset" && (
+          <button onClick={handleGoogle} disabled={loading}
+            style={{ width: "100%", padding: "12px", background: S.el, color: S.t1, border: S.bd, borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>G</span> {t.loginGoogle}
+          </button>
+        )}
+        <div style={{ textAlign: "center", fontSize: 13, color: S.t3 }}>
+          {mode === "login" && <>{t.noAccount} <button onClick={() => { setMode("register"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.register}</button></>}
+          {mode === "register" && <>{t.haveAccount} <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.login}</button></>}
+          {mode === "reset" && <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>← {t.login}</button>}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const NAV = [
   { id: "dash",   label: "Dashboard",   icon: "◈", group: "Gestione" },
   { id: "ing",    label: "Ingredienti", icon: "⬡", group: "Gestione" },
