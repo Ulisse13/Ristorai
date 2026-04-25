@@ -2218,14 +2218,21 @@ export default function App() {
   )
 
   const isMobile = w < 700
-  const pages = {
-    dash:   <Dashboard ings={ings} isMobile={isMobile} />,
-    ing:    <Ingredients ings={ings} setIngs={setIngs} isMobile={isMobile} />,
-    dishes: <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />,
-    inv:    <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} isMobile={isMobile} />,
-    fc:     <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />,
-    ai:     <AIInsights dishes={dishes} ings={ings} isMobile={isMobile} />,
-    menu:   <CreateMenu menus={menus} setMenus={setMenus} dishes={dishes} isMobile={isMobile} />,
+  function renderPage() {
+    try {
+      switch(page) {
+        case "dash":   return <Dashboard ings={ings} isMobile={isMobile} />
+        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} isMobile={isMobile} />
+        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />
+        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} isMobile={isMobile} />
+        case "fc":     return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />
+        case "ai":     return <AIInsights dishes={dishes} ings={ings} isMobile={isMobile} />
+        case "menu":   return <CreateMenu menus={menus} setMenus={setMenus} dishes={dishes} isMobile={isMobile} />
+        default:       return <Dashboard ings={ings} isMobile={isMobile} />
+      }
+    } catch(e) {
+      return <div style={{ padding: 20, color: "#f87171" }}>Errore: {e.message}</div>
+    }
   }
   const groups = [...new Set(NAV.map(n => n.group))]
   const sideW = collapsed ? 52 : 160
@@ -2242,7 +2249,7 @@ export default function App() {
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
-        {pages[page]}
+        {renderPage()}
       </div>
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: S.surf, borderTop: S.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
         {NAV.map(n => (
@@ -2323,7 +2330,7 @@ export default function App() {
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 48px" }}>
-          {pages[page]}
+          {renderPage()}
         </div>
       </div>
     </div>
