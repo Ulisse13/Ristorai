@@ -785,7 +785,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         const url = URL.createObjectURL(file)
         img.onload = () => {
           try {
-            const MAX_W = 1200, MAX_H = 1600
+            const MAX_W = 2000, MAX_H = 2800
             let w = img.width, h = img.height
             if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W }
             if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H }
@@ -793,7 +793,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
             canvas.width = w; canvas.height = h
             canvas.getContext("2d").drawImage(img, 0, 0, w, h)
             URL.revokeObjectURL(url)
-            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.75)
+            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.92)
           } catch(e) { URL.revokeObjectURL(url); res(file) }
         }
         img.onerror = () => { URL.revokeObjectURL(url); res(file) }
@@ -852,7 +852,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                 },
                 {
                   type: "text",
-                  text: 'Sei un esperto contabile italiano. Analizza questo documento — potrebbe contenere UNA o PIU fatture/bolle sullo stesso foglio (es. Documento 1, Documento 2 ecc.). Estrai TUTTI i prodotti da TUTTI i documenti presenti. Somma tutti i totali imponibili e IVA. Usa il fornitore e la data del primo documento. Rispondi SOLO con JSON valido senza markdown ne backtick. Formato esatto: {"fornitore":"nome fornitore","numero":"numero documento","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}. Regole importanti: 1) Per ogni prodotto calcola il prezzo unitario per kg, litro o bottiglia. 2) Includi TUTTI i prodotti da tutti i sotto-documenti senza escludere nulla. 3) Somma tutti i TOTALE DOCUMENTO per ottenere il totale finale. 4) Somma tutte le IVA. 5) Se unita di misura non e chiara usa kg. 6) Se campo non presente usa stringa vuota o 0.'
+                  text: 'Sei un esperto contabile italiano specializzato in fatture e bolle di consegna. Analizza questo documento con attenzione. PUO contenere piu documenti/sezioni sullo stesso foglio. ISTRUZIONI: 1) Estrai il nome del fornitore in alto. 2) Usa la prima data trovata. 3) Leggi OGNI riga prodotto da TUTTE le sezioni del documento. 4) Per ogni prodotto: estrai nome descrittivo (senza codici numerici), quantita, unita di misura, e calcola prezzo unitario per kg o litro (PREZZO diviso per QTA.V). 5) Somma TUTTI i TOTALE DOCUMENTO per il totale finale. 6) Somma tutta la IVA. 7) Includi anche prodotti non alimentari come detersivi, materiali pulizia. Rispondi SOLO con JSON valido senza markdown ne backtick: {"fornitore":"nome","numero":"numero","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto senza codice","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}'
                 }
               ]
             }],
