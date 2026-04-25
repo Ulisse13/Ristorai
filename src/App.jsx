@@ -523,21 +523,6 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
     setDetail(null)
   }
 
-  const DeleteConfirm = () => delTarget ? (
-    <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
-      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-      <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
-        <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-          Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
-        </div>
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-          <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
-        </div>
-      </div>
-    </div>
-  ) : null
 
   // ── CATEGORY VIEW ──────────────────────────────
   if (!selCat) return (
@@ -619,7 +604,21 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
             )
           })
         )}
-        <DeleteConfirm />
+{delTarget && (
+        <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
+          <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
+            <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
+              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
+              <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     )
   }
@@ -677,7 +676,21 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
           ))}
         </div>
       )}
-      <DeleteConfirm />
+{delTarget && (
+        <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
+          <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
+            <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
+              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
+            </div>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+              <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
+              <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
