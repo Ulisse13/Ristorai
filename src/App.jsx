@@ -2543,7 +2543,7 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, dismissed }, { merge: true })
+    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, dismissed, menus }, { merge: true })
       .catch(e => console.log("Save error:", e))
   }, [ings, dishes, invs, dismissed, menus, ready, user])
 
