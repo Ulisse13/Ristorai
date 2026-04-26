@@ -3055,18 +3055,14 @@ export default function App() {
           if (d.menus)     setMenus(d.menus)
           if (d.fornitori)  setFornitori(d.fornitori)
           if (d.spesa)      setSpesa(d.spesa)
-          if (d.onboarded === false) setOnboarded(false)
-          else setOnboarded(true)
+          // Utente esistente — salta onboarding
+          setOnboarded(true)
+        } else {
+          // Nuovo utente — mostra onboarding
+          setOnboarded(false)
         }
       } catch (e) { console.log("Load error:", e) }
       setReady(true)
-    }
-    // Check if new user
-    async function checkNew() {
-      try {
-        const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
-        if (!snap.exists()) setOnboarded(false)
-      } catch(e) {}
     }
     load()
   }, [user])
@@ -3074,9 +3070,9 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, fornitori, spesa, onboarded: true }, { merge: true })
+    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, fornitori, spesa, onboarded: onboarded }, { merge: true })
       .catch(e => console.log("Save error:", e))
-  }, [ings, dishes, invs, menus, fornitori, spesa, ready, user])
+  }, [ings, dishes, invs, menus, fornitori, spesa, onboarded, ready, user])
 
   async function deleteAccount() {
     if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non è reversibile.")) return
@@ -3141,16 +3137,7 @@ export default function App() {
           <button onClick={deleteAccount} style={{ background: "none", border: "none", color: S.t3, fontFamily: "inherit", fontSize: 10, cursor: "pointer", padding: "4px 6px" }} title="Elimina account">✕ account</button>
         </div>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}
-        onTouchStart={e => { window._swipeX = e.touches[0].clientX }}
-        onTouchEnd={e => {
-          const dx = e.changedTouches[0].clientX - (window._swipeX || 0)
-          if (Math.abs(dx) < 60) return
-          const ids = NAV.map(n => n.id)
-          const cur = ids.indexOf(page)
-          if (dx < 0 && cur < ids.length - 1) setPage(ids[cur + 1]) // swipe left → avanti
-          if (dx > 0 && cur > 0) setPage(ids[cur - 1])              // swipe right → indietro
-        }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
         {renderPage()}
       </div>
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: S.surf, borderTop: S.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
