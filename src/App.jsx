@@ -785,7 +785,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         const url = URL.createObjectURL(file)
         img.onload = () => {
           try {
-            const MAX_W = 2000, MAX_H = 2800
+            const MAX_W = 1600, MAX_H = 2200
             let w = img.width, h = img.height
             if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W }
             if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H }
@@ -793,7 +793,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
             canvas.width = w; canvas.height = h
             canvas.getContext("2d").drawImage(img, 0, 0, w, h)
             URL.revokeObjectURL(url)
-            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.92)
+            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.85)
           } catch(e) { URL.revokeObjectURL(url); res(file) }
         }
         img.onerror = () => { URL.revokeObjectURL(url); res(file) }
@@ -831,7 +831,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
 
       setProg(50); setProgLabel("Invio a Groq AI...")
       const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 30000)
+      const timeout = setTimeout(() => controller.abort(), 60000)
       const response = await fetch(
         "https://api.groq.com/openai/v1/chat/completions",
         {
@@ -928,17 +928,39 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         return "Altre regioni"
       }
 
+      // Algoritmo fuzzy matching — calcola similarità tra due stringhe
+      function similarity(a, b) {
+        const sa = a.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean)
+        const sb = b.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean)
+        if (sa.length === 0 || sb.length === 0) return 0
+        let matches = 0
+        for (const wa of sa) {
+          for (const wb of sb) {
+            // Match esatto o uno contiene l'altro (min 3 chars)
+            if (wa === wb || (wa.length >= 3 && wb.includes(wa)) || (wb.length >= 3 && wa.includes(wb))) {
+              matches++; break
+            }
+          }
+        }
+        return matches / Math.max(sa.length, sb.length)
+      }
+
+      function findBestMatch(nome) {
+        let best = null, bestScore = 0
+        for (const ing of ings) {
+          const score = similarity(nome, ing.name)
+          if (score > bestScore) { bestScore = score; best = ing }
+        }
+        return bestScore >= 0.45 ? best : null
+      }
+
       // Analisi prodotti
       const prodotti = parsed.prodotti || []
       const foundList = prodotti.filter(p => p && p.nome).map(p => {
-        const nameLow = p.nome.toLowerCase().trim()
-        const existing = ings.find(i =>
-          i.name.toLowerCase().includes(nameLow) ||
-          nameLow.includes(i.name.toLowerCase().split(" ")[0])
-        )
+        const existing = findBestMatch(p.nome)
         if (existing) {
           return {
-            nome: p.nome, quantita: p.quantita, unita: p.unita,
+            nome: p.nome, nomeEdit: p.nome, quantita: p.quantita, unita: p.unita,
             prezzoUnitario: p.prezzoUnitario,
             tipo: "update", ingId: existing.id, ingName: existing.name,
             cat: existing.cat, include: true
@@ -946,7 +968,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
         } else {
           const cat = guessCat(p.nome)
           return {
-            nome: p.nome, quantita: p.quantita, unita: p.unita,
+            nome: p.nome, nomeEdit: p.nome, quantita: p.quantita, unita: p.unita,
             prezzoUnitario: p.prezzoUnitario,
             tipo: "new", ingId: null, ingName: null,
             cat, include: true,
@@ -961,7 +983,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
 
     } catch(e) {
       const msg = e.name === "AbortError"
-        ? "Timeout: Gemini non ha risposto in 30 secondi. Riprova."
+        ? "Timeout: Groq non ha risposto in 60 secondi. Riprova con una foto più nitida."
         : "Errore OCR: " + e.message
       setOcrError(msg)
       setStep("upload")
@@ -996,7 +1018,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
     if (toAdd.length > 0) {
       const newIngs = toAdd.map(p => ({
         id: "i" + uid(),
-        name: p.nome,
+        name: (p.nomeEdit || p.nome).trim(),
         cat: p.cat,
         unit: p.cat === "Vini" ? "bottiglia" : (p.unita || "kg"),
         cur: p.prezzoUnitario,
@@ -1133,32 +1155,50 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
               </div>
               {found.map((p, i) => (
                 <div key={i} style={{ padding: "12px 0", borderBottom: i < found.length - 1 ? S.bds : "none" }}>
-                  <div style={row({ justifyContent: "space-between", marginBottom: p.tipo === "new" ? 8 : 0 })}>
+                  <div style={row({ justifyContent: "space-between", marginBottom: 8, alignItems: "flex-start" })}>
                     <div style={{ flex: 1 }}>
-                      <div style={row({ gap: 6, marginBottom: 3 })}>
+                      <div style={row({ gap: 6, marginBottom: 6 })}>
                         <span style={badge(p.tipo === "update" ? "g" : "a")}>
                           {p.tipo === "update" ? "↑ Aggiorna" : "+ Nuovo"}
                         </span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{p.nome}</span>
+                        <span style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: S.t3 }}>
-                        {p.quantita} {p.unita} — {F(p.prezzoUnitario)}/{p.unita}
-                        {p.tipo === "update" && <span style={{ color: S.green }}> → {p.ingName}</span>}
-                      </div>
+                      {/* Nome modificabile */}
+                      <input
+                        style={inp({ fontSize: 12.5, padding: "5px 8px", marginBottom: 4 })}
+                        value={p.nomeEdit !== undefined ? p.nomeEdit : p.nome}
+                        onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, nomeEdit: e.target.value } : x))}
+                        placeholder="Nome ingrediente"
+                      />
+                      {p.tipo === "update" && (
+                        <div style={{ fontSize: 11, color: S.green }}>→ aggiorna: {p.ingName}</div>
+                      )}
                     </div>
                     <input type="checkbox" checked={p.include}
                       onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, include: e.target.checked } : x))}
-                      style={{ width: 18, height: 18, cursor: "pointer", accentColor: S.ac, flexShrink: 0 }}
+                      style={{ width: 18, height: 18, cursor: "pointer", accentColor: S.ac, flexShrink: 0, marginLeft: 10, marginTop: 4 }}
                     />
                   </div>
-                  {p.tipo === "new" && p.include && (
-                    <div style={{ marginTop: 6 }}>
-                      <label style={{ fontSize: 11, color: S.t2, marginBottom: 3, display: "block" }}>Categoria</label>
-                      <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12.5 })}
-                        value={p.cat}
-                        onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
-                        {CATS.map(c => <option key={c}>{c}</option>)}
-                      </select>
+                  {p.include && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                      {p.tipo === "new" && (
+                        <div>
+                          <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Categoria</label>
+                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
+                            value={p.cat}
+                            onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
+                            {CATS.map(c => <option key={c}>{c}</option>)}
+                          </select>
+                        </div>
+                      )}
+                      <div>
+                        <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Prezzo unitario €</label>
+                        <input type="number" step="0.01" min="0"
+                          style={inp({ fontSize: 12, padding: "5px 8px" })}
+                          value={p.prezzoUnitario}
+                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, prezzoUnitario: parseFloat(e.target.value) || 0 } : x))}
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -1517,7 +1557,15 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
                   <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "center", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
                     <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })} value={row.ingId} onChange={e => fUpdateRow(row.id, { ingId: e.target.value })}>
                       <option value="">Seleziona...</option>
-                      {ings.map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                      {["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini"].map(cat => {
+                        const catIngs = ings.filter(i => i.cat === cat)
+                        if (catIngs.length === 0) return null
+                        return <optgroup key={cat} label={cat}>
+                          {catIngs.map(i => <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>)}
+                        </optgroup>
+                      })}
+                      {/* Ingredienti senza categoria standard */}
+                      {(() => { const other = ings.filter(i => !["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini"].includes(i.cat)); return other.length > 0 ? <optgroup label="Altro">{other.map(i => <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>)}</optgroup> : null })()}
                     </select>
                     <input style={inp({ padding: "6px 6px", fontSize: 12 })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
                     <select style={inp({ padding: "6px 4px", fontSize: 12, appearance: "none" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
@@ -1779,12 +1827,30 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   }
 
   async function shareMenu(item) {
-    // Apre anteprima di stampa — l'utente salva come PDF e condivide
-    openPrintPreview(item)
+    const html = buildPrintHTML(item)
+    // Genera blob URL e apri in browser — su mobile compare "Condividi" nativo
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    // Apri in nuova tab — su Android Chrome appare il menu condivisione nativo
+    const win = window.open(url, "_blank")
+    if (!win) {
+      // Fallback: usa Web Share API con testo
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: item.label, text: item.label + " — " + new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"}) })
+        } catch(e) {}
+      }
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000)
   }
 
   function printItem(item) {
-    openPrintPreview(item)
+    const html = buildPrintHTML(item)
+    const win = window.open("", "_blank")
+    if (!win) { alert("Abilita i popup per questo sito"); return }
+    win.document.write(html)
+    win.document.close()
+    setTimeout(() => win.print(), 600)
   }
 
   // ── Build print HTML ──────────────────────────
@@ -1846,6 +1912,13 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 <h1>${item.type === "menu" ? "Menu" : "Carta dei Vini"}</h1>
 <div class="date">${new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
 ${body}
+<div class="no-print" style="text-align:center;margin-top:32px;padding-bottom:24px;">
+  <button onclick="window.print()" style="padding:12px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit;">
+    Salva come PDF / Stampa
+  </button>
+  <p style="font-size:12px;color:#888;margin-top:10px;">Su iPhone: tocca Condividi → Salva su File o Stampa<br>Su Android: menu browser → Stampa → Salva come PDF</p>
+</div>
+<style>.no-print { } @media print { .no-print { display:none; } }</style>
 </body></html>`
   }
 
@@ -2197,21 +2270,29 @@ function AIInsights({ dishes, ings, isMobile }) {
         return { nome: i.name, cat: i.cat, prezzoAttuale: i.cur, media: i.avg, variazione: var_pct, unita: i.unit }
       }).filter(i => Math.abs(i.variazione) > 0.5)
 
-      const prompt = `Sei un consulente di ristorazione esperto in food cost e gestione del menu.
+      const prompt = `Sei un imprenditore di ristorazione con 20 anni di esperienza e formazione da chef professionista. Hai gestito trattorie, ristoranti e osterie in Italia. Conosci perfettamente il food cost, le grammature reali delle porzioni, i prezzi di mercato degli ingredienti italiani, e le dinamiche di un menu stagionale.
 
-DATI PIATTI (food cost %):
+Analizza questi dati reali del ristorante:
+
+PIATTI IN MENU:
 ${JSON.stringify(dishData, null, 2)}
 
-INGREDIENTI CON VARIAZIONI DI PREZZO RECENTI:
+INGREDIENTI CON VARIAZIONI DI PREZZO (confronto ultimo acquisto vs precedente):
 ${JSON.stringify(ingData, null, 2)}
 
-Analizza i dati e genera esattamente 5 insights pratici e concreti per aiutare il ristoratore a mantenere o migliorare i margini. Per ogni insight:
-- Identifica un problema specifico (piatto sopra target, ingrediente aumentato, ecc.)
-- Dai 2-3 azioni concrete e alternative (es: aumentare prezzo di €X, ridurre grammatura di Yg, sostituire ingrediente Z con W più economico)
-- Stima il guadagno mensile potenziale in euro (assumendo 30-50 porzioni/mese)
+Genera esattamente 5 consigli. Ogni consiglio deve essere:
+- SPECIFICO: cita il nome esatto del piatto o ingrediente
+- NUMERICO: dai cifre precise (€X di aumento prezzo, Yg di riduzione grammatura, Z% di risparmio)
+- PRATICO: azione che un oste può fare domani mattina
+- DA CHEF: considera alternative di ingredienti reali e stagionali italiani (es: sostituire branzino con orata in questo periodo, usare coscia invece di petto, ecc.)
+- REALISTICO: stima guadagno mensile assumendo 40 porzioni/settimana per piatto principale, 20 per secondi di pesce
+
+Ragiona così: "Questo piatto mi costa X, lo vendo a Y, il food cost è Z%. Per rientrare nel target posso fare A oppure B oppure C."
+
+NON dare consigli generici come "verifica i fornitori" o "monitora i prezzi". Ogni consiglio deve essere azionabile immediatamente.
 
 Rispondi SOLO con JSON valido senza markdown:
-[{"titolo":"...","problema":"...","azioni":["...","...","..."],"guadagno":0,"priorita":"alta|media|bassa"}]`
+[{"titolo":"titolo specifico con nome piatto/ingrediente","problema":"analisi numerica precisa del problema","azioni":["azione concreta 1 con numeri","azione concreta 2 con numeri","alternativa ingrediente stagionale se applicabile"],"guadagno":0,"priorita":"alta|media|bassa"}]`
 
       const GROQ_KEY = "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"
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -2275,7 +2356,7 @@ Rispondi SOLO con JSON valido senza markdown:
 
       {loading && (
         <div style={card({ padding: 32, textAlign: "center" })}>
-          <div style={{ fontSize: 13, color: S.t3, marginBottom: 8 }}>Claude sta analizzando i tuoi dati...</div>
+          <div style={{ fontSize: 13, color: S.t3, marginBottom: 8 }}>Groq sta analizzando i tuoi dati...</div>
           <div style={{ fontSize: 11, color: S.t3 }}>Piatti, food cost, variazioni prezzi ingredienti</div>
         </div>
       )}
@@ -2594,7 +2675,16 @@ export default function App() {
           <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>{T[lang].logout}</button>
         </div>
       </div>
-      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
+      <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}
+        onTouchStart={e => { window._swipeX = e.touches[0].clientX }}
+        onTouchEnd={e => {
+          const dx = e.changedTouches[0].clientX - (window._swipeX || 0)
+          if (Math.abs(dx) < 60) return
+          const ids = NAV.map(n => n.id)
+          const cur = ids.indexOf(page)
+          if (dx < 0 && cur < ids.length - 1) setPage(ids[cur + 1]) // swipe left → avanti
+          if (dx > 0 && cur > 0) setPage(ids[cur - 1])              // swipe right → indietro
+        }}>
         {renderPage()}
       </div>
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: S.surf, borderTop: S.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
