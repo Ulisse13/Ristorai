@@ -13,9 +13,6 @@ const D = s => new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: 
 const FC_COLOR = (a, t) => a <= t ? "#4ade80" : a <= t * 1.1 ? "#e8a838" : "#f87171"
 const uid = () => Math.random().toString(36).slice(2, 7)
 
-const DISHES = []
-const INIT_ING = []
-const INIT_INV = []
 
 const S = {
   bg: "#0d0d0f", surf: "#141417", el: "#1c1c21", ov: "#242429",
@@ -27,39 +24,22 @@ const S = {
   r: "8px", r2: "12px",
 }
 
-const css = (o) => ({ ...o })
-const row = (extra) => css({ display: "flex", alignItems: "center", gap: 8, ...extra })
-const col = (extra) => css({ display: "flex", flexDirection: "column", gap: 4, ...extra })
-const card = (extra) => css({ background: S.surf, border: S.bds, borderRadius: S.r2, ...extra })
+const row = (extra) => ({ display: "flex", alignItems: "center", gap: 8, ...extra })
+const col = (extra) => ({ display: "flex", flexDirection: "column", gap: 4, ...extra })
+const card = (extra) => ({ background: S.surf, border: S.bds, borderRadius: S.r2, ...extra })
 const btn = (variant, extra) => {
   const base = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: S.r, fontFamily: "inherit", fontSize: 12.5, fontWeight: 500, cursor: "pointer", border: "1px solid transparent", lineHeight: 1, whiteSpace: "nowrap" }
   const v = { p: { background: S.ac, color: "#0d0d0f", borderColor: S.ac }, s: { background: S.el, color: S.t1, borderColor: S.bd.replace("1px solid ", "") }, g: { background: "transparent", color: S.t2 } }
   return { ...base, ...(v[variant] || v.s), ...extra }
 }
-const inp = (extra) => css({ width: "100%", padding: "8px 11px", background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, fontFamily: "inherit", fontSize: 13.5, outline: "none", boxSizing: "border-box", ...extra })
+const inp = (extra) => ({ width: "100%", padding: "8px 11px", background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, fontFamily: "inherit", fontSize: 13.5, outline: "none", boxSizing: "border-box", ...extra })
 const badge = (color, extra) => {
   const colors = { g: { background: S.gd, color: S.green, borderColor: "rgba(74,222,128,0.25)" }, r: { background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.25)" }, a: { background: S.acg, color: S.ac, borderColor: S.acd }, n: { background: S.el, color: S.t2, borderColor: "#2a2a31" } }
   return { display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 999, fontSize: 10.5, fontWeight: 600, border: "1px solid transparent", whiteSpace: "nowrap", ...(colors[color] || colors.n), ...extra }
 }
 
-function Modal({ open, onClose, title, children, footer }) {
-  if (!open) return null
-  return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999 }}>
-      <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 520, maxHeight: "90vh", overflow: "auto" }}>
-        <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
-          <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>{title}</span>
-          <button onClick={onClose} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14 }}>x</button>
-        </div>
-        <div style={{ padding: "16px 22px" }}>{children}</div>
-        {footer && <div style={row({ justifyContent: "flex-end", padding: "0 22px 18px" })}>{footer}</div>}
-      </div>
-    </div>
-  )
-}
-
 function Fld({ label, children }) {
-  return <div style={col({ marginBottom: 12 })}><label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2 }}>{label}</label>{children}</div>
+  return <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}><label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2 }}>{label}</label>{children}</div>
 }
 
 function Dashboard({ ings, isMobile }) {
@@ -161,11 +141,32 @@ function Dashboard({ ings, isMobile }) {
   )
 }
 
-function Ingredients({ ings, setIngs, isMobile }) {
+function Ingredients({ ings, setIngs, invs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
   const [selTipo, setSelTipo] = useState(null)
+  // Trova prezzi per fornitore per un ingrediente
+  function prezziPerFornitore(ing) {
+    const result = []
+    const nameLow = ing.name.toLowerCase()
+    const seen = new Set()
+    for (const inv of invs) {
+      if (!inv.prodotti) continue
+      for (const p of inv.prodotti) {
+        if (!p.nome || !p.prezzoUnitario) continue
+        const pLow = p.nome.toLowerCase()
+        if (pLow.includes(nameLow.split(" ")[0]) || nameLow.includes(pLow.split(" ")[0])) {
+          if (!seen.has(inv.sup)) {
+            seen.add(inv.sup)
+            result.push({ sup: inv.sup, price: p.prezzoUnitario, date: inv.date })
+          }
+        }
+      }
+    }
+    return result.sort((a, b) => a.price - b.price)
+  }
+
   const [selCat, setSelCat]     = useState(null) // null = category view
   const [open, setOpen]         = useState(false)
   const [delTarget, setDelTarget] = useState(null)
@@ -450,12 +451,27 @@ function Ingredients({ ings, setIngs, isMobile }) {
                   <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{ing.name}</div>
                   <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                 </div>
-                <div style={row({ justifyContent: "space-between" })}>
+                <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
                   <span style={{ fontSize: 14, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>
                     {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
                   </span>
-                  <span style={{ fontSize: 12, color: S.t3 }}>Media: {F(ing.avg)}/{ing.unit}</span>
+                  <span style={{ fontSize: 12, color: S.t3 }}>prec. {F(ing.prev||ing.avg)}/{ing.unit}</span>
                 </div>
+                {(() => {
+                  const prezzi = prezziPerFornitore(ing)
+                  if (prezzi.length < 2) return null
+                  return (
+                    <div style={{ background: S.el, borderRadius: S.r, padding: "6px 8px", marginTop: 4 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 4 }}>Prezzi fornitori</div>
+                      {prezzi.map((p, i) => (
+                        <div key={i} style={row({ justifyContent: "space-between", padding: "2px 0" })}>
+                          <span style={{ fontSize: 11, color: i === 0 ? S.green : S.t2 }}>{p.sup}</span>
+                          <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? S.green : S.t2 }}>{F(p.price)}/{ing.unit}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                })()}
                 {ing.confPrice && (
                   <div style={{ fontSize: 11, color: S.t3, marginTop: 4 }}>
                     Confezione: {F(ing.confPrice)} · {ing.confWeight}kg
@@ -486,7 +502,20 @@ function Ingredients({ ings, setIngs, isMobile }) {
                       {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
                     </td>
                     <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
-                      {F(ing.avg)}/{ing.unit}
+                      {(() => {
+                        const prezzi = prezziPerFornitore(ing)
+                        if (prezzi.length < 2) return <span>{F(ing.avg)}/{ing.unit}</span>
+                        return (
+                          <div>
+                            {prezzi.map((p, i) => (
+                              <div key={i} style={row({ gap: 6 })}>
+                                <span style={{ fontSize: 11, color: i === 0 ? S.green : S.t3 }}>{p.sup}</span>
+                                <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? S.green : S.t2 }}>{F(p.price)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )
+                      })()}
                     </td>
                     <td style={{ padding: "11px 16px", borderBottom: S.bds, textAlign: "right" }}>
                       <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">✕</button>
@@ -730,9 +759,15 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
 }
 
 
-function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
+function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
   const GEMINI_KEY = "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"
+
+  const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori"
+  const [selFornitore, setSelFornitore] = useState(null)
+  const [forniForm, setForniForm]   = useState({ name: "", tel: "", email: "", cat: "" })
+  const [forniOpen, setForniOpen]   = useState(false)
+  const [forniEdit, setForniEdit]   = useState(null)
 
   // step: "list" | "upload" | "loading" | "review"
   const [step, setStep]           = useState("list")
@@ -1008,14 +1043,25 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
 
     // Salva fattura
     const v = +fattura.vat || 0
-    setInvs(prev => [{
+    const newInv = {
       id: "v" + uid(), sup: fattura.sup, num: fattura.num,
       date: fattura.date, total: +fattura.total,
       vat: v, net: +fattura.total - v, ok: true,
       prodotti: found.filter(p => p.include).map(p => ({
         nome: (p.nomeEdit || p.nome).trim(), quantita: p.quantita, unita: p.unita, prezzoUnitario: p.prezzoUnitario
       }))
-    }, ...prev])
+    }
+    setInvs(prev => [newInv, ...prev])
+
+    // Auto-crea o aggiorna fornitore
+    const supName = fattura.sup.trim()
+    if (supName) {
+      setFornitori(prev => {
+        const exists = prev.find(f => f.name.toLowerCase() === supName.toLowerCase())
+        if (exists) return prev // già presente
+        return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
+      })
+    }
 
     reset()
   }
@@ -1030,11 +1076,162 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
       <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", alignItems: "flex-start" })}>
         <div>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Fatture</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>{invs.length} fatture — OCR con Groq AI</div>
+          <div style={{ fontSize: 12, color: S.t3 }}>{invs.length} fatture · {fornitori.length} fornitori</div>
         </div>
-        {step === "list" && <button style={btn("p")} onClick={() => setStep("upload")}>+ Carica fattura</button>}
-        {step !== "list" && <button style={btn("g")} onClick={reset}>← Annulla</button>}
+        <div style={row({ gap: 8 })}>
+          {step === "list" && invTab === "fatture" && <button style={btn("p")} onClick={() => setStep("upload")}>+ Carica fattura</button>}
+          {step === "list" && invTab === "fornitori" && <button style={btn("p")} onClick={() => { setForniEdit(null); setForniForm({ name: "", tel: "", email: "", cat: "" }); setForniOpen(true) }}>+ Fornitore</button>}
+          {step !== "list" && <button style={btn("g")} onClick={reset}>← Annulla</button>}
+        </div>
       </div>
+
+      {/* Tabs */}
+      {step === "list" && (
+        <div style={row({ gap: 0, marginBottom: 16 })}>
+          {[["fatture", "Fatture"], ["fornitori", "Fornitori"]].map(([id, label]) => (
+            <button key={id} onClick={() => setInvTab(id)}
+              style={{ padding: "7px 20px", background: invTab === id ? S.ac : S.el, color: invTab === id ? "#0d0d0f" : S.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: invTab === id ? 700 : 400, cursor: "pointer", borderRadius: id === "fatture" ? "8px 0 0 8px" : "0 8px 8px 0" }}>
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── TAB FORNITORI ── */}
+      {step === "list" && invTab === "fornitori" && (
+        <div>
+          {/* Fornitore detail */}
+          {selFornitore && (() => {
+            const f = fornitori.find(x => x.id === selFornitore)
+            if (!f) return null
+            const fInvs = invs.filter(i => i.sup.toLowerCase() === f.name.toLowerCase())
+            const meseAtt = new Date().toISOString().slice(0,7)
+            const totMese = fInvs.filter(i => i.date.startsWith(meseAtt)).reduce((s,i) => s + i.total, 0)
+            const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
+            return (
+              <div>
+                <div style={row({ marginBottom: 16 })}>
+                  <button onClick={() => setSelFornitore(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Fornitori</button>
+                  <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+                  <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{f.name}</span>
+                </div>
+
+                {/* Dati contatto */}
+                <div style={card({ padding: 16, marginBottom: 14 })}>
+                  <div style={row({ justifyContent: "space-between", marginBottom: 12 })}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Dati contatto</div>
+                    <div style={row({ gap: 8 })}>
+                      <button onClick={() => { setForniEdit(f); setForniForm({ name: f.name, tel: f.tel||"", email: f.email||"", cat: f.cat||"" }); setForniOpen(true) }}
+                        style={{ background: "none", border: "none", color: S.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Modifica</button>
+                      <button onClick={() => { if(window.confirm("Eliminare " + f.name + "?")) { setFornitori(prev => prev.filter(x => x.id !== f.id)); setSelFornitore(null) } }}
+                        style={{ background: "none", border: "none", color: S.red, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Elimina</button>
+                    </div>
+                  </div>
+                  {[["Nome", f.name], ["Telefono", f.tel||"—"], ["Email", f.email||"—"], ["Categoria", f.cat||"—"]].map(([l,v]) => (
+                    <div key={l} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: S.bds })}>
+                      <span style={{ fontSize: 12, color: S.t3 }}>{l}</span>
+                      <span style={{ fontSize: 13, color: S.t1, fontWeight: 500 }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Totali */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
+                  {[{ l: "Speso questo mese", v: F(totMese) }, { l: "Speso quest'anno", v: F(totAnno) }].map((k,i) => (
+                    <div key={i} style={card({ padding: "12px 14px" })}>
+                      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+                      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>{k.v}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Storico fatture */}
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>
+                  Fatture ({fInvs.length})
+                </div>
+                {fInvs.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "24px 0", color: S.t3, fontSize: 13 }}>Nessuna fattura</div>
+                ) : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {fInvs.map(inv => (
+                      <div key={inv.id} style={card({ padding: "12px 14px" })} onClick={() => setDetailInv(inv)}>
+                        <div style={row({ justifyContent: "space-between" })}>
+                          <div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{inv.num || "—"}</div>
+                            <div style={{ fontSize: 11, color: S.t3 }}>{D(inv.date)}</div>
+                          </div>
+                          <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1 }}>{F(inv.total)}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Lista fornitori */}
+          {!selFornitore && (
+            fornitori.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+                Nessun fornitore — vengono creati automaticamente quando carichi una fattura
+              </div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {fornitori.map(f => {
+                  const fInvs = invs.filter(i => i.sup.toLowerCase() === f.name.toLowerCase())
+                  const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
+                  return (
+                    <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => setSelFornitore(f.id)}>
+                      <div style={row({ justifyContent: "space-between" })}>
+                        <div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{f.name}</div>
+                          <div style={{ fontSize: 11, color: S.t3 }}>{f.cat || "—"} · {fInvs.length} fatture</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: 13, color: S.t2 }}>Anno</div>
+                          <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.ac }}>{F(totAnno)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )
+          )}
+
+          {/* Modal aggiungi/modifica fornitore */}
+          {forniOpen && (
+            <div onClick={e => e.target === e.currentTarget && setForniOpen(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999 }}>
+              <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 400 }}>
+                <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
+                  <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>{forniEdit ? "Modifica fornitore" : "Nuovo fornitore"}</span>
+                  <button onClick={() => setForniOpen(false)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+                </div>
+                <div style={{ padding: "16px 22px" }}>
+                  <Fld label="Nome *"><input style={inp()} value={forniForm.name} onChange={e => setForniForm(f => ({ ...f, name: e.target.value }))} placeholder="es. MARR SpA" /></Fld>
+                  <Fld label="Telefono"><input style={inp()} value={forniForm.tel} onChange={e => setForniForm(f => ({ ...f, tel: e.target.value }))} placeholder="es. 011 543070" /></Fld>
+                  <Fld label="Email"><input style={inp()} value={forniForm.email} onChange={e => setForniForm(f => ({ ...f, email: e.target.value }))} placeholder="es. ordini@marr.it" /></Fld>
+                  <Fld label="Categoria merci"><input style={inp()} value={forniForm.cat} onChange={e => setForniForm(f => ({ ...f, cat: e.target.value }))} placeholder="es. Carni, Pesce, Alimentari..." /></Fld>
+                </div>
+                <div style={row({ justifyContent: "flex-end", padding: "0 22px 18px", gap: 8 })}>
+                  <button style={btn("g")} onClick={() => setForniOpen(false)}>Annulla</button>
+                  <button style={btn("p")} onClick={() => {
+                    if (!forniForm.name.trim()) return
+                    if (forniEdit) {
+                      setFornitori(prev => prev.map(f => f.id === forniEdit.id ? { ...f, ...forniForm, name: forniForm.name.trim() } : f))
+                    } else {
+                      setFornitori(prev => [...prev, { id: "f" + uid(), ...forniForm, name: forniForm.name.trim() }])
+                    }
+                    setForniOpen(false)
+                  }}>Salva</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── STEP: UPLOAD ── */}
       {step === "upload" && (
@@ -1266,11 +1463,11 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
       )}
 
       {/* ── LISTA FATTURE ── */}
-      {step === "list" && (
+      {step === "list" && invTab === "fatture" && (
         <>
           {isMobile ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {invs.map(inv => (
+              {invs.slice(0, 5).map(inv => (
                 <div key={inv.id} style={card({ padding: "16px", cursor: "pointer" })} onClick={() => setDetailInv(inv)}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
                     <div style={{ fontSize: 16, fontWeight: 700, color: S.t1 }}>{inv.sup}</div>
@@ -1289,7 +1486,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                 <thead><tr>{["Data", "Fornitore", "N° Fattura", "Imponibile", "Totale"].map(h => (
                   <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
                 ))}</tr></thead>
-                <tbody>{invs.map(inv => (
+                <tbody>{invs.slice(0, 5).map(inv => (
                   <tr key={inv.id} onClick={() => setDetailInv(inv)} style={{ cursor: "pointer" }}
                     onMouseEnter={e => { for (const td of e.currentTarget.cells) td.style.background = S.el }}
                     onMouseLeave={e => { for (const td of e.currentTarget.cells) td.style.background = "" }}>
@@ -1346,12 +1543,12 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
   const [fErr, setFErr]       = useState({})
   const [fSaved, setFSaved]   = useState(false)
 
-  const fLiveCost = fRecipe.reduce((sum, row) => {
-    const ing = ings.find(i => i.id === row.ingId)
-    if (!ing || !row.qty) return sum
-    const qty = parseFloat(row.qty) || 0
-    const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
-    return sum + toIngUnit(qty, row.unit, ing.unit) * ing.cur * wasteMult
+  const fLiveCost = fRecipe.reduce((sum, rr) => {
+    const ing = ings.find(i => i.id === rr.ingId)
+    if (!ing || !rr.qty) return sum
+    const qty = parseFloat(rr.qty) || 0
+    const wasteMult = 1 + (parseFloat(rr.waste) || 0) / 100
+    return sum + toIngUnit(qty, rr.unit, ing.unit) * ing.cur * wasteMult
   }, 0)
   const fRicarico  = parseFloat(fForm.ricarico) || 300
   const fSugPrice  = fLiveCost * (1 + fRicarico / 100)
@@ -2561,23 +2758,202 @@ function LoginPage({ lang, setLang }) {
 }
 
 
+
+function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
+  const [selCat, setSelCat] = useState(null)
+  const [note, setNote]     = useState({}) // { ingId: noteText }
+  const uid2 = () => Math.random().toString(36).slice(2, 7)
+
+  function toggleIng(ing) {
+    const exists = spesa.find(s => s.ingId === ing.id)
+    if (exists) {
+      setSpesa(prev => prev.filter(s => s.ingId !== ing.id))
+    } else {
+      setSpesa(prev => [...prev, { id: uid2(), ingId: ing.id, name: ing.name, unit: ing.unit, cat: ing.cat, done: false }])
+    }
+  }
+
+  function toggleDone(id) {
+    setSpesa(prev => prev.map(s => s.id === id ? { ...s, done: !s.done } : s))
+  }
+
+  function removeItem(id) {
+    setSpesa(prev => prev.filter(s => s.id !== id))
+  }
+
+  function clearDone() {
+    setSpesa(prev => prev.filter(s => !s.done))
+  }
+
+  async function shareSpesa() {
+    const text = spesa.map(s => (s.done ? "✓ " : "◻ ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
+    const full = "Lista della spesa — " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
+    if (navigator.share) {
+      try { await navigator.share({ title: "Lista spesa", text: full }); return } catch(e) {}
+    }
+    navigator.clipboard?.writeText(full)
+    alert("Lista copiata negli appunti!")
+  }
+
+  const todoByCat = CATS.map(cat => ({
+    cat,
+    items: spesa.filter(s => s.cat === cat && !s.done)
+  })).filter(g => g.items.length > 0)
+
+  const doneItems = spesa.filter(s => s.done)
+
+  // ── SELEZIONE INGREDIENTI ──────────────────────
+  if (selCat !== null) {
+    const catIngs = ings.filter(i => i.cat === selCat)
+    return (
+      <div>
+        <div style={row({ marginBottom: 16 })}>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Lista spesa</button>
+          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
+        </div>
+        <div style={{ fontSize: 12, color: S.t3, marginBottom: 14 }}>Tocca per aggiungere alla lista</div>
+        {catIngs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun ingrediente in questa categoria</div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {catIngs.map(ing => {
+              const inList = spesa.some(s => s.ingId === ing.id)
+              return (
+                <div key={ing.id} onClick={() => toggleIng(ing)}
+                  style={{ ...card({ padding: "12px 14px", cursor: "pointer" }),
+                    borderColor: inList ? S.acd : "#1f1f25",
+                    background: inList ? S.acg : S.surf }}>
+                  <div style={row({ justifyContent: "space-between" })}>
+                    <div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: inList ? S.ac : S.t1 }}>{ing.name}</div>
+                      <div style={{ fontSize: 11, color: S.t3 }}>{ing.cur > 0 ? "€ " + ing.cur.toFixed(2) + "/" + ing.unit : ing.unit}</div>
+                    </div>
+                    <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? S.ac : "#2a2a31"), background: inList ? S.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>✓</span>}
+                    </div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ── LISTA SPESA ────────────────────────────────
+  return (
+    <div>
+      <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap" })}>
+        <div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 2 }}>Lista della spesa</div>
+          <div style={{ fontSize: 12, color: S.t3 }}>{spesa.filter(s => !s.done).length} da comprare · {doneItems.length} completati</div>
+        </div>
+        <div style={row({ gap: 8 })}>
+          {doneItems.length > 0 && (
+            <button style={btn("g", { fontSize: 12 })} onClick={clearDone}>Rimuovi completati</button>
+          )}
+          {spesa.length > 0 && (
+            <button style={btn("s", { fontSize: 12 })} onClick={shareSpesa}>Condividi</button>
+          )}
+        </div>
+      </div>
+
+      {/* Categorie per aggiungere */}
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>
+        Aggiungi dalla lista ingredienti
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 8, marginBottom: 24 }}>
+        {CATS.map(cat => {
+          const count = ings.filter(i => i.cat === cat).length
+          const inList = spesa.filter(s => s.cat === cat && !s.done).length
+          return (
+            <div key={cat} onClick={() => setSelCat(cat)}
+              style={{ ...card({ padding: "12px 14px", cursor: "pointer" }),
+                borderColor: inList > 0 ? S.acd : "#1f1f25" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{cat}</div>
+              <div style={{ fontSize: 11, color: S.t3 }}>{count} ingredienti</div>
+              {inList > 0 && <div style={{ fontSize: 10, color: S.ac, marginTop: 2 }}>{inList} in lista</div>}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Lista da comprare */}
+      {spesa.filter(s => !s.done).length === 0 && spesa.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "40px 0", color: S.t3, fontSize: 13 }}>
+          La lista è vuota — aggiungi ingredienti dalle categorie sopra
+        </div>
+      ) : (
+        <>
+          {todoByCat.map(({ cat, items }) => (
+            <div key={cat} style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8, paddingBottom: 4, borderBottom: S.bds }}>{cat}</div>
+              {items.map(s => (
+                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: S.surf, border: S.bds, borderRadius: S.r, marginBottom: 6 })}>
+                  <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
+                    <span style={{ fontSize: 14, color: S.t1 }}>{s.name}</span>
+                  </div>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          ))}
+
+          {/* Completati */}
+          {doneItems.length > 0 && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Completati</div>
+              {doneItems.map(s => (
+                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: S.el, border: S.bds, borderRadius: S.r, marginBottom: 6, opacity: 0.6 })}>
+                  <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + S.green, background: S.gd, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 11, color: S.green, fontWeight: 700 }}>✓</span>
+                    </div>
+                    <span style={{ fontSize: 14, color: S.t3, textDecoration: "line-through" }}>{s.name}</span>
+                  </div>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  )
+}
+
+
 function Onboarding({ onDone }) {
   const [step, setStep] = useState(0)
   const steps = [
     {
-      icon: "▤",
-      title: "Carica le tue fatture",
-      desc: "Scatta una foto alla fattura del fornitore. FoodMargin legge automaticamente i prodotti e aggiorna i prezzi nel tuo magazzino."
+      icon: "◈",
+      title: "Benvenuto in FoodMargin",
+      desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu — tutto dal tuo telefono."
     },
     {
-      icon: "⬡",
-      title: "Gestisci gli ingredienti",
-      desc: "Tutti i tuoi ingredienti organizzati per categoria con variazioni di prezzo in tempo reale. Saprai sempre chi vende più conveniente."
+      icon: "▤",
+      title: "Scansiona le fatture",
+      desc: "Scatta una foto alla bolla del fornitore. FoodMargin legge i prodotti automaticamente, aggiorna i prezzi e tiene traccia di ogni fornitore."
     },
     {
       icon: "◬",
-      title: "Calcola il Food Cost",
-      desc: "Crea le tue ricette, inserisci gli ingredienti con grammature e scarti. FoodMargin calcola il prezzo di vendita consigliato automaticamente."
+      title: "Calcola Food & Drink Cost",
+      desc: "Crea ricette con ingredienti e grammature reali. Il prezzo di vendita consigliato viene calcolato in automatico con il tuo ricarico."
+    },
+    {
+      icon: "❑",
+      title: "Crea il tuo menu",
+      desc: "Genera menu stagionali e carte dei vini in pochi tap. Stampali o condividili via WhatsApp direttamente dall'app."
+    },
+    {
+      icon: "◉",
+      title: "Lista della spesa",
+      desc: "Aggiungi ingredienti alla lista spesa direttamente dal magazzino. Condividila con il tuo fornitore via WhatsApp in un tap."
     },
   ]
   const cur = steps[step]
@@ -2637,6 +3013,7 @@ const NAV = [
   { id: "fc",     label: "F&D Cost",    icon: "◬", group: "Gestione" },
   { id: "menu",   label: "Crea Menu",   icon: "❑", group: "Gestione" },
   { id: "ai",     label: "AI Insights", icon: "✦", group: "Gestione" },
+  { id: "spesa",  label: "Spesa",       icon: "◉", group: "Gestione" },
 ]
 
 export default function App() {
@@ -2651,10 +3028,12 @@ export default function App() {
   useEffect(() => { const h = () => setW(window.innerWidth); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h) }, [])
   useEffect(() => { localStorage.setItem("fm_lang", lang) }, [lang])
 
-  const [ings,      setIngs]      = useState(INIT_ING)
-  const [dishes,    setDishes]    = useState(DISHES)
-  const [invs,      setInvs]      = useState(INIT_INV)
+  const [ings,      setIngs]      = useState([])
+  const [dishes,    setDishes]    = useState([])
+  const [invs,      setInvs]      = useState([])
   const [menus, setMenus] = useState([])
+  const [fornitori, setFornitori] = useState([])
+  const [spesa, setSpesa] = useState([])
   const [onboarded, setOnboarded] = useState(true) // true = skip onboarding for existing users
 
   // Auth listener
@@ -2680,6 +3059,8 @@ export default function App() {
           if (d.dishes)    setDishes(d.dishes)
           if (d.invs)      setInvs(d.invs)
           if (d.menus)     setMenus(d.menus)
+          if (d.fornitori)  setFornitori(d.fornitori)
+          if (d.spesa)      setSpesa(d.spesa)
           if (d.onboarded === false) setOnboarded(false)
           else setOnboarded(true)
         }
@@ -2699,9 +3080,9 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, onboarded: true }, { merge: true })
+    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, fornitori, spesa, onboarded: true }, { merge: true })
       .catch(e => console.log("Save error:", e))
-  }, [ings, dishes, invs, menus, ready, user])
+  }, [ings, dishes, invs, menus, fornitori, spesa, ready, user])
 
   if (!authReady) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
@@ -2725,12 +3106,13 @@ export default function App() {
     try {
       switch(page) {
         case "dash":   return <Dashboard ings={ings} isMobile={isMobile} />
-        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} isMobile={isMobile} />
+        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />
-        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} isMobile={isMobile} />
+        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} isMobile={isMobile} />
         case "fc":     return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />
         case "ai":     return <AIInsights dishes={dishes} ings={ings} isMobile={isMobile} />
         case "menu":   return <CreateMenu menus={menus} setMenus={setMenus} dishes={dishes} isMobile={isMobile} />
+        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} isMobile={isMobile} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
     } catch(e) {
