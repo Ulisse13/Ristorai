@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react"
 import { db, auth, googleProvider } from "./firebase"
-import { doc, getDoc, setDoc } from "firebase/firestore"
+import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore"
 import {
   onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signInWithPopup,
-  signOut, sendPasswordResetEmail
+  signOut, sendPasswordResetEmail, deleteUser
 } from "firebase/auth"
 
 const F = n => "€ " + Number(n).toFixed(2).replace(".", ",")
@@ -2645,8 +2645,8 @@ function FMPercentIcon({ size = 44 }) {
   )
 }
 
-function LoginPage({ lang, setLang }) {
-  const t = T[lang]
+function LoginPage() {
+  const t = T["it"]
   const [mode, setMode] = useState("login")
   const [form, setForm] = useState({ email: "", password: "", confirm: "" })
   const [err, setErr] = useState("")
@@ -2692,11 +2692,7 @@ function LoginPage({ lang, setLang }) {
 
   return (
     <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ position: "fixed", top: 16, right: 16, display: "flex", gap: 6 }}>
-        {["it","en"].map(l => (
-          <button key={l} onClick={() => setLang(l)} style={{ padding: "4px 10px", background: lang === l ? S.acg : "none", border: `1px solid ${lang === l ? S.acd : "#2a2a31"}`, borderRadius: 999, color: lang === l ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, fontWeight: 700, cursor: "pointer", textTransform: "uppercase" }}>{l}</button>
-        ))}
-      </div>
+
       <div style={{ marginBottom: 32, textAlign: "center" }}>
         <div style={{ width: 72, height: 72, background: S.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <FMPercentIcon size={44} />
@@ -3023,10 +3019,8 @@ export default function App() {
   const [ready, setReady] = useState(false)
   const [user, setUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
-  const [lang, setLang] = useState(() => localStorage.getItem("fm_lang") || "it")
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1024)
   useEffect(() => { const h = () => setW(window.innerWidth); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h) }, [])
-  useEffect(() => { localStorage.setItem("fm_lang", lang) }, [lang])
 
   const [ings,      setIngs]      = useState([])
   const [dishes,    setDishes]    = useState([])
@@ -3084,6 +3078,22 @@ export default function App() {
       .catch(e => console.log("Save error:", e))
   }, [ings, dishes, invs, menus, fornitori, spesa, ready, user])
 
+  async function deleteAccount() {
+    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non è reversibile.")) return
+    try {
+      // Cancella dati Firestore
+      await deleteDoc(doc(db, "users", user.uid, "data", "main"))
+      // Cancella account Firebase Auth
+      await deleteUser(user)
+    } catch(e) {
+      if (e.code === "auth/requires-recent-login") {
+        alert("Per sicurezza devi prima effettuare il logout e rientrare, poi potrai eliminare l'account.")
+      } else {
+        alert("Errore: " + e.message)
+      }
+    }
+  }
+
   if (!authReady) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
       <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: "#e8a838", letterSpacing: "-0.02em" }}>FoodMargin</div>
@@ -3091,7 +3101,7 @@ export default function App() {
     </div>
   )
 
-  if (!user) return <LoginPage lang={lang} setLang={setLang} />
+  if (!user) return <LoginPage />
   if (!onboarded) return <Onboarding onDone={() => { setOnboarded(true) }} />
 
   if (!ready) return (
@@ -3127,10 +3137,8 @@ export default function App() {
       <div style={{ height: 52, background: S.surf, borderBottom: S.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>FoodMargin</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <div style={{ display: "flex", gap: 4 }}>
-            {["it","en"].map(l => <button key={l} onClick={() => setLang(l)} style={{ padding: "2px 7px", background: lang===l ? S.acg : "none", border: `1px solid ${lang===l ? S.acd : "#2a2a31"}`, borderRadius: 999, color: lang===l ? S.ac : S.t3, fontFamily: "inherit", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>{l.toUpperCase()}</button>)}
-          </div>
-          <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>{T[lang].logout}</button>
+          <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Esci</button>
+          <button onClick={deleteAccount} style={{ background: "none", border: "none", color: S.t3, fontFamily: "inherit", fontSize: 10, cursor: "pointer", padding: "4px 6px" }} title="Elimina account">✕ account</button>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}
@@ -3213,14 +3221,12 @@ export default function App() {
             {NAV.find(n => n.id === page) && NAV.find(n => n.id === page).label}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", gap: 4 }}>
-              {["it","en"].map(l => <button key={l} onClick={() => setLang(l)} style={{ padding: "2px 7px", background: lang===l ? S.acg : "none", border: `1px solid ${lang===l ? S.acd : "#2a2a31"}`, borderRadius: 999, color: lang===l ? S.ac : S.t3, fontFamily: "inherit", fontSize: 10, fontWeight: 700, cursor: "pointer" }}>{l.toUpperCase()}</button>)}
-            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 9px 4px 5px", background: S.el, border: S.bd, borderRadius: 6 }}>
               <div style={{ width: 22, height: 22, borderRadius: 5, background: S.acg, border: "1px solid " + S.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 11, color: S.ac }}>{user?.email?.[0]?.toUpperCase() || "U"}</div>
               <span style={{ fontSize: 12, fontWeight: 500, color: S.t1 }}>{user?.email?.split("@")[0] || "User"}</span>
             </div>
-            <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "5px 12px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>{T[lang].logout}</button>
+            <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "5px 12px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Esci</button>
+            <button onClick={deleteAccount} style={{ background: "none", border: "none", color: S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer", padding: "5px 8px" }} title="Elimina account">✕ account</button>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 48px" }}>
