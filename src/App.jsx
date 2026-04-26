@@ -13,29 +13,9 @@ const D = s => new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: 
 const FC_COLOR = (a, t) => a <= t ? "#4ade80" : a <= t * 1.1 ? "#e8a838" : "#f87171"
 const uid = () => Math.random().toString(36).slice(2, 7)
 
-const DISHES = [
-  { id: "d1", name: "Petto di Pollo", cat: "secondo", price: 14, target: 0.28, cost: 3.40, fc: 0.243, margin: 10.60 },
-  { id: "d2", name: "Spaghetti Pomodoro", cat: "primo", price: 11, target: 0.28, cost: 2.10, fc: 0.191, margin: 8.90 },
-  { id: "d3", name: "Branzino al Forno", cat: "secondo", price: 22, target: 0.30, cost: 9.20, fc: 0.418, margin: 12.80 },
-  { id: "d4", name: "Cacio e Pepe", cat: "primo", price: 13, target: 0.28, cost: 3.80, fc: 0.292, margin: 9.20 },
-  { id: "d5", name: "Antipasto Misto", cat: "antipasto", price: 16, target: 0.25, cost: 3.20, fc: 0.200, margin: 12.80 },
-  { id: "d6", name: "Tiramisù", cat: "dolce", price: 7, target: 0.25, cost: 1.60, fc: 0.229, margin: 5.40 },
-]
-const INIT_ING = [
-  { id: "i1", name: "Petto di Pollo", cat: "Carni", unit: "kg", cur: 8.50, avg: 7.80 },
-  { id: "i2", name: "Parmigiano Reg.", cat: "Latticini", unit: "kg", cur: 28.00, avg: 24.00 },
-  { id: "i3", name: "Pasta di Semola", cat: "Pasta & Cereali", unit: "kg", cur: 1.80, avg: 1.80 },
-  { id: "i4", name: "Olio EVO", cat: "Olio & Grassi", unit: "l", cur: 9.50, avg: 8.20 },
-  { id: "i5", name: "Pomodori Pelati", cat: "Verdure", unit: "kg", cur: 1.20, avg: 1.20 },
-  { id: "i6", name: "Branzino", cat: "Pesce", unit: "kg", cur: 18.00, avg: 15.00 },
-  { id: "i7", name: "Burro", cat: "Latticini", unit: "kg", cur: 7.50, avg: 7.00 },
-  { id: "i8", name: "Prosciutto Crudo", cat: "Salumi", unit: "kg", cur: 32.00, avg: 30.00 },
-]
-const INIT_INV = [
-  { id: "v1", sup: "Carni Rossi srl", num: "2024/041", date: "2024-11-20", total: 480, vat: 43.6, net: 436.4, ok: true },
-  { id: "v2", sup: "Pescheria Azzurra", num: "2024/089", date: "2024-11-18", total: 312, vat: 28.4, net: 283.6, ok: true },
-  { id: "v3", sup: "Oleificio Toscano", num: "2024/012", date: "2024-11-22", total: 228, vat: 20.7, net: 207.3, ok: false },
-]
+const DISHES = []
+const INIT_ING = []
+const INIT_INV = []
 
 const S = {
   bg: "#0d0d0f", surf: "#141417", el: "#1c1c21", ov: "#242429",
@@ -186,8 +166,6 @@ function Ingredients({ ings, setIngs, isMobile }) {
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
   const [selTipo, setSelTipo] = useState(null)
-  const [selRegione, setSelRegione] = useState(null)
-
   const [selCat, setSelCat]     = useState(null) // null = category view
   const [open, setOpen]         = useState(false)
   const [delTarget, setDelTarget] = useState(null)
@@ -754,7 +732,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
 
 function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
-  const GEMINI_KEY = "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"
+  const GEMINI_KEY = "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"
 
   // step: "list" | "upload" | "loading" | "review"
   const [step, setStep]           = useState("list")
@@ -872,12 +850,12 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
 
       // Pulizia e parsing JSON sicuro
       const jsonMatch = raw.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error("Gemini non ha restituito un JSON valido")
+      if (!jsonMatch) throw new Error("Groq non ha restituito un JSON valido")
       let parsed
       try {
         parsed = JSON.parse(jsonMatch[0])
       } catch(parseErr) {
-        throw new Error("JSON malformato da Gemini — riprova o migliora la foto")
+        throw new Error("JSON malformato — riprova con una foto più nitida")
       }
 
       setProg(90); setProgLabel("Confronto con magazzino...")
@@ -1035,7 +1013,7 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
       date: fattura.date, total: +fattura.total,
       vat: v, net: +fattura.total - v, ok: true,
       prodotti: found.filter(p => p.include).map(p => ({
-        nome: p.nome, quantita: p.quantita, unita: p.unita, prezzoUnitario: p.prezzoUnitario
+        nome: (p.nomeEdit || p.nome).trim(), quantita: p.quantita, unita: p.unita, prezzoUnitario: p.prezzoUnitario
       }))
     }, ...prev])
 
@@ -1243,42 +1221,31 @@ function Invoices({ invs, setInvs, ings, setIngs, isMobile }) {
                 ))}
               </div>
 
-              {/* Prodotti con prezzo modificabile */}
-              {detailInv.prodotti && detailInv.prodotti.length > 0 && (
-                <div>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>
-                    Prodotti — modifica prezzo se necessario
-                  </div>
-                  <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
-                    {detailInv.prodotti.map((p, i) => (
-                      <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 80px 90px", gap: 8, padding: "10px 14px", borderBottom: i < detailInv.prodotti.length - 1 ? S.bds : "none", alignItems: "center" }}>
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 500, color: S.t1 }}>{p.nome}</div>
-                          <div style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</div>
-                        </div>
-                        <span style={{ fontSize: 12, color: S.t2 }}>{p.unita}</span>
-                        <input type="number" step="0.01" min="0"
-                          defaultValue={p.prezzoUnitario}
-                          onBlur={e => {
-                            const newPrice = parseFloat(e.target.value)
-                            if (!isNaN(newPrice) && newPrice !== p.prezzoUnitario) {
-                              setInvs(prev => prev.map(inv => inv.id === detailInv.id
-                                ? { ...inv, prodotti: inv.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }
-                                : inv
-                              ))
-                              setDetailInv(prev => ({ ...prev, prodotti: prev.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }))
-                            }
-                          }}
-                          style={{ ...inp({ fontSize: 12.5, padding: "6px 8px" }) }}
-                        />
-                      </div>
+              {/* Prodotti */}
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>
+                Prodotti ({detailInv.prodotti?.length || 0})
+              </div>
+              {detailInv.prodotti && detailInv.prodotti.length > 0 ? (
+                <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
+                  {/* Header */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 80px", gap: 8, padding: "7px 12px", background: S.el, borderBottom: S.bds }}>
+                    {["Prodotto", "Qtà", "€/unità"].map(h => (
+                      <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
                     ))}
                   </div>
+                  {detailInv.prodotti.map((p, i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 70px 80px", gap: 8, padding: "10px 12px", borderBottom: i < detailInv.prodotti.length - 1 ? S.bds : "none", alignItems: "center" }}>
+                      <div>
+                        <div style={{ fontSize: 13, fontWeight: 500, color: S.t1, lineHeight: 1.3 }}>{p.nome}</div>
+                      </div>
+                      <div style={{ fontSize: 12, color: S.t2 }}>{p.quantita} {p.unita}</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: S.ac, fontVariantNumeric: "tabular-nums" }}>{F(p.prezzoUnitario)}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
-              {(!detailInv.prodotti || detailInv.prodotti.length === 0) && (
+              ) : (
                 <div style={{ textAlign: "center", padding: "20px 0", color: S.t3, fontSize: 13 }}>
-                  Nessun prodotto salvato per questa fattura
+                  Nessun prodotto — carica di nuovo la fattura per elaborarla
                 </div>
               )}
             </div>
@@ -1828,19 +1795,27 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
   async function shareMenu(item) {
     const html = buildPrintHTML(item)
-    // Genera blob URL e apri in browser — su mobile compare "Condividi" nativo
+    // Prova Web Share API con file (Android Chrome, iOS Safari)
+    if (navigator.share) {
+      try {
+        const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+        const file = new File([blob], item.label.replace(/[^a-zA-Z0-9]/g, "_") + ".html", { type: "text/html" })
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], title: item.label })
+          return
+        }
+        // Share solo testo con link
+        await navigator.share({
+          title: item.label,
+          text: item.label + " — " + new Date(item.date).toLocaleDateString("it-IT", { day:"2-digit", month:"long", year:"numeric" })
+        })
+        return
+      } catch(e) { /* utente ha annullato o non supportato */ }
+    }
+    // Fallback: apri in nuova tab con istruzioni
     const blob = new Blob([html], { type: "text/html;charset=utf-8" })
     const url = URL.createObjectURL(blob)
-    // Apri in nuova tab — su Android Chrome appare il menu condivisione nativo
-    const win = window.open(url, "_blank")
-    if (!win) {
-      // Fallback: usa Web Share API con testo
-      if (navigator.share) {
-        try {
-          await navigator.share({ title: item.label, text: item.label + " — " + new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"}) })
-        } catch(e) {}
-      }
-    }
+    window.open(url, "_blank")
     setTimeout(() => URL.revokeObjectURL(url), 60000)
   }
 
@@ -1962,11 +1937,34 @@ ${body}
                 </div>
                 <span style={{ ...badge("n"), textTransform: "uppercase", fontSize: 9 }}>{m.type === "menu" ? "Menu" : "Vini"}</span>
               </div>
-              <div style={row({ gap: 6, flexWrap: "wrap" })}>
-                <button style={btn("s", { fontSize: 11, padding: "4px 10px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
-                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => shareMenu(m)}>PDF / Stampa</button>
-                <button style={btn("g", { fontSize: 11, padding: "4px 10px" })} onClick={() => printItem(m)}>PDF / Stampa</button>
-                <button style={{ ...btn("g", { fontSize: 11, padding: "4px 10px" }), color: S.red }} onClick={() => deleteMenu(m.id)}>Elimina</button>
+              <div style={row({ gap: 10, marginTop: 4 })}>
+                <button style={btn("s", { fontSize: 11, padding: "5px 14px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
+                <div style={row({ gap: 14, marginLeft: 4 })}>
+                  {/* Condividi — apre menu nativo del telefono */}
+                  <button title="Condividi" onClick={() => shareMenu(m)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: S.t2, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                      <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+                    </svg>
+                  </button>
+                  {/* Stampa / PDF */}
+                  <button title="Stampa / PDF" onClick={() => printItem(m)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: S.t2, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                      <rect x="6" y="14" width="12" height="8"/>
+                    </svg>
+                  </button>
+                  {/* Elimina */}
+                  <button title="Elimina" onClick={() => deleteMenu(m.id)}
+                    style={{ background: "none", border: "none", cursor: "pointer", color: S.red, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                      <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
           ))}
@@ -2294,7 +2292,7 @@ NON dare consigli generici come "verifica i fornitori" o "monitora i prezzi". Og
 Rispondi SOLO con JSON valido senza markdown:
 [{"titolo":"titolo specifico con nome piatto/ingrediente","problema":"analisi numerica precisa del problema","azioni":["azione concreta 1 con numeri","azione concreta 2 con numeri","alternativa ingrediente stagionale se applicabile"],"guadagno":0,"priorita":"alta|media|bassa"}]`
 
-      const GROQ_KEY = "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"
+      const GROQ_KEY = "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"
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_KEY },
@@ -2562,6 +2560,75 @@ function LoginPage({ lang, setLang }) {
   )
 }
 
+
+function Onboarding({ onDone }) {
+  const [step, setStep] = useState(0)
+  const steps = [
+    {
+      icon: "▤",
+      title: "Carica le tue fatture",
+      desc: "Scatta una foto alla fattura del fornitore. FoodMargin legge automaticamente i prodotti e aggiorna i prezzi nel tuo magazzino."
+    },
+    {
+      icon: "⬡",
+      title: "Gestisci gli ingredienti",
+      desc: "Tutti i tuoi ingredienti organizzati per categoria con variazioni di prezzo in tempo reale. Saprai sempre chi vende più conveniente."
+    },
+    {
+      icon: "◬",
+      title: "Calcola il Food Cost",
+      desc: "Crea le tue ricette, inserisci gli ingredienti con grammature e scarti. FoodMargin calcola il prezzo di vendita consigliato automaticamente."
+    },
+  ]
+  const cur = steps[step]
+  return (
+    <div style={{ minHeight: "100vh", background: S.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "system-ui, sans-serif" }}>
+      {/* Logo */}
+      <div style={{ marginBottom: 40, textAlign: "center" }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: S.ac, letterSpacing: "-0.02em" }}>FoodMargin</div>
+        <div style={{ fontSize: 12, color: S.t3, marginTop: 4 }}>Gestione costi per ristoratori</div>
+      </div>
+
+      {/* Step card */}
+      <div style={{ width: "100%", maxWidth: 360, background: S.surf, border: S.bd, borderRadius: 20, padding: "32px 24px", marginBottom: 28, textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, background: S.acg, border: "1px solid " + S.acd, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28, color: S.ac }}>
+          {cur.icon}
+        </div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 12 }}>{cur.title}</div>
+        <div style={{ fontSize: 14, color: S.t2, lineHeight: 1.7 }}>{cur.desc}</div>
+      </div>
+
+      {/* Dots */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
+        {steps.map((_, i) => (
+          <div key={i} style={{ width: i === step ? 20 : 8, height: 8, borderRadius: 999, background: i === step ? S.ac : S.el, transition: "width 0.3s" }} />
+        ))}
+      </div>
+
+      {/* Buttons */}
+      <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 10 }}>
+        {step < steps.length - 1 ? (
+          <>
+            <button onClick={() => setStep(s => s + 1)}
+              style={{ width: "100%", padding: "14px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+              Avanti
+            </button>
+            <button onClick={onDone}
+              style={{ width: "100%", padding: "10px", background: "none", color: S.t3, border: "none", fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>
+              Salta introduzione
+            </button>
+          </>
+        ) : (
+          <button onClick={onDone}
+            style={{ width: "100%", padding: "14px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+            Inizia subito
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const NAV = [
   { id: "dash",   label: "Dashboard",   icon: "◈", group: "Gestione" },
   { id: "ing",    label: "Ingredienti", icon: "⬡", group: "Gestione" },
@@ -2587,8 +2654,8 @@ export default function App() {
   const [ings,      setIngs]      = useState(INIT_ING)
   const [dishes,    setDishes]    = useState(DISHES)
   const [invs,      setInvs]      = useState(INIT_INV)
-  const [dismissed, setDismissed] = useState([])
   const [menus, setMenus] = useState([])
+  const [onboarded, setOnboarded] = useState(true) // true = skip onboarding for existing users
 
   // Auth listener
   useEffect(() => {
@@ -2612,11 +2679,19 @@ export default function App() {
           if (d.ings)      setIngs(d.ings)
           if (d.dishes)    setDishes(d.dishes)
           if (d.invs)      setInvs(d.invs)
-          if (d.dismissed) setDismissed(d.dismissed)
           if (d.menus)     setMenus(d.menus)
+          if (d.onboarded === false) setOnboarded(false)
+          else setOnboarded(true)
         }
       } catch (e) { console.log("Load error:", e) }
       setReady(true)
+    }
+    // Check if new user
+    async function checkNew() {
+      try {
+        const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
+        if (!snap.exists()) setOnboarded(false)
+      } catch(e) {}
     }
     load()
   }, [user])
@@ -2624,9 +2699,9 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, dismissed, menus }, { merge: true })
+    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, onboarded: true }, { merge: true })
       .catch(e => console.log("Save error:", e))
-  }, [ings, dishes, invs, dismissed, menus, ready, user])
+  }, [ings, dishes, invs, menus, ready, user])
 
   if (!authReady) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
@@ -2636,6 +2711,7 @@ export default function App() {
   )
 
   if (!user) return <LoginPage lang={lang} setLang={setLang} />
+  if (!onboarded) return <Onboarding onDone={() => { setOnboarded(true) }} />
 
   if (!ready) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
