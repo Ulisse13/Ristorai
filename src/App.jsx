@@ -760,7 +760,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
 
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
   const GEMINI_KEY = "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"
 
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori"
@@ -865,7 +865,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
                 },
                 {
                   type: "text",
-                  text: 'Sei un esperto contabile italiano specializzato in fatture e bolle di consegna. Analizza questo documento con attenzione. PUO contenere piu documenti/sezioni sullo stesso foglio. ISTRUZIONI: 1) Estrai il nome del fornitore in alto. 2) Usa la prima data trovata. 3) Leggi OGNI riga prodotto da TUTTE le sezioni del documento. 4) Per ogni prodotto: estrai nome descrittivo (senza codici numerici), quantita, unita di misura, e calcola prezzo unitario per kg o litro (PREZZO diviso per QTA.V). 5) Somma TUTTI i TOTALE DOCUMENTO per il totale finale. 6) Somma tutta la IVA. 7) Includi anche prodotti non alimentari come detersivi, materiali pulizia. Rispondi SOLO con JSON valido senza markdown ne backtick: {"fornitore":"nome","numero":"numero","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto senza codice","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}'
+                  text: 'Sei un esperto contabile italiano. Analizza questa fattura o bolla di consegna. REGOLE IMPORTANTI: 1) Il documento puo avere piu sezioni o documenti — leggi TUTTO. 2) Per ogni riga prodotto: ignora i codici numerici iniziali (es. 056137), prendi solo il nome descrittivo del prodotto. 3) Il prezzo unitario e nella colonna PREZZO — e il prezzo per unita di misura (kg, litro, pezzo). NON dividere per quantita se il prezzo e gia unitario. 4) Se vedi colonne QTA.V e QTA.F usa QTA.V come quantita. 5) Somma tutti i TOTALE DOCUMENTO per il totale finale. 6) Includi TUTTI i prodotti: alimentari, detersivi, materiali pulizia, tutto. 7) Per prodotti venduti a confezione/cartone calcola il prezzo per kg se possibile. Rispondi SOLO con JSON valido senza markdown: {"fornitore":"nome","numero":"numero","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto pulito","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}'
                 }
               ]
             }],
@@ -1358,8 +1358,10 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       {p.tipo === "new" && (
                         <div>
-                          <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Categoria</label>
-                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
+                          <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
+                            Categoria {p.cat !== "Scatolame" && <span style={{ color: S.green, fontSize: 9 }}>✓ rilevata</span>}
+                          </label>
+                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: p.cat !== "Scatolame" ? S.acd : "#2a2a31" })}
                             value={p.cat}
                             onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
                             {CATS.map(c => <option key={c}>{c}</option>)}
