@@ -142,7 +142,7 @@ function Dashboard({ ings, isMobile }) {
 }
 
 function Ingredients({ ings, setIngs, invs, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
   const [selTipo, setSelTipo] = useState(null)
@@ -213,8 +213,11 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
       unitBase = "kg" // default — utente può cambiarlo in futuro
     } else {
       cur = +form.cur
-      // Normalizza: salva sempre "l" internamente, non "litri"
-      unitBase = form.unit === "litri" ? "l" : form.unit
+      // Normalizza unità: salva sempre in kg o l per coerenza con food cost
+      if (form.unit === "litri") unitBase = "l"
+      else if (form.unit === "g") { unitBase = "kg"; cur = Math.round(cur * 1000 * 100) / 100 }
+      else if (form.unit === "ml") { unitBase = "l"; cur = Math.round(cur * 1000 * 100) / 100 }
+      else unitBase = form.unit
     }
 
     const oldAvg = edit ? edit.avg : cur
@@ -548,8 +551,8 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   )
 }
 
-function Dishes({ dishes, setDishes, ings, isMobile }) {
-  const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail"]
+function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
+  const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
@@ -569,6 +572,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
     if (cat === "Speciali")  return c === "speciale" || c === "speciali"
     if (cat === "Vini")      return c === "vino"     || c === "vini"
     if (cat === "Cocktail")  return c === "cocktail"
+    if (cat === "Bevande")   return c === "bevanda" || c === "bevande"
     return false
   }
 
@@ -714,7 +718,11 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
                     {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
                   </div>
                 </div>
-                <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                <div style={row({ gap: 8 })}>
+                  <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
+                    style={{ background: "none", border: "none", color: S.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: S.r, border: "1px solid #2a2a31" }}>Modifica</button>
+                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                </div>
               </div>
               {/* Food cost bar */}
               {d.fc > 0 && (
@@ -760,7 +768,7 @@ function Dishes({ dishes, setDishes, ings, isMobile }) {
 
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
   const GEMINI_KEY = "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"
 
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori"
@@ -865,7 +873,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
                 },
                 {
                   type: "text",
-                  text: 'Sei un esperto contabile italiano. Analizza questa fattura o bolla di consegna. REGOLE IMPORTANTI: 1) Il documento puo avere piu sezioni o documenti — leggi TUTTO. 2) Per ogni riga prodotto: ignora i codici numerici iniziali (es. 056137), prendi solo il nome descrittivo del prodotto. 3) Il prezzo unitario e nella colonna PREZZO — e il prezzo per unita di misura (kg, litro, pezzo). NON dividere per quantita se il prezzo e gia unitario. 4) Se vedi colonne QTA.V e QTA.F usa QTA.V come quantita. 5) Somma tutti i TOTALE DOCUMENTO per il totale finale. 6) Includi TUTTI i prodotti: alimentari, detersivi, materiali pulizia, tutto. 7) Per prodotti venduti a confezione/cartone calcola il prezzo per kg se possibile. Rispondi SOLO con JSON valido senza markdown: {"fornitore":"nome","numero":"numero","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto pulito","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}'
+                  text: 'Sei un esperto contabile italiano. Analizza questa fattura o bolla di consegna. REGOLE IMPORTANTI: 1) Il documento puo avere piu sezioni o documenti — leggi TUTTO. 2) Per ogni riga prodotto: ignora i codici numerici iniziali (es. 056137), prendi solo il nome descrittivo del prodotto. 3) Il prezzo unitario e nella colonna PREZZO — e il prezzo per unita di misura (kg, litro, pezzo, bottiglia). NON dividere per quantita se il prezzo e gia unitario. 4) SCONTI: se trovi colonne sconto (SC%, SCONTO, DISC, ABBUONO) o righe di sconto, calcola il prezzo NETTO dopo lo sconto. Esempio: prezzo €12 con sconto 10% = prezzo netto €10,80. Il prezzoUnitario deve essere sempre il prezzo finale dopo tutti gli sconti applicati. 5) Se vedi colonne QTA.V e QTA.F usa QTA.V come quantita. 6) Somma tutti i TOTALE DOCUMENTO per il totale finale. 7) Includi TUTTI i prodotti: alimentari, vini, detersivi, materiali pulizia, tutto. 8) Per vini e bottiglie usa unita "bottiglia" e prezzo per bottiglia. Rispondi SOLO con JSON valido senza markdown: {"fornitore":"nome","numero":"numero","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto pulito","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}'
                 }
               ]
             }],
@@ -910,6 +918,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
         if (/detersiv|sapone|piatti|bucato|ammorbident|candegg|disinfett|multiuso|sgrassator|lavastoviglie|lavatrice|spugna|strofinaccio|carta igien|scottex|sacchetti|brillantante|wc gel|disincrost|panno|bobina|guanti nitr|tovaglioli/.test(n)) return "Detersivi"
         if (/surgelat|gelo|gelato|congelat|misto mare surgelato|verdure surgelate|piselli surgelati|fagiolini surgelati|spinaci gelo|mais surgelato/.test(n)) return "Surgelati"
         if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola|pomodori scatola|sugo pronto|legumi/.test(n)) return "Scatolame"
+        if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|nastro|moretti|lattina|acqua minerale|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin|vodka|rum|whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|rhum|tequila|mezcal/.test(n)) return "Bevande"
         if (/vino |vini |barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|montepulciano|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|côtes|chablis|rosso di|bianco di|bollicine|spumante|cava/.test(n)) return "Vini"
         if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|prosciutto|salame|mortadella|bresaola|coppa|speck|roast.beef|noce b/.test(n)) return "Carni"
         if (/pesce|merluzzo|salmone|tonno|branzino|orata|sogliola|baccalà|acciuga|sarda|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
@@ -941,17 +950,44 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
         return "Altre regioni"
       }
 
-      // Algoritmo fuzzy matching — calcola similarità tra due stringhe
+      // Normalizza stringa per confronto
+      function normalizeStr(s) {
+        return s.toLowerCase()
+          .replace(/[àáâã]/g, "a").replace(/[èéêë]/g, "e")
+          .replace(/[ìíîï]/g, "i").replace(/[òóôõ]/g, "o")
+          .replace(/[ùúûü]/g, "u")
+          .replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim()
+      }
+
+      // Algoritmo fuzzy matching migliorato
       function similarity(a, b) {
-        const sa = a.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean)
-        const sb = b.toLowerCase().replace(/[^a-z0-9]/g, " ").split(/\s+/).filter(Boolean)
+        const na = normalizeStr(a)
+        const nb = normalizeStr(b)
+        // Match esatto dopo normalizzazione
+        if (na === nb) return 1.0
+        // Uno contiene l'altro
+        if (na.includes(nb) || nb.includes(na)) return 0.95
+        // Confronto per parole
+        const sa = na.split(" ").filter(w => w.length >= 3)
+        const sb = nb.split(" ").filter(w => w.length >= 3)
         if (sa.length === 0 || sb.length === 0) return 0
         let matches = 0
         for (const wa of sa) {
           for (const wb of sb) {
-            // Match esatto o uno contiene l'altro (min 3 chars)
-            if (wa === wb || (wa.length >= 3 && wb.includes(wa)) || (wb.length >= 3 && wa.includes(wb))) {
-              matches++; break
+            // Match esatto
+            if (wa === wb) { matches += 1; break }
+            // Una parola contiene l'altra (min 4 chars)
+            if (wa.length >= 4 && wb.includes(wa)) { matches += 0.9; break }
+            if (wb.length >= 4 && wa.includes(wb)) { matches += 0.9; break }
+            // Levenshtein semplificato: differenza di 1 carattere
+            if (Math.abs(wa.length - wb.length) <= 1) {
+              let diff = 0
+              const shorter = wa.length <= wb.length ? wa : wb
+              const longer  = wa.length <= wb.length ? wb : wa
+              for (let i = 0; i < shorter.length; i++) {
+                if (shorter[i] !== longer[i]) diff++
+              }
+              if (diff <= 1) { matches += 0.85; break }
             }
           }
         }
@@ -964,7 +1000,8 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
           const score = similarity(nome, ing.name)
           if (score > bestScore) { bestScore = score; best = ing }
         }
-        return bestScore >= 0.45 ? best : null
+        // Soglia abbassata a 0.35 per catturare varianti tipografiche
+        return bestScore >= 0.35 ? best : null
       }
 
       // Analisi prodotti
@@ -1427,18 +1464,45 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
               {detailInv.prodotti && detailInv.prodotti.length > 0 ? (
                 <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
                   {/* Header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 80px", gap: 8, padding: "7px 12px", background: S.el, borderBottom: S.bds }}>
-                    {["Prodotto", "Qtà", "€/unità"].map(h => (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, padding: "7px 12px", background: S.el, borderBottom: S.bds }}>
+                    {["Nome prodotto (modificabile)", "€/unità"].map(h => (
                       <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
                     ))}
                   </div>
                   {detailInv.prodotti.map((p, i) => (
-                    <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 70px 80px", gap: 8, padding: "10px 12px", borderBottom: i < detailInv.prodotti.length - 1 ? S.bds : "none", alignItems: "center" }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 500, color: S.t1, lineHeight: 1.3 }}>{p.nome}</div>
+                    <div key={i} style={{ padding: "10px 12px", borderBottom: i < detailInv.prodotti.length - 1 ? S.bds : "none" }}>
+                      {/* Nome modificabile */}
+                      <input
+                        style={inp({ fontSize: 12.5, padding: "5px 8px", marginBottom: 6 })}
+                        defaultValue={p.nome}
+                        onBlur={e => {
+                          const newNome = e.target.value.trim()
+                          if (newNome && newNome !== p.nome) {
+                            setInvs(prev => prev.map(inv => inv.id === detailInv.id
+                              ? { ...inv, prodotti: inv.prodotti.map((x, j) => j === i ? { ...x, nome: newNome } : x) }
+                              : inv
+                            ))
+                            setDetailInv(prev => ({ ...prev, prodotti: prev.prodotti.map((x, j) => j === i ? { ...x, nome: newNome } : x) }))
+                          }
+                        }}
+                      />
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, alignItems: "center" }}>
+                        <div style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</div>
+                        <input type="number" step="0.01" min="0"
+                          style={inp({ fontSize: 12.5, padding: "5px 8px" })}
+                          defaultValue={p.prezzoUnitario}
+                          onBlur={e => {
+                            const newPrice = parseFloat(e.target.value)
+                            if (!isNaN(newPrice) && newPrice !== p.prezzoUnitario) {
+                              setInvs(prev => prev.map(inv => inv.id === detailInv.id
+                                ? { ...inv, prodotti: inv.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }
+                                : inv
+                              ))
+                              setDetailInv(prev => ({ ...prev, prodotti: prev.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }))
+                            }
+                          }}
+                        />
                       </div>
-                      <div style={{ fontSize: 12, color: S.t2 }}>{p.quantita} {p.unita}</div>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: S.ac, fontVariantNumeric: "tabular-nums" }}>{F(p.prezzoUnitario)}</div>
                     </div>
                   ))}
                 </div>
@@ -1508,11 +1572,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
   )
 }
 
-function FoodCost({ dishes, setDishes, ings, isMobile }) {
+function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) {
   const [tab, setTab] = useState("food") // "food" | "drink"
 
   // ── Shared ────────────────────────────────────
-  const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail"]
+  const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
   const UNITS = ["kg", "g", "l", "ml", "pz"]
@@ -1545,6 +1609,23 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
   const [fErr, setFErr]       = useState({})
   const [fSaved, setFSaved]   = useState(false)
 
+  // Pre-carica piatto esistente per modifica
+  useEffect(() => {
+    if (!editDish) return
+    const catMapRev = { speciale:"Speciali", antipasto:"Antipasti", primo:"Primi", secondo:"Secondi", dolce:"Dolci", cocktail:"Cocktail" }
+    setFForm({
+      name: editDish.name,
+      cat: catMapRev[(editDish.cat||"").toLowerCase()] || "Secondi",
+      ricarico: editDish.cost > 0 && editDish.price > 0 ? String(Math.round((editDish.price / editDish.cost - 1) * 100)) : "300"
+    })
+    if (editDish.recipe && editDish.recipe.length > 0) {
+      setFRecipe(editDish.recipe.map(r => ({
+        id: uid2(), ingId: r.ingId, qty: String(r.qty), unit: r.unit, waste: String(r.waste || "0")
+      })))
+    }
+    setTab("food")
+  }, [editDish])
+
   const fLiveCost = fRecipe.reduce((sum, rr) => {
     const ing = ings.find(i => i.id === rr.ingId)
     if (!ing || !rr.qty) return sum
@@ -1571,16 +1652,27 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
     const cost  = r2(fLiveCost)
     const price = r2(fSugPrice)
     const fc    = price > 0 ? r2(cost / price) : 0
-    const catMap = { Speciali: "speciale", Antipasti: "antipasto", Primi: "primo", Secondi: "secondo", Dolci: "dolce", Cocktail: "cocktail" }
+    const catMap = { Speciali: "speciale", Antipasti: "antipasto", Primi: "primo", Secondi: "secondo", Dolci: "dolce", Cocktail: "cocktail", Bevande: "bevanda" }
     const savedRecipe = fRecipe.filter(r => r.ingId).map(r => ({
       ingId: r.ingId, qty: parseFloat(r.qty) || 0, unit: r.unit, waste: r.waste || "0"
     }))
-    setDishes(prev => [...prev, {
-      id: "d" + uid2(), name: fForm.name.trim(),
-      cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
-      price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
-      recipe: savedRecipe, stagioni: []
-    }])
+    if (editDish) {
+      // Aggiorna piatto esistente
+      setDishes(prev => prev.map(d => d.id === editDish.id ? {
+        ...d, name: fForm.name.trim(),
+        cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
+        price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
+        recipe: savedRecipe
+      } : d))
+      if (setEditDish) setEditDish(null)
+    } else {
+      setDishes(prev => [...prev, {
+        id: "d" + uid2(), name: fForm.name.trim(),
+        cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
+        price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
+        recipe: savedRecipe, stagioni: []
+      }])
+    }
     setFForm({ name: "", cat: "Secondi", ricarico: "300" })
     setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
     setFErr({})
@@ -1613,7 +1705,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
     }))
   }
 
-  const dPriceNet  = dForm.bottlePrice ? (+dForm.bottlePrice / (1 + (+dForm.iva || 0) / 100)) : 0
+  // Prezzo bottiglia inserito = prezzo NETTO (IVA esclusa)
+  // Costo totale = prezzo netto + IVA
+  const dPriceNet   = dForm.bottlePrice ? +dForm.bottlePrice : 0
+  const dPriceGross = r2(dPriceNet * (1 + (+dForm.iva || 0) / 100))
   const dSellBottle = r2(dPriceNet * (1 + (+dForm.ricarico || 0) / 100))
   const dSellCalice = dForm.calici > 0 ? r2(dSellBottle / +dForm.calici) : 0
 
@@ -1623,11 +1718,11 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
     if (!dForm.bottlePrice || +dForm.bottlePrice <= 0) e.bottlePrice = "Prezzo > 0"
     if (Object.keys(e).length) { setDErr(e); return }
 
-    const isVino = dForm.tipo !== "Cocktail"
+    const isVino = !["Cocktail", "Bevanda"].includes(dForm.tipo)
     setDishes(prev => [...prev, {
       id: "d" + uid2(),
       name: dForm.name.trim(),
-      cat: isVino ? "vino" : "cocktail",
+      cat: isVino ? "vino" : dForm.tipo === "Bevanda" ? "bevanda" : "cocktail",
       price: isVino ? dSellCalice : dSellBottle,
       priceBottle: dSellBottle,
       priceCalice: dSellCalice,
@@ -1720,19 +1815,33 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
                 const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : qty
                 const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMult) : 0
                 return (
-                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "center", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
-                    <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })} value={row.ingId} onChange={e => fUpdateRow(row.id, { ingId: e.target.value })}>
-                      <option value="">Seleziona...</option>
-                      {["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini"].map(cat => {
-                        const catIngs = ings.filter(i => i.cat === cat)
-                        if (catIngs.length === 0) return null
-                        return <optgroup key={cat} label={cat}>
-                          {catIngs.map(i => <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>)}
-                        </optgroup>
-                      })}
-                      {/* Ingredienti senza categoria standard */}
-                      {(() => { const other = ings.filter(i => !["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini"].includes(i.cat)); return other.length > 0 ? <optgroup label="Altro">{other.map(i => <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>)}</optgroup> : null })()}
-                    </select>
+                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
+                    {/* Selezione a 2 livelli: prima categoria, poi ingrediente */}
+                    {(() => {
+                      const rowCat = row.ingId ? (ings.find(i => i.id === row.ingId)?.cat || "") : (row._cat || "")
+                      const ALL_CATS = ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"]
+                      const catsWithIngs = ALL_CATS.filter(c => ings.some(i => i.cat === c))
+                      return (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                          <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })}
+                            value={rowCat}
+                            onChange={e => fUpdateRow(row.id, { ingId: "", _cat: e.target.value })}>
+                            <option value="">— Categoria —</option>
+                            {catsWithIngs.map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
+                          {rowCat && (
+                            <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })}
+                              value={row.ingId}
+                              onChange={e => fUpdateRow(row.id, { ingId: e.target.value })}>
+                              <option value="">— Ingrediente —</option>
+                              {ings.filter(i => i.cat === rowCat).map(i => (
+                                <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>
+                              ))}
+                            </select>
+                          )}
+                        </div>
+                      )
+                    })()}
                     <input style={inp({ padding: "6px 6px", fontSize: 12 })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
                     <select style={inp({ padding: "6px 4px", fontSize: 12, appearance: "none" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
                       {UNITS.map(u => <option key={u}>{u}</option>)}
@@ -1771,8 +1880,14 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
             </div>
           )}
 
+          {editDish && (
+            <button style={{ ...btn("g"), width: "100%", justifyContent: "center", padding: "10px", marginBottom: 8 }}
+              onClick={() => { if(setEditDish) setEditDish(null); setFForm({ name: "", cat: "Secondi", ricarico: "300" }); setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }]) }}>
+              Annulla modifica
+            </button>
+          )}
           <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={fSave}>
-            Salva piatto e invia a Piatti
+            {editDish ? "Aggiorna piatto" : "Salva piatto e invia a Piatti"}
           </button>
         </div>
       )}
@@ -1798,7 +1913,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
               <Fld label="Tipologia">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.tipo}
                   onChange={e => setDForm(f => ({ ...f, tipo: e.target.value, isVino: e.target.value !== "Cocktail" }))}>
-                  {[...VINO_TIPI, "Cocktail"].map(t => <option key={t}>{t}</option>)}
+                  {[...VINO_TIPI, "Cocktail", "Bevanda"].map(t => <option key={t}>{t}</option>)}
                 </select>
               </Fld>
               {dForm.tipo !== "Cocktail" && (
@@ -1821,7 +1936,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
             )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              <Fld label="Prezzo bottiglia (€) *">
+              <Fld label="Prezzo bottiglia IVA esclusa (€) *">
                 <input style={inp()} type="number" step="0.01" value={dForm.bottlePrice} onChange={e => setDForm(f => ({ ...f, bottlePrice: e.target.value, selIngId: "" }))} placeholder="0.00" />
                 {dErr.bottlePrice && <span style={{ fontSize: 11, color: S.red }}>{dErr.bottlePrice}</span>}
               </Fld>
@@ -1848,9 +1963,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile }) {
           {dForm.bottlePrice && +dForm.bottlePrice > 0 && (
             <div style={card({ padding: 14, marginBottom: 16 })}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
-              <div style={{ display: "grid", gridTemplateColumns: dForm.tipo !== "Cocktail" ? "1fr 1fr 1fr" : "1fr 1fr", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: dForm.tipo !== "Cocktail" ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8 }}>
                 {[
-                  { l: "Costo netto bottiglia", v: F(r2(dPriceNet)), c: S.t1 },
+                  { l: "Costo netto (IVA esclusa)", v: F(r2(dPriceNet)), c: S.t1 },
+                  { l: "Costo lordo (IVA inclusa)", v: F(dPriceGross), c: S.t2 },
                   { l: "Prezzo vendita bottiglia", v: F(dSellBottle), c: S.ac },
                   ...(dForm.tipo !== "Cocktail" ? [{ l: "Prezzo al calice", v: F(dSellCalice), c: S.green }] : []),
                 ].map((k, i) => (
@@ -1928,6 +2044,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     if (cat === "Dolci")     return c === "dolce"    || c === "dolci"
     if (cat === "Speciali")  return c === "speciale" || c === "speciali"
     if (cat === "Cocktail")  return c === "cocktail"
+    if (cat === "Bevande")   return c === "bevanda" || c === "bevande"
     return false
   }
 
@@ -2420,9 +2537,19 @@ function AIInsights({ dishes, ings, isMobile }) {
   const MAX_CALLS_MONTH = 10
   const STORAGE_KEY = "fm_ai_calls"
 
-  const [insights, setInsights]   = useState(() => {
-    try { return JSON.parse(localStorage.getItem("fm_insights") || "[]") } catch(e) { return [] }
-  })
+  const [insights, setInsights]   = useState([])
+
+  // Carica insights dal localStorage solo se generati oggi
+  useEffect(() => {
+    try {
+      const date = localStorage.getItem("fm_insights_date")
+      const today = new Date().toISOString().slice(0, 10)
+      if (date && date.startsWith(today)) {
+        const cached = JSON.parse(localStorage.getItem("fm_insights") || "[]")
+        if (cached.length > 0) setInsights(cached)
+      }
+    } catch(e) {}
+  }, [])
   const [loading, setLoading]     = useState(false)
   const [error, setError]         = useState(null)
   const [callsUsed, setCallsUsed] = useState(0)
@@ -2450,22 +2577,30 @@ function AIInsights({ dishes, ings, isMobile }) {
 
     try {
       // Prepara contesto: piatti con food cost + ingredienti con variazioni prezzo
+      // Tutti i piatti con almeno un prezzo
       const dishData = dishes
-        .filter(d => d.cost > 0 && d.price > 0)
+        .filter(d => d.price > 0)
         .map(d => ({
           nome: d.name,
           cat: d.cat,
           prezzo: d.price,
-          costo: d.cost,
-          foodCost: Math.round(d.fc * 1000) / 10,
-          target: Math.round(d.target * 100),
-          margine: d.margin,
+          costo: d.cost || 0,
+          foodCost: d.fc ? Math.round(d.fc * 1000) / 10 : null,
+          margine: d.margin || 0,
         }))
 
+      // Tutti gli ingredienti — non solo quelli con variazione
       const ingData = ings.map(i => {
-        const var_pct = i.avg > 0 ? Math.round(((i.cur - i.avg) / i.avg) * 1000) / 10 : 0
-        return { nome: i.name, cat: i.cat, prezzoAttuale: i.cur, media: i.avg, variazione: var_pct, unita: i.unit }
-      }).filter(i => Math.abs(i.variazione) > 0.5)
+        const ref = i.prev !== undefined ? i.prev : i.avg
+        const var_pct = ref > 0 ? Math.round(((i.cur - ref) / ref) * 1000) / 10 : 0
+        return { nome: i.name, cat: i.cat, prezzoAttuale: i.cur, variazione: var_pct, unita: i.unit }
+      })
+
+      if (dishData.length === 0 && ingData.length === 0) {
+        setError("Aggiungi prima piatti e ingredienti per generare insights.")
+        setLoading(false)
+        return
+      }
 
       const prompt = `Sei un imprenditore di ristorazione con 20 anni di esperienza e formazione da chef professionista. Hai gestito trattorie, ristoranti e osterie in Italia. Conosci perfettamente il food cost, le grammature reali delle porzioni, i prezzi di mercato degli ingredienti italiani, e le dinamiche di un menu stagionale.
 
@@ -2510,6 +2645,7 @@ Rispondi SOLO con JSON valido senza markdown:
       const parsed = JSON.parse(jsonMatch[0])
       setInsights(parsed)
       localStorage.setItem("fm_insights", JSON.stringify(parsed))
+      localStorage.setItem("fm_insights_date", new Date().toISOString())
       incrementCalls()
 
     } catch(e) {
@@ -2758,7 +2894,7 @@ function LoginPage() {
 
 
 function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini"]
+  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
   const uid2 = () => Math.random().toString(36).slice(2, 7)
@@ -2855,6 +2991,12 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
           )}
           {spesa.length > 0 && (
             <button style={btn("s", { fontSize: 12 })} onClick={shareSpesa}>Condividi</button>
+          )}
+          {spesa.length > 0 && (
+            <button style={{ ...btn("g", { fontSize: 12 }), color: S.red }}
+              onClick={() => { if (window.confirm("Svuotare tutta la lista spesa?")) setSpesa([]) }}>
+              Svuota lista
+            </button>
           )}
         </div>
       </div>
@@ -3030,6 +3172,7 @@ export default function App() {
   const [menus, setMenus] = useState([])
   const [fornitori, setFornitori] = useState([])
   const [spesa, setSpesa] = useState([])
+  const [editDish, setEditDish] = useState(null)
   const [onboarded, setOnboarded] = useState(true) // true = skip onboarding for existing users
 
   // Auth listener
@@ -3115,9 +3258,9 @@ export default function App() {
       switch(page) {
         case "dash":   return <Dashboard ings={ings} isMobile={isMobile} />
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} />
-        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />
+        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={setPage} setEditDish={setEditDish} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} isMobile={isMobile} />
-        case "fc":     return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} />
+        case "fc":     return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} />
         case "ai":     return <AIInsights dishes={dishes} ings={ings} isMobile={isMobile} />
         case "menu":   return <CreateMenu menus={menus} setMenus={setMenus} dishes={dishes} isMobile={isMobile} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} isMobile={isMobile} />
