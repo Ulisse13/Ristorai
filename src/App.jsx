@@ -1832,8 +1832,8 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
             {fErr.recipe && <div style={{ fontSize: 11, color: S.red, marginBottom: 8 }}>{fErr.recipe}</div>}
 
             {/* Header colonne */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 70px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
-              {["Ingrediente", "Qtà / Um", "Scarto", "Costo", ""].map(h => (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
+              {["Ingrediente", "Qtà / Um", "Scarto %", ""].map(h => (
                 <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
               ))}
             </div>
@@ -1846,7 +1846,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                 const wasteMultDisplay = wastePctDisplay >= 1 ? 1 : 1 / (1 - wastePctDisplay)
                 const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : 0
                 return (
-                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 70px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
+                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
                     {/* Bottone che apre modal full-screen per selezionare ingrediente */}
                     {(() => {
                       const ing = ings.find(i => i.id === row.ingId)
@@ -1854,10 +1854,13 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                         <button
                           onClick={() => fUpdateRow(row.id, { _open: true, _cat: row._cat || "" })}
                           style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: ing ? S.acg : S.el, borderColor: ing ? S.acd : "#2a2a31" })}}>
-                          <span style={{ color: ing ? S.ac : S.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%" }}>
-                            {ing ? ing.name : "Seleziona"}
-                          </span>
-                          <span style={{ fontSize: 9, color: S.t3, flexShrink: 0 }}>▾</span>
+                          <div style={{ overflow: "hidden", flex: 1 }}>
+                            <div style={{ color: ing ? S.ac : S.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ing ? ing.name.slice(0, 6) + (ing.name.length > 6 ? "…" : "") : "Sel…"}
+                            </div>
+                            {lineCost > 0 && <div style={{ fontSize: 10, color: S.green, marginTop: 1 }}>{F(lineCost)}</div>}
+                          </div>
+                          <span style={{ fontSize: 9, color: S.t3, flexShrink: 0, marginLeft: 4 }}>▾</span>
                         </button>
                       )
                     })()}
@@ -1913,9 +1916,6 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                     <div style={{ position: "relative" }}>
                       <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
                       <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: S.t3, pointerEvents: "none" }}>%</span>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      {lineCost > 0 ? <span style={{ fontSize: 12, fontWeight: 600, color: S.ac }}>{F(lineCost)}</span> : <span style={{ fontSize: 11, color: S.t3 }}>—</span>}
                     </div>
                     <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13, padding: 0 }}>×</button>
                   </div>
