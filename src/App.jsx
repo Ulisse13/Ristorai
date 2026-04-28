@@ -665,7 +665,11 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                                 ))}
                               </div>
                             </div>
-                            <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", alignSelf: "flex-start", marginLeft: 8 }}>✕</button>
+                            <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginLeft: 8, flexShrink: 0 }}>
+                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                              <button onClick={() => { if(setEditDish && setPage) { setEditDish(v); setPage("fc") } }}
+                                style={{ background: "none", border: "1px solid #2a2a31", color: S.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: S.r }}>Modifica</button>
+                            </div>
                           </div>
                           {/* Food cost bar */}
                           {v.priceBottle > 0 && v.cost > 0 && (() => {
@@ -1749,7 +1753,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
       price: isVino ? dSellCalice : dSellBottle,
       priceBottle: dSellBottle,
       priceCalice: dSellCalice,
-      target: 0, cost: r2(dPriceNet / (isVino ? +dForm.calici : 1)), fc: 0, margin: 0,
+      cost: r2(dPriceNet / (isVino ? +dForm.calici : 1)),
+      fc: 0, margin: r2(dSellBottle - dPriceNet),
+      ricarico: +dForm.ricarico,
+      target: 0,
       tipoVino: isVino ? dForm.tipo : null,
       regioneVino: isVino ? dForm.regione : null,
       stagioni: [],
@@ -1825,8 +1832,8 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
             {fErr.recipe && <div style={{ fontSize: 11, color: S.red, marginBottom: 8 }}>{fErr.recipe}</div>}
 
             {/* Header colonne */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
-              {["Ingrediente", "Qtà", "Um", "Scarto", "Costo", ""].map(h => (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 70px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
+              {["Ingrediente", "Qtà / Um", "Scarto", "Costo", ""].map(h => (
                 <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
               ))}
             </div>
@@ -1839,7 +1846,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                 const wasteMultDisplay = wastePctDisplay >= 1 ? 1 : 1 / (1 - wastePctDisplay)
                 const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : 0
                 return (
-                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
+                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 70px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
                     {/* Bottone che apre modal full-screen per selezionare ingrediente */}
                     {(() => {
                       const ing = ings.find(i => i.id === row.ingId)
@@ -1897,10 +1904,12 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                         </div>
                       </div>
                     )}
-                    <input style={inp({ padding: "6px 6px", fontSize: 12 })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
-                    <select style={inp({ padding: "6px 4px", fontSize: 12, appearance: "none" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
-                      {UNITS.map(u => <option key={u}>{u}</option>)}
-                    </select>
+                    <div style={{ display: "flex", gap: 3 }}>
+                      <input style={inp({ padding: "6px 4px", fontSize: 12, width: "50px" })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
+                      <select style={inp({ padding: "6px 3px", fontSize: 11, appearance: "none", width: "38px" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
+                        {UNITS.map(u => <option key={u}>{u}</option>)}
+                      </select>
+                    </div>
                     <div style={{ position: "relative" }}>
                       <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
                       <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: S.t3, pointerEvents: "none" }}>%</span>
@@ -3151,32 +3160,42 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
             <button style={btn("g", { fontSize: 12 })} onClick={clearDone}>Rimuovi completati</button>
           )}
           {spesa.length > 0 && (
-            <div style={{ position: "relative" }}>
-              <button style={btn("s", { fontSize: 12 })} onClick={() => setShareMenuOpen(o => !o)}>Condividi ▾</button>
-              {shareMenuOpen && (
-                <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: S.surf, border: S.bd, borderRadius: S.r2, zIndex: 100, minWidth: 180, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", overflow: "hidden" }}>
-                  {/* Tutta la lista */}
-                  <div onClick={() => { shareSpesa(null); setShareMenuOpen(false) }}
-                    style={{ padding: "12px 16px", cursor: "pointer", borderBottom: S.bds, fontSize: 13, color: S.t1, fontWeight: 600 }}
-                    onMouseEnter={e => e.currentTarget.style.background = S.el}
-                    onMouseLeave={e => e.currentTarget.style.background = ""}>
-                    📋 Tutta la lista
-                  </div>
-                  {/* Per categoria */}
-                  {[...new Set(spesa.filter(s => !s.done).map(s => s.cat))].map(cat => (
-                    <div key={cat} onClick={() => { shareSpesa(cat); setShareMenuOpen(false) }}
-                      style={{ padding: "11px 16px", cursor: "pointer", borderBottom: S.bds, fontSize: 13, color: S.t2 }}
-                      onMouseEnter={e => e.currentTarget.style.background = S.el}
-                      onMouseLeave={e => e.currentTarget.style.background = ""}>
-                      Solo {cat}
-                    </div>
-                  ))}
-                  <div onClick={() => setShareMenuOpen(false)}
-                    style={{ padding: "9px 16px", cursor: "pointer", fontSize: 12, color: S.t3, textAlign: "center" }}>
-                    Annulla
+            <button style={btn("s", { fontSize: 12 })} onClick={() => setShareMenuOpen(true)}>Condividi</button>
+          )}
+          {/* Bottom sheet condivisione */}
+          {shareMenuOpen && (
+            <div onClick={() => setShareMenuOpen(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 500, display: "flex", alignItems: "flex-end" }}>
+              <div onClick={e => e.stopPropagation()}
+                style={{ width: "100%", background: S.surf, borderRadius: "16px 16px 0 0", paddingBottom: 24 }}>
+                <div style={{ padding: "16px 20px 12px", borderBottom: S.bds }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: S.t1 }}>Condividi lista spesa</div>
+                </div>
+                {/* Tutta la lista */}
+                <div onClick={() => { shareSpesa(null); setShareMenuOpen(false) }}
+                  style={{ padding: "14px 20px", cursor: "pointer", borderBottom: S.bds, display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 20 }}>📋</span>
+                  <div>
+                    <div style={{ fontSize: 14, color: S.t1, fontWeight: 600 }}>Tutta la lista</div>
+                    <div style={{ fontSize: 11, color: S.t3 }}>{spesa.filter(s => !s.done).length} prodotti</div>
                   </div>
                 </div>
-              )}
+                {/* Per categoria */}
+                {[...new Set(spesa.filter(s => !s.done).map(s => s.cat))].map(cat => (
+                  <div key={cat} onClick={() => { shareSpesa(cat); setShareMenuOpen(false) }}
+                    style={{ padding: "14px 20px", cursor: "pointer", borderBottom: S.bds, display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 20 }}>📦</span>
+                    <div>
+                      <div style={{ fontSize: 14, color: S.t1 }}>Solo {cat}</div>
+                      <div style={{ fontSize: 11, color: S.t3 }}>{spesa.filter(s => !s.done && s.cat === cat).length} prodotti</div>
+                    </div>
+                  </div>
+                ))}
+                <div onClick={() => setShareMenuOpen(false)}
+                  style={{ padding: "14px 20px", textAlign: "center", cursor: "pointer" }}>
+                  <span style={{ fontSize: 13, color: S.t3 }}>Annulla</span>
+                </div>
+              </div>
             </div>
           )}
           {spesa.length > 0 && (
