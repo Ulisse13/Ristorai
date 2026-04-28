@@ -1609,10 +1609,9 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
 
   // ── FOOD COST state ───────────────────────────
   const [fForm, setFForm]     = useState({ name: "", cat: "Secondi", ricarico: "300" })
-  const [fRecipe, setFRecipe] = useState([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
+  const [fRecipe, setFRecipe] = useState([{ id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }])
   const [fErr, setFErr]       = useState({})
   const [fSaved, setFSaved]   = useState(false)
-  const [rowCats, setRowCats] = useState({}) // { rowId: catName }
 
   // Pre-carica piatto esistente per modifica
   useEffect(() => {
@@ -1635,7 +1634,8 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
     const ing = ings.find(i => i.id === rr.ingId)
     if (!ing || !rr.qty) return sum
     const qty = parseFloat(rr.qty) || 0
-    const wasteMult = 1 + (parseFloat(rr.waste) || 0) / 100
+    const wastePct = (parseFloat(rr.waste) || 0) / 100
+    const wasteMult = wastePct >= 1 ? 1 : 1 / (1 - wastePct)
     return sum + toIngUnit(qty, rr.unit, ing.unit) * ing.cur * wasteMult
   }, 0)
   const fRicarico  = parseFloat(fForm.ricarico) || 300
@@ -1643,7 +1643,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
   const fMargin    = fSugPrice - fLiveCost
   const fFoodCostPct = fSugPrice > 0 ? fLiveCost / fSugPrice : 0
 
-  function fAddRow()    { setFRecipe(r => [...r, { id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }]) }
+  function fAddRow()    { setFRecipe(r => [...r, { id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }]) }
   function fRemoveRow(id) { setFRecipe(r => r.filter(x => x.id !== id)) }
   function fUpdateRow(id, patch) { setFRecipe(r => r.map(x => x.id === id ? { ...x, ...patch } : x)) }
 
@@ -1679,8 +1679,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
       }])
     }
     setFForm({ name: "", cat: "Secondi", ricarico: "300" })
-    setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
-    setRowCats({})
+    setFRecipe([{ id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }])
     setFErr({})
     setFSaved(true)
     setTimeout(() => setFSaved(false), 3000)
@@ -1817,36 +1816,59 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
               {fRecipe.map((row, idx) => {
                 const ing = ings.find(i => i.id === row.ingId)
                 const qty = parseFloat(row.qty) || 0
-                const wasteMult = 1 + (parseFloat(row.waste) || 0) / 100
                 const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : qty
-                const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMult) : 0
+                const wastePctDisplay = (parseFloat(row.waste) || 0) / 100
+                const wasteMultDisplay = wastePctDisplay >= 1 ? 1 : 1 / (1 - wastePctDisplay)
+                const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : 0
                 return (
                   <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
-                    {/* Selezione a 2 livelli: prima categoria, poi ingrediente */}
+                    {/* Menu a cascata: prima categorie, poi ingredienti nella stessa area */}
                     {(() => {
-                      const selCat = row.ingId ? (ings.find(i => i.id === row.ingId)?.cat || "") : (rowCats[row.id] || "")
-                      const ALL_CATS = ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"]
-                      const catsWithIngs = ALL_CATS.filter(c => ings.some(i => i.cat === c))
+                      const cat = row._cat || ings.find(i => i.id === row.ingId)?.cat || ""
+                      const ing = ings.find(i => i.id === row.ingId)
+                      const CATS = ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"].filter(c => ings.some(i => i.cat === c))
                       return (
-                        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                          <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })}
-                            value={selCat}
-                            onChange={e => {
-                              setRowCats(prev => ({ ...prev, [row.id]: e.target.value }))
-                              fUpdateRow(row.id, { ingId: "" })
-                            }}>
-                            <option value="">— Categoria —</option>
-                            {catsWithIngs.map(c => <option key={c} value={c}>{c}</option>)}
-                          </select>
-                          {selCat !== "" && (
-                            <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })}
-                              value={row.ingId}
-                              onChange={e => fUpdateRow(row.id, { ingId: e.target.value })}>
-                              <option value="">— Ingrediente —</option>
-                              {ings.filter(i => i.cat === selCat).map(i => (
-                                <option key={i.id} value={i.id}>{i.name} · {F(i.cur)}/{i.unit}</option>
-                              ))}
-                            </select>
+                        <div style={{ position: "relative" }}>
+                          {/* Label visibile */}
+                          <div style={{ ...inp({ padding: "6px 8px", fontSize: 12, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }), userSelect: "none" }}
+                            onClick={() => fUpdateRow(row.id, { _open: !row._open })}>
+                            <span style={{ color: ing ? S.t1 : S.t3 }}>
+                              {ing ? ing.name : cat ? "← " + cat : "— Seleziona —"}
+                            </span>
+                            <span style={{ fontSize: 10, color: S.t3 }}>▾</span>
+                          </div>
+                          {/* Dropdown */}
+                          {row._open && (
+                            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: S.surf, border: S.bd, borderRadius: S.r, zIndex: 200, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
+                              {!cat ? (
+                                // Mostra categorie
+                                CATS.map(c => (
+                                  <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, ingId: "", _open: true })}
+                                    style={{ padding: "9px 12px", fontSize: 13, color: S.t1, cursor: "pointer", borderBottom: S.bds, display: "flex", justifyContent: "space-between" }}
+                                    onMouseEnter={e => e.currentTarget.style.background = S.el}
+                                    onMouseLeave={e => e.currentTarget.style.background = ""}>
+                                    <span>{c}</span><span style={{ fontSize: 11, color: S.t3 }}>›</span>
+                                  </div>
+                                ))
+                              ) : (
+                                // Mostra ingredienti della categoria
+                                <>
+                                  <div onClick={() => fUpdateRow(row.id, { _cat: "", ingId: "", _open: true })}
+                                    style={{ padding: "7px 12px", fontSize: 11, color: S.ac, cursor: "pointer", borderBottom: S.bds, fontWeight: 600 }}>
+                                    ← {cat}
+                                  </div>
+                                  {ings.filter(i => i.cat === cat).map(i => (
+                                    <div key={i.id} onClick={() => fUpdateRow(row.id, { ingId: i.id, _open: false })}
+                                      style={{ padding: "9px 12px", fontSize: 12, color: row.ingId === i.id ? S.ac : S.t1, cursor: "pointer", borderBottom: S.bds, background: row.ingId === i.id ? S.acg : "" }}
+                                      onMouseEnter={e => { if(row.ingId !== i.id) e.currentTarget.style.background = S.el }}
+                                      onMouseLeave={e => { if(row.ingId !== i.id) e.currentTarget.style.background = "" }}>
+                                      <div>{i.name}</div>
+                                      <div style={{ fontSize: 10, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
+                                    </div>
+                                  ))}
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
                       )
