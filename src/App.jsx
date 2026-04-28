@@ -1407,10 +1407,14 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
                       )}
                       <div>
                         <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Prezzo unitario €</label>
-                        <input type="number" step="0.01" min="0"
+                        <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12, padding: "5px 8px" })}
-                          value={p.prezzoUnitario}
-                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, prezzoUnitario: parseFloat(e.target.value) || 0 } : x))}
+                          value={p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario)}
+                          onChange={e => {
+                            const val = e.target.value
+                            setFound(prev => prev.map((x, j) => j === i ? { ...x, prezzoUnitario: val === "" ? 0 : parseFloat(val.replace(",", ".")) || 0 } : x))
+                          }}
+                          placeholder="0.00"
                         />
                       </div>
                     </div>
@@ -1608,6 +1612,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
   const [fRecipe, setFRecipe] = useState([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
   const [fErr, setFErr]       = useState({})
   const [fSaved, setFSaved]   = useState(false)
+  const [rowCats, setRowCats] = useState({}) // { rowId: catName }
 
   // Pre-carica piatto esistente per modifica
   useEffect(() => {
@@ -1675,6 +1680,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
     }
     setFForm({ name: "", cat: "Secondi", ricarico: "300" })
     setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }])
+    setRowCats({})
     setFErr({})
     setFSaved(true)
     setTimeout(() => setFSaved(false), 3000)
@@ -1818,24 +1824,27 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                   <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
                     {/* Selezione a 2 livelli: prima categoria, poi ingrediente */}
                     {(() => {
-                      const rowCat = row.ingId ? (ings.find(i => i.id === row.ingId)?.cat || "") : (row._cat || "")
+                      const selCat = row.ingId ? (ings.find(i => i.id === row.ingId)?.cat || "") : (rowCats[row.id] || "")
                       const ALL_CATS = ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"]
                       const catsWithIngs = ALL_CATS.filter(c => ings.some(i => i.cat === c))
                       return (
                         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                           <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })}
-                            value={rowCat}
-                            onChange={e => fUpdateRow(row.id, { ingId: "", _cat: e.target.value })}>
+                            value={selCat}
+                            onChange={e => {
+                              setRowCats(prev => ({ ...prev, [row.id]: e.target.value }))
+                              fUpdateRow(row.id, { ingId: "" })
+                            }}>
                             <option value="">— Categoria —</option>
                             {catsWithIngs.map(c => <option key={c} value={c}>{c}</option>)}
                           </select>
-                          {rowCat && (
+                          {selCat !== "" && (
                             <select style={inp({ padding: "6px 6px", fontSize: 12, appearance: "none" })}
                               value={row.ingId}
                               onChange={e => fUpdateRow(row.id, { ingId: e.target.value })}>
                               <option value="">— Ingrediente —</option>
-                              {ings.filter(i => i.cat === rowCat).map(i => (
-                                <option key={i.id} value={i.id}>{i.name} ({F(i.cur)}/{i.unit})</option>
+                              {ings.filter(i => i.cat === selCat).map(i => (
+                                <option key={i.id} value={i.id}>{i.name} · {F(i.cur)}/{i.unit}</option>
                               ))}
                             </select>
                           )}
@@ -2009,9 +2018,12 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   const VINO_REGIONI = ["Piemonte","Toscana","Veneto","Sicilia","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"]
 
   // state
-  const [view, setView]           = useState("home") // home | create_menu | create_vini | open
+  const [view, setView]           = useState("home") // home | create_menu | create_vini | open | translate
   const [selAnno, setSelAnno]     = useState(ANNI[0])
   const [openItem, setOpenItem]   = useState(null)
+  const [translations, setTranslations] = useState({}) // { dishId: "english name" }
+  const [translating, setTranslating]   = useState(false)
+  const [pendingSelected, setPendingSelected] = useState(null)
 
   // Crea menu state
   const [step, setStep]           = useState(1) // 1=config, 2=selezione
@@ -2159,7 +2171,10 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         if (!piatti || piatti.length === 0) return
         body += `<div class="section"><h2>${cat}</h2>`
         piatti.forEach(p => {
-          body += `<div class="item"><span class="name">${p.name}</span><span class="price">${p.price > 0 ? "€ " + p.price.toFixed(2).replace(".",",") : ""}</span></div>`
+          body += `<div class="item">
+            <span class="name">${p.name}${p.nameEn ? `<br><span class="name-en">${p.nameEn}</span>` : ""}</span>
+            <span class="price">${p.price > 0 ? "€ " + p.price.toFixed(2).replace(".",",") : ""}</span>
+          </div>`
         })
         body += `</div>`
       })
@@ -2172,7 +2187,11 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           if (!vini || vini.length === 0) return
           body += `<div class="regione">${reg}</div>`
           vini.forEach(v => {
-            body += `<div class="item"><span class="name">${v.name}</span><span class="price">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") + " / cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+            if (v.priceBottle) {
+              body += `<div class="item-vino"><span class="name">${v.name}</span><span class="col-bottiglia">€ ${v.priceBottle.toFixed(2).replace(".",",")}</span><span class="col-calice">cal. € ${v.priceCalice ? v.priceCalice.toFixed(2).replace(".",",") : "—"}</span></div>`
+            } else {
+              body += `<div class="item"><span class="name">${v.name}</span><span class="price">—</span></div>`
+            }
           })
         })
         body += `</div>`
@@ -2187,21 +2206,24 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   .print-tip strong { color: #333; }
   @media print { .print-tip { display: none; } }
   h1 { text-align: center; font-size: 1.6em; letter-spacing: 0.15em; text-transform: uppercase; border-bottom: ${isClassic ? "2px solid #1a1a1a" : "1px solid #ccc"}; padding-bottom: 8px; margin-bottom: 24px; }
-  .date { text-align: center; font-size: 0.8em; color: #666; margin-bottom: 32px; }
   .section { margin-bottom: 28px; }
   h2 { font-size: 1em; text-transform: uppercase; letter-spacing: 0.12em; color: ${accent}; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 12px; }
-  .regione { font-size: 0.8em; color: #888; font-style: italic; margin: 8px 0 4px; }
-  .item { display: flex; justify-content: space-between; align-items: baseline; padding: 4px 0; border-bottom: 1px dotted #e0e0e0; }
+  .regione { font-size: 0.8em; color: #888; font-style: italic; margin: 10px 0 4px; }
+  .item { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 5px 0; border-bottom: 1px dotted #e0e0e0; gap: 16px; }
   .name { font-weight: ${isClassic ? "normal" : "500"}; }
-  .price { font-weight: 600; min-width: 80px; text-align: right; }
-  @media print { body { -webkit-print-color-adjust: exact; } }
+  .name-en { font-size: 0.82em; color: #888; font-style: italic; font-weight: normal; }
+  .price { font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .price-calice { font-size: 0.85em; color: #666; font-weight: normal; }
+  .item-vino { display: grid; grid-template-columns: 1fr auto auto; align-items: baseline; padding: 5px 0; border-bottom: 1px dotted #e0e0e0; gap: 16px; }
+  .col-bottiglia { font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .col-calice { font-size: 0.85em; color: #666; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  @media print { body { -webkit-print-color-adjust: exact; } .no-print { display: none; } }
 </style></head><body>
 <div class="print-tip">
   Per salvare come PDF: tocca i <strong>tre puntini</strong> del browser → <strong>Stampa</strong> → seleziona <strong>Salva come PDF</strong>.<br>
   Poi condividi il PDF via WhatsApp.
 </div>
 <h1>${item.type === "menu" ? "Menu" : "Carta dei Vini"}</h1>
-<div class="date">${new Date(item.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
 ${body}
 <div class="no-print" style="text-align:center;margin-top:32px;padding-bottom:24px;">
   <button onclick="window.print()" style="padding:12px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit;">
@@ -2209,7 +2231,6 @@ ${body}
   </button>
   <p style="font-size:12px;color:#888;margin-top:10px;">Su iPhone: tocca Condividi → Salva su File o Stampa<br>Su Android: menu browser → Stampa → Salva come PDF</p>
 </div>
-<style>.no-print { } @media print { .no-print { display:none; } }</style>
 </body></html>`
   }
 
@@ -2444,9 +2465,99 @@ ${body}
           )
         })}
 
-        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={saveMenu}>
-          Salva Menu
+        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={async () => {
+          // Costruisci selected
+          const sel = {}
+          FOOD_CATS.forEach(cat => {
+            sel[cat] = (selDishes[cat] || []).map(id => dishes.find(d => d.id === id)).filter(Boolean)
+          })
+          setPendingSelected(sel)
+          // Chiedi traduzione AI
+          setTranslating(true)
+          setView("translate")
+          try {
+            const nomi = Object.values(sel).flat().map(d => d.name).filter(Boolean)
+            if (nomi.length === 0) { saveMenu(); return }
+            const GROQ_KEY = "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"
+            const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_KEY },
+              body: JSON.stringify({
+                model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                max_tokens: 500,
+                messages: [{ role: "user", content: 'Traduci questi nomi di piatti italiani in inglese per un menu di ristorante. Rispondi SOLO con JSON valido senza markdown: {"traduzioni":{"nome italiano":"english translation"}}. Piatti: ' + JSON.stringify(nomi) }]
+              })
+            })
+            const data = await resp.json()
+            const raw = data.choices?.[0]?.message?.content || ""
+            const match = raw.match(/\{[\s\S]*\}/)
+            if (match) {
+              const parsed = JSON.parse(match[0])
+              const newTrans = {}
+              Object.values(sel).flat().forEach(d => {
+                if (parsed.traduzioni?.[d.name]) newTrans[d.id] = parsed.traduzioni[d.name]
+              })
+              setTranslations(newTrans)
+            }
+          } catch(e) { console.log("translation error", e) }
+          setTranslating(false)
+        }}>
+          Continua — Traduzioni
         </button>
+      </div>
+    )
+  }
+
+  // ── TRANSLATE STEP ────────────────────────────
+  if (view === "translate" && pendingSelected) {
+    const allDishes = Object.values(pendingSelected).flat()
+    return (
+      <div style={{ maxWidth: 560 }}>
+        <div style={row({ marginBottom: 16 })}>
+          <button onClick={() => { setView("create_menu"); setStep(2) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Modifica selezione</button>
+        </div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 4 }}>Traduzioni inglese</div>
+        <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>Correggi se necessario — appariranno sotto ogni piatto nel menu</div>
+
+        {translating ? (
+          <div style={{ textAlign: "center", padding: "32px 0", color: S.t3, fontSize: 13 }}>
+            Traduzione in corso...
+          </div>
+        ) : (
+          <>
+            <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden", marginBottom: 20 }}>
+              {allDishes.map((d, i) => (
+                <div key={d.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "10px 14px", borderBottom: i < allDishes.length - 1 ? S.bds : "none", alignItems: "center" }}>
+                  <div style={{ fontSize: 13, color: S.t1, fontWeight: 500 }}>{d.name}</div>
+                  <input
+                    style={inp({ fontSize: 12.5, padding: "5px 8px" })}
+                    value={translations[d.id] || ""}
+                    onChange={e => setTranslations(prev => ({ ...prev, [d.id]: e.target.value }))}
+                    placeholder="english name..."
+                  />
+                </div>
+              ))}
+            </div>
+            <div style={row({ gap: 10 })}>
+              <button style={{ ...btn("g"), flex: 1, justifyContent: "center" }} onClick={() => {
+                // Salta traduzioni
+                const selected = {}
+                FOOD_CATS.forEach(cat => { selected[cat] = (pendingSelected[cat] || []) })
+                setMenus(prev => [{ id: "m" + uid2(), type: "menu", label: "Menu del " + nowStr(), date: nowISO(), template, fontSize, selected }, ...prev])
+                setView("home"); setStep(1); setSelDishes({}); setPendingSelected(null); setTranslations({})
+              }}>Salta traduzioni</button>
+              <button style={{ ...btn("p"), flex: 1, justifyContent: "center" }} onClick={() => {
+                // Salva con traduzioni
+                const selected = {}
+                FOOD_CATS.forEach(cat => {
+                  selected[cat] = (pendingSelected[cat] || []).map(d => ({ ...d, nameEn: translations[d.id] || "" }))
+                })
+                setMenus(prev => [{ id: "m" + uid2(), type: "menu", label: "Menu del " + nowStr(), date: nowISO(), template, fontSize, selected }, ...prev])
+                setView("home"); setStep(1); setSelDishes({}); setPendingSelected(null); setTranslations({})
+              }}>Salva Menu</button>
+            </div>
+          </>
+        )}
       </div>
     )
   }
