@@ -648,20 +648,34 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                       {byReg.map(v => (
                         <div key={v.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }) }}>
                           <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
-                            <div>
-                              <div style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{v.name}</div>
-                              <div style={{ fontSize: 12, color: S.t3 }}>{v.price > 0 ? F(v.price) : "—"}</div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 6 }}>{v.name}</div>
+                              {/* KPI vino */}
+                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
+                                {[
+                                  { l: "Costo netto", v: v.cost > 0 ? F(v.cost) : "—", c: S.t2 },
+                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? F(v.priceCalice) : "—", c: S.ac },
+                                  { l: "Prezzo bottiglia", v: v.priceBottle > 0 ? F(v.priceBottle) : "—", c: S.t1 },
+                                  { l: "Margine", v: v.priceBottle > 0 && v.cost > 0 ? F(r2(v.priceBottle - v.cost)) : "—", c: S.green },
+                                ].map((k, i) => (
+                                  <div key={i} style={{ background: S.el, borderRadius: 6, padding: "6px 8px" }}>
+                                    <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3, fontWeight: 600, marginBottom: 2 }}>{k.l}</div>
+                                    <div style={{ fontSize: 12, fontWeight: 600, color: k.c, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
-                            <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                            <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", alignSelf: "flex-start", marginLeft: 8 }}>✕</button>
                           </div>
-                          <div style={row({ flexWrap: "wrap", gap: 4 })}>
-                            {STAGIONI.map(s => (
-                              <button key={s} onClick={() => toggleStagione(v, s)}
-                                style={{ padding: "2px 8px", background: (v.stagioni||[]).includes(s) ? S.acg : "none", border: "1px solid " + ((v.stagioni||[]).includes(s) ? S.acd : "#2a2a31"), borderRadius: 999, color: (v.stagioni||[]).includes(s) ? S.ac : S.t3, fontFamily: "inherit", fontSize: 10, cursor: "pointer" }}>
-                                {s}
-                              </button>
-                            ))}
-                          </div>
+                          {/* Food cost bar */}
+                          {v.priceBottle > 0 && v.cost > 0 && (() => {
+                            const fc = v.cost / v.priceBottle
+                            return (
+                              <div style={{ height: 3, background: S.el, borderRadius: 999, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: Math.min(fc * 100, 100) + "%", background: fc > 0.4 ? S.red : fc > 0.3 ? S.ac : S.green, borderRadius: 999 }} />
+                              </div>
+                            )
+                          })()}
                         </div>
                       ))}
                     </div>
@@ -714,6 +728,8 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{d.name}</div>
                   <div style={row({ gap: 10 })}>
                     <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{d.price > 0 ? F(d.price) : "—"}</span>
+                    {d.ricarico && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}>×{(d.ricarico/100).toFixed(1)}</span>}
+                    {d.ricarico > 0 && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}>×{(d.ricarico/100).toFixed(1)}</span>}
                     {d.fc > 0 && <span style={{ fontSize: 12, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{P(d.fc)} FC</span>}
                     {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
                   </div>
@@ -1620,7 +1636,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
     setFForm({
       name: editDish.name,
       cat: catMapRev[(editDish.cat||"").toLowerCase()] || "Secondi",
-      ricarico: editDish.cost > 0 && editDish.price > 0 ? String(Math.round((editDish.price / editDish.cost - 1) * 100)) : "300"
+      ricarico: editDish.ricarico ? String(editDish.ricarico) : (editDish.cost > 0 && editDish.price > 0 ? String(Math.round((editDish.price / editDish.cost) * 100)) : "300")
     })
     if (editDish.recipe && editDish.recipe.length > 0) {
       setFRecipe(editDish.recipe.map(r => ({
@@ -1639,7 +1655,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
     return sum + toIngUnit(qty, rr.unit, ing.unit) * ing.cur * wasteMult
   }, 0)
   const fRicarico  = parseFloat(fForm.ricarico) || 300
-  const fSugPrice  = fLiveCost * (1 + fRicarico / 100)
+  const fSugPrice  = fLiveCost * (fRicarico / 100)  // moltiplicatore: 300% = ×3
   const fMargin    = fSugPrice - fLiveCost
   const fFoodCostPct = fSugPrice > 0 ? fLiveCost / fSugPrice : 0
 
@@ -1667,6 +1683,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
         ...d, name: fForm.name.trim(),
         cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
         price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
+        ricarico: fRicarico,
         recipe: savedRecipe
       } : d))
       if (setEditDish) setEditDish(null)
@@ -1675,6 +1692,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
         id: "d" + uid2(), name: fForm.name.trim(),
         cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
         price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
+        ricarico: fRicarico,
         recipe: savedRecipe, stagioni: []
       }])
     }
@@ -1714,7 +1732,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
   // Costo totale = prezzo netto + IVA
   const dPriceNet   = dForm.bottlePrice ? +dForm.bottlePrice : 0
   const dPriceGross = r2(dPriceNet * (1 + (+dForm.iva || 0) / 100))
-  const dSellBottle = r2(dPriceNet * (1 + (+dForm.ricarico || 0) / 100))
+  const dSellBottle = r2(dPriceNet * ((+dForm.ricarico || 200) / 100)) // moltiplicatore: 200% = ×2
   const dSellCalice = dForm.calici > 0 ? r2(dSellBottle / +dForm.calici) : 0
 
   function dSave() {
@@ -1786,7 +1804,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
               </Fld>
               <Fld label="Ricarico %">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={fForm.ricarico} onChange={e => setFForm(f => ({ ...f, ricarico: e.target.value }))}>
-                  {["100","150","200","250","300","350","400","450","500","600","700"].map(v => <option key={v}>{v}</option>)}
+                  {[["100","×1.0"],["150","×1.5"],["200","×2.0"],["250","×2.5"],["300","×3.0"],["350","×3.5"],["400","×4.0"],["450","×4.5"],["500","×5.0"],["600","×6.0"],["700","×7.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
                 </select>
               </Fld>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
@@ -1822,57 +1840,63 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                 const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : 0
                 return (
                   <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 70px 60px 70px 80px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
-                    {/* Menu a cascata: prima categorie, poi ingredienti nella stessa area */}
+                    {/* Bottone che apre modal full-screen per selezionare ingrediente */}
                     {(() => {
-                      const cat = row._cat || ings.find(i => i.id === row.ingId)?.cat || ""
                       const ing = ings.find(i => i.id === row.ingId)
-                      const CATS = ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"].filter(c => ings.some(i => i.cat === c))
                       return (
-                        <div style={{ position: "relative" }}>
-                          {/* Label visibile */}
-                          <div style={{ ...inp({ padding: "6px 8px", fontSize: 12, cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }), userSelect: "none" }}
-                            onClick={() => fUpdateRow(row.id, { _open: !row._open })}>
-                            <span style={{ color: ing ? S.t1 : S.t3 }}>
-                              {ing ? ing.name : cat ? "← " + cat : "— Seleziona —"}
-                            </span>
-                            <span style={{ fontSize: 10, color: S.t3 }}>▾</span>
-                          </div>
-                          {/* Dropdown */}
-                          {row._open && (
-                            <div style={{ position: "absolute", top: "100%", left: 0, right: 0, background: S.surf, border: S.bd, borderRadius: S.r, zIndex: 200, maxHeight: 220, overflowY: "auto", boxShadow: "0 4px 16px rgba(0,0,0,0.4)" }}>
-                              {!cat ? (
-                                // Mostra categorie
-                                CATS.map(c => (
-                                  <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, ingId: "", _open: true })}
-                                    style={{ padding: "9px 12px", fontSize: 13, color: S.t1, cursor: "pointer", borderBottom: S.bds, display: "flex", justifyContent: "space-between" }}
-                                    onMouseEnter={e => e.currentTarget.style.background = S.el}
-                                    onMouseLeave={e => e.currentTarget.style.background = ""}>
-                                    <span>{c}</span><span style={{ fontSize: 11, color: S.t3 }}>›</span>
-                                  </div>
-                                ))
-                              ) : (
-                                // Mostra ingredienti della categoria
-                                <>
-                                  <div onClick={() => fUpdateRow(row.id, { _cat: "", ingId: "", _open: true })}
-                                    style={{ padding: "7px 12px", fontSize: 11, color: S.ac, cursor: "pointer", borderBottom: S.bds, fontWeight: 600 }}>
-                                    ← {cat}
-                                  </div>
-                                  {ings.filter(i => i.cat === cat).map(i => (
-                                    <div key={i.id} onClick={() => fUpdateRow(row.id, { ingId: i.id, _open: false })}
-                                      style={{ padding: "9px 12px", fontSize: 12, color: row.ingId === i.id ? S.ac : S.t1, cursor: "pointer", borderBottom: S.bds, background: row.ingId === i.id ? S.acg : "" }}
-                                      onMouseEnter={e => { if(row.ingId !== i.id) e.currentTarget.style.background = S.el }}
-                                      onMouseLeave={e => { if(row.ingId !== i.id) e.currentTarget.style.background = "" }}>
-                                      <div>{i.name}</div>
-                                      <div style={{ fontSize: 10, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
-                                    </div>
-                                  ))}
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </div>
+                        <button
+                          onClick={() => fUpdateRow(row.id, { _open: true, _cat: row._cat || "" })}
+                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: ing ? S.acg : S.el, borderColor: ing ? S.acd : "#2a2a31" })}}>
+                          <span style={{ color: ing ? S.ac : S.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: "90%" }}>
+                            {ing ? ing.name : "Seleziona"}
+                          </span>
+                          <span style={{ fontSize: 9, color: S.t3, flexShrink: 0 }}>▾</span>
+                        </button>
                       )
                     })()}
+                    {row._open && (
+                      <div onClick={e => { if(e.target === e.currentTarget) fUpdateRow(row.id, { _open: false }) }}
+                        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 500, display: "flex", alignItems: "flex-end" }}>
+                        <div style={{ width: "100%", background: S.surf, borderRadius: "16px 16px 0 0", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 12px", borderBottom: S.bds, flexShrink: 0 }}>
+                            {row._cat ? (
+                              <button onClick={() => fUpdateRow(row.id, { _cat: "" })}
+                                style={{ background: "none", border: "none", color: S.ac, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                                ← {row._cat}
+                              </button>
+                            ) : (
+                              <span style={{ fontSize: 15, fontWeight: 600, color: S.t1 }}>Scegli ingrediente</span>
+                            )}
+                            <button onClick={() => fUpdateRow(row.id, { _open: false })}
+                              style={{ background: S.el, border: S.bd, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14 }}>✕</button>
+                          </div>
+                          <div style={{ overflowY: "auto", flex: 1 }}>
+                            {!row._cat ? (
+                              ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"]
+                                .filter(c => ings.some(i => i.cat === c))
+                                .map(c => (
+                                  <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c })}
+                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: S.bds, cursor: "pointer" }}>
+                                    <span style={{ fontSize: 15, color: S.t1 }}>{c}</span>
+                                    <span style={{ color: S.t3 }}>›</span>
+                                  </div>
+                                ))
+                            ) : (
+                              ings.filter(i => i.cat === row._cat).map(i => (
+                                <div key={i.id} onClick={() => fUpdateRow(row.id, { ingId: i.id, _open: false })}
+                                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: S.bds, cursor: "pointer", background: row.ingId === i.id ? S.acg : "" }}>
+                                  <div>
+                                    <div style={{ fontSize: 14, color: row.ingId === i.id ? S.ac : S.t1, fontWeight: row.ingId === i.id ? 600 : 400 }}>{i.name}</div>
+                                    <div style={{ fontSize: 11, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
+                                  </div>
+                                  {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}>✓</span>}
+                                </div>
+                              ))
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                     <input style={inp({ padding: "6px 6px", fontSize: 12 })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
                     <select style={inp({ padding: "6px 4px", fontSize: 12, appearance: "none" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
                       {UNITS.map(u => <option key={u}>{u}</option>)}
@@ -3053,11 +3077,15 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
     setSpesa(prev => prev.filter(s => !s.done))
   }
 
-  async function shareSpesa() {
-    const text = spesa.map(s => (s.done ? "✓ " : "◻ ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
-    const full = "Lista della spesa — " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
+  const [shareMenuOpen, setShareMenuOpen] = useState(false)
+
+  async function shareSpesa(cat) {
+    const items = cat ? spesa.filter(s => s.cat === cat) : spesa
+    const header = cat ? "Lista spesa — " + cat : "Lista della spesa"
+    const text = items.map(s => (s.done ? "✓ " : "◻ ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
+    const full = header + " — " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
     if (navigator.share) {
-      try { await navigator.share({ title: "Lista spesa", text: full }); return } catch(e) {}
+      try { await navigator.share({ title: header, text: full }); return } catch(e) {}
     }
     navigator.clipboard?.writeText(full)
     alert("Lista copiata negli appunti!")
@@ -3123,7 +3151,33 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
             <button style={btn("g", { fontSize: 12 })} onClick={clearDone}>Rimuovi completati</button>
           )}
           {spesa.length > 0 && (
-            <button style={btn("s", { fontSize: 12 })} onClick={shareSpesa}>Condividi</button>
+            <div style={{ position: "relative" }}>
+              <button style={btn("s", { fontSize: 12 })} onClick={() => setShareMenuOpen(o => !o)}>Condividi ▾</button>
+              {shareMenuOpen && (
+                <div style={{ position: "absolute", right: 0, top: "100%", marginTop: 4, background: S.surf, border: S.bd, borderRadius: S.r2, zIndex: 100, minWidth: 180, boxShadow: "0 4px 16px rgba(0,0,0,0.4)", overflow: "hidden" }}>
+                  {/* Tutta la lista */}
+                  <div onClick={() => { shareSpesa(null); setShareMenuOpen(false) }}
+                    style={{ padding: "12px 16px", cursor: "pointer", borderBottom: S.bds, fontSize: 13, color: S.t1, fontWeight: 600 }}
+                    onMouseEnter={e => e.currentTarget.style.background = S.el}
+                    onMouseLeave={e => e.currentTarget.style.background = ""}>
+                    📋 Tutta la lista
+                  </div>
+                  {/* Per categoria */}
+                  {[...new Set(spesa.filter(s => !s.done).map(s => s.cat))].map(cat => (
+                    <div key={cat} onClick={() => { shareSpesa(cat); setShareMenuOpen(false) }}
+                      style={{ padding: "11px 16px", cursor: "pointer", borderBottom: S.bds, fontSize: 13, color: S.t2 }}
+                      onMouseEnter={e => e.currentTarget.style.background = S.el}
+                      onMouseLeave={e => e.currentTarget.style.background = ""}>
+                      Solo {cat}
+                    </div>
+                  ))}
+                  <div onClick={() => setShareMenuOpen(false)}
+                    style={{ padding: "9px 16px", cursor: "pointer", fontSize: 12, color: S.t3, textAlign: "center" }}>
+                    Annulla
+                  </div>
+                </div>
+              )}
+            </div>
           )}
           {spesa.length > 0 && (
             <button style={{ ...btn("g", { fontSize: 12 }), color: S.red }}
