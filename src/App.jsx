@@ -382,6 +382,13 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     )
     // Tipo selected — show by regione
     const byTipo = vini.filter(v => v.tipoVino === selTipo)
+    const REGIONI_IT_ING = {
+      Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+      Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
+      "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
+      Bollicine:["Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni","Francia"],
+    }
+    const regioniOrdinate = REGIONI_IT_ING[selTipo] || VINO_REGIONI
     return (
       <div>
         <div style={row({ marginBottom: 16 })}>
@@ -394,7 +401,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
         {byTipo.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun vino in questa tipologia</div>
         ) : (
-          VINO_REGIONI.map(reg => {
+          regioniOrdinate.map(reg => {
             const byReg = byTipo.filter(v => v.regioneVino === reg)
             if (byReg.length === 0) return null
             return (
@@ -655,7 +662,15 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
             return (
               <div key={tipo} style={{ marginBottom: 28 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: S.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: S.bds }}>{tipo}</div>
-                {(getRegioniOrder ? getRegioniOrder(tipo) : VINO_REGIONI).map(reg => {
+                {(() => {
+                  const REGIONI_IT_D = {
+                    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+                    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
+                    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
+                    Bollicine:["Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni","Francia"],
+                  }
+                  return (REGIONI_IT_D[tipo] || VINO_REGIONI)
+                })().map(reg => {
                   const byReg = byTipo.filter(v => v.regioneVino === reg)
                   if (byReg.length === 0) return null
                   return (
@@ -958,7 +973,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
         if (/surgelat|gelo|gelato|congelat|misto mare surgelato|verdure surgelate|piselli surgelati|fagiolini surgelati|spinaci gelo|mais surgelato/.test(n)) return "Surgelati"
         if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola|pomodori scatola|sugo pronto|legumi/.test(n)) return "Scatolame"
         if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|nastro|moretti|lattina|acqua minerale|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin|vodka|rum|whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|rhum|tequila|mezcal/.test(n)) return "Bevande"
-        if (/vino |vini |barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|montepulciano|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|côtes|chablis|rosso di|bianco di|bollicine|spumante|cava/.test(n)) return "Vini"
+        if (/vino |vini |barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|montepulciano|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|côtes|chablis|rosso di|bianco di|bollicine|spumante|cava|docg|doc |igt |vdt |cantina|tenuta|castello|podere|fattoria|abbazia|donnafugata|antinori|gaja|sassicaia|ornellaia|tignanello|conterno|giacosa|ceretto|vietti|sandrone|mascarello|allegrini|masi|bertani|zonin|frescobaldi|banfi|ruffino|melini|ricasoli|biondi santi|pertimali|casanova|salicutti|le pupille|morellino|vernaccia|lacryma|aglianico|greco|fiano|falanghina|moscato|asti|dolcetto|grignolino|ruché|timorasso|arneis|gavi|roero|sforzato|valtellina|franciacorta|lugana|soave|ripasso|corvina|rondinella|garganega|trebbiano|verdicchio|montepulciano d|lacryma christi|taurasi|greco di tufo|fiano di avellino/.test(n)) return "Vini"
         if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|prosciutto|salame|mortadella|bresaola|coppa|speck|roast.beef|noce b/.test(n)) return "Carni"
         if (/pesce|merluzzo|salmone|tonno|branzino|orata|sogliola|baccalà|acciuga|sarda|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
         if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado|verdura|fave/.test(n)) return "Verdure"
@@ -976,15 +991,15 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
 
       function guessRegioneVino(nome) {
         const n = nome.toLowerCase()
-        if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto/.test(n)) return "Piemonte"
+        if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto|conterno|giacosa|ceretto|vietti|sandrone|mascarello|gaja|vajra|marcarini|altare|scavino/.test(n)) return "Piemonte"
         if (/valle d.aosta|aoste|torrette|enfer/.test(n)) return "Valle d'Aosta"
-        if (/chianti|brunello|vernaccia|bolgheri|morellino|toscana|supertuscan|sassicaia|ornellaia|tignanello/.test(n)) return "Toscana"
+        if (/chianti|brunello|vernaccia|bolgheri|morellino|toscana|supertuscan|sassicaia|ornellaia|tignanello|antinori|frescobaldi|banfi|ruffino|ricasoli|biondi santi|pertimali|casanova|le pupille|col d.orcia|fonterutoli|isole e olena/.test(n)) return "Toscana"
         if (/prosecco|soave|amarone|valpolicella|bardolino|lugana|veneto|ripasso/.test(n)) return "Veneto"
         if (/friuli|collio|grave|isonzo|ribolla|malvasia istriana/.test(n)) return "Friuli Venezia Giulia"
         if (/trentino|alto adige|sudtirol|teroldego|lagrein|gewurz|müller/.test(n)) return "Trentino Alto Adige"
         if (/franciacorta|oltrepò|lombardia|valtellina|sforzato/.test(n)) return "Lombardia"
         if (/pigato|vermentino ligure|rossese|liguria|cinque terre/.test(n)) return "Liguria"
-        if (/nero d.avola|nerello|etna|sicilia|marsala/.test(n)) return "Sicilia"
+        if (/nero d.avola|nerello|etna|sicilia|marsala|donnafugata|tasca|planeta|cusumano|firriato|duca di salaparuta|corvo|florio/.test(n)) return "Sicilia"
         if (/aglianico|greco di tufo|fiano|campania|taurasi|falanghina/.test(n)) return "Campania"
         if (/vermentino|cannonau|sardegna|carignano|nuragus/.test(n)) return "Sardegna"
         if (/primitivo|negroamaro|puglia|salice|negro amaro/.test(n)) return "Puglia"
@@ -2093,7 +2108,9 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
 
             {dForm.tipo !== "Cocktail" && (
               <Fld label="Calici per bottiglia">
-                <input style={inp()} type="number" step="1" min="1" value={dForm.calici} onChange={e => setDForm(f => ({ ...f, calici: e.target.value }))} />
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.calici} onChange={e => setDForm(f => ({ ...f, calici: e.target.value }))}>
+                  {["4","5","6","7","8"].map(v => <option key={v}>{v}</option>)}
+                </select>
               </Fld>
             )}
           </div>
@@ -2147,6 +2164,13 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   const FOOD_CATS = ["Speciali","Antipasti","Primi","Secondi","Dolci","Cocktail"]
   const VINO_TIPI = ["Rossi","Bianchi","Rosé","Bollicine"]
   const VINO_REGIONI = ["Piemonte","Toscana","Veneto","Sicilia","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"]
+  const VINO_REGIONI_ORDER_MENU = {
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+  }
+  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER_MENU[tipo] || VINO_REGIONI }
 
   // state
   const [view, setView]           = useState("home") // home | create_menu | create_vini | open | translate
@@ -2168,6 +2192,14 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   // Print options
   const [template, setTemplate]   = useState("semplice")
   const [fontSize, setFontSize]   = useState("Medio")
+  const [arrotonda, setArrotonda] = useState("no") // "no" | "0.50" | "1"
+
+  function arrotondaPrezzo(price, mode) {
+    if (!price || mode === "no") return price
+    if (mode === "0.50") return Math.round(price * 2) / 2
+    if (mode === "1") return Math.round(price)
+    return price
+  }
 
   const uid2 = () => Math.random().toString(36).slice(2, 9)
   const nowStr = () => {
@@ -2223,7 +2255,11 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       VINO_REGIONI.forEach(reg => {
         const key = tipo + "|" + reg
         if (selVini[key]?.length > 0) {
-          selected[tipo][reg] = selVini[key].map(id => dishes.find(d => d.id === id)).filter(Boolean)
+          selected[tipo][reg] = selVini[key].map(id => {
+            const d = dishes.find(x => x.id === id)
+            if (!d) return null
+            return { ...d, priceBottle: arrotondaPrezzo(d.priceBottle, arrotonda), priceCalice: arrotondaPrezzo(d.priceCalice, arrotonda) }
+          }).filter(Boolean)
         }
       })
     })
@@ -2586,11 +2622,20 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           ))}
         </div>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Dimensione testo</div>
-        <div style={row({ gap: 8 })}>
+        <div style={row({ gap: 8, marginBottom: 14 })}>
           {FONT_SIZES.map(f => (
             <button key={f} onClick={() => setFontSize(f)}
               style={{ padding: "4px 14px", background: fontSize === f ? S.acg : "none", border: "1px solid " + (fontSize === f ? S.acd : "#2a2a31"), borderRadius: 999, color: fontSize === f ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
               {f}
+            </button>
+          ))}
+        </div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Arrotonda prezzi</div>
+        <div style={row({ gap: 8 })}>
+          {[["no","Nessuno"],["0.50","€ 0,50"],["1","€ 1,00"]].map(([v,l]) => (
+            <button key={v} onClick={() => setArrotonda(v)}
+              style={{ padding: "4px 14px", background: arrotonda === v ? S.acg : "none", border: "1px solid " + (arrotonda === v ? S.acd : "#2a2a31"), borderRadius: 999, color: arrotonda === v ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+              {l}
             </button>
           ))}
         </div>
@@ -2677,7 +2722,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
             sel[cat] = (selDishes[cat] || []).map(id => {
               const d = dishes.find(x => x.id === id)
               if (!d) return null
-              return { ...d, sigla: sigle[id] || "" }
+              return { ...d, sigla: sigle[id] || "", price: arrotondaPrezzo(d.price, arrotonda) }
             }).filter(Boolean)
           })
           setPendingSelected(sel)
@@ -2785,12 +2830,21 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         {/* Template */}
         <div style={card({ padding: 14, marginBottom: 16 })}>
           <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Template</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
             {TEMPLATES.map(t => (
               <div key={t.id} onClick={() => setTemplate(t.id)}
                 style={{ padding: "8px 8px", background: template === t.id ? S.acg : S.el, border: "1px solid " + (template === t.id ? S.acd : "#2a2a31"), borderRadius: S.r, cursor: "pointer", textAlign: "center" }}>
                 <div style={{ fontSize: 11, fontWeight: 600, color: template === t.id ? S.ac : S.t1 }}>{t.label}</div>
               </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Arrotonda prezzi</div>
+          <div style={row({ gap: 8 })}>
+            {[["no","Nessuno"],["0.50","€ 0,50"],["1","€ 1,00"]].map(([v,l]) => (
+              <button key={v} onClick={() => setArrotonda(v)}
+                style={{ padding: "4px 12px", background: arrotonda === v ? S.acg : "none", border: "1px solid " + (arrotonda === v ? S.acd : "#2a2a31"), borderRadius: 999, color: arrotonda === v ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+                {l}
+              </button>
             ))}
           </div>
         </div>
