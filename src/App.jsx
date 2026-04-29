@@ -144,7 +144,14 @@ function Dashboard({ ings, isMobile }) {
 function Ingredients({ ings, setIngs, invs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
-  const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const VINO_REGIONI_ORDER = {
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+  }
+  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
+  const VINO_REGIONI = ["Piemonte", "Valle d'Aosta", "Toscana", "Veneto", "Friuli Venezia Giulia", "Trentino Alto Adige", "Lombardia", "Liguria", "Sicilia", "Campania", "Sardegna", "Puglia", "Calabria", "Altre regioni", "Francia"]
   const [selTipo, setSelTipo] = useState(null)
   // Trova prezzi per fornitore per un ingrediente
   function prezziPerFornitore(ing) {
@@ -460,6 +467,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                   </span>
                   <span style={{ fontSize: 12, color: S.t3 }}>prec. {F(ing.prev||ing.avg)}/{ing.unit}</span>
                 </div>
+                {ing.fornitore && <div style={{ fontSize: 10, color: S.t3, marginBottom: 2 }}>📦 {ing.fornitore}</div>}
                 {(() => {
                   const prezzi = prezziPerFornitore(ing)
                   if (prezzi.length < 2) return null
@@ -500,6 +508,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>
                       {ing.name}
                       {ing.confPrice && <span style={{ fontSize: 10, color: S.t3, marginLeft: 6 }}>conf. {F(ing.confPrice)}</span>}
+                      {ing.fornitore && <div style={{ fontSize: 10, color: S.t3, marginTop: 2 }}>{ing.fornitore}</div>}
                     </td>
                     <td style={{ padding: "10px 16px", color: spiked ? S.red : S.t1, fontWeight: spiked ? 600 : 400, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
                       {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
@@ -555,7 +564,14 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
-  const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const VINO_REGIONI_ORDER = {
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+  }
+  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
+  const VINO_REGIONI = ["Piemonte", "Valle d'Aosta", "Toscana", "Veneto", "Friuli Venezia Giulia", "Trentino Alto Adige", "Lombardia", "Liguria", "Sicilia", "Campania", "Sardegna", "Puglia", "Calabria", "Altre regioni", "Francia"]
 
   const [selCat, setSelCat]       = useState(null)
   const [detail, setDetail]       = useState(null)
@@ -639,7 +655,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
             return (
               <div key={tipo} style={{ marginBottom: 28 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: S.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: S.bds }}>{tipo}</div>
-                {VINO_REGIONI.map(reg => {
+                {(getRegioniOrder ? getRegioniOrder(tipo) : VINO_REGIONI).map(reg => {
                   const byReg = byTipo.filter(v => v.regioneVino === reg)
                   if (byReg.length === 0) return null
                   return (
@@ -653,10 +669,10 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                               {/* KPI vino */}
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
                                 {[
-                                  { l: "Costo netto", v: v.cost > 0 ? F(v.cost) : "—", c: S.t2 },
-                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? F(v.priceCalice) : "—", c: S.ac },
-                                  { l: "Prezzo bottiglia", v: v.priceBottle > 0 ? F(v.priceBottle) : "—", c: S.t1 },
-                                  { l: "Margine", v: v.priceBottle > 0 && v.cost > 0 ? F(r2(v.priceBottle - v.cost)) : "—", c: S.green },
+                                  { l: "Costo bottiglia", v: v.bottlePrice > 0 ? F(v.bottlePrice) : (v.cost > 0 ? F(r2(v.cost * (v.calici || 6))) : "—"), c: S.t2 },
+                                  { l: "Vendita bottiglia", v: v.priceBottle > 0 ? F(v.priceBottle) : "—", c: S.ac },
+                                  { l: "Margine", v: v.priceBottle > 0 && v.bottlePrice > 0 ? F(r2(v.priceBottle - v.bottlePrice)) : "—", c: S.green },
+                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? F(v.priceCalice) : "—", c: S.t1 },
                                 ].map((k, i) => (
                                   <div key={i} style={{ background: S.el, borderRadius: 6, padding: "6px 8px" }}>
                                     <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3, fontWeight: 600, marginBottom: 2 }}>{k.l}</div>
@@ -732,7 +748,6 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{d.name}</div>
                   <div style={row({ gap: 10 })}>
                     <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{d.price > 0 ? F(d.price) : "—"}</span>
-                    {d.ricarico && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}>×{(d.ricarico/100).toFixed(1)}</span>}
                     {d.ricarico > 0 && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}>×{(d.ricarico/100).toFixed(1)}</span>}
                     {d.fc > 0 && <span style={{ fontSize: 12, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{P(d.fc)} FC</span>}
                     {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
@@ -893,11 +908,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
                 },
                 {
                   type: "text",
-                  text: 'Sei un esperto contabile italiano. Analizza questa fattura o bolla di consegna. REGOLE IMPORTANTI: 1) Il documento puo avere piu sezioni o documenti — leggi TUTTO. 2) Per ogni riga prodotto: ignora i codici numerici iniziali (es. 056137), prendi solo il nome descrittivo del prodotto. 3) Il prezzo unitario e nella colonna PREZZO — e il prezzo per unita di misura (kg, litro, pezzo, bottiglia). NON dividere per quantita se il prezzo e gia unitario. 4) SCONTI: se trovi colonne sconto (SC%, SCONTO, DISC, ABBUONO) o righe di sconto, calcola il prezzo NETTO dopo lo sconto. Esempio: prezzo €12 con sconto 10% = prezzo netto €10,80. Il prezzoUnitario deve essere sempre il prezzo finale dopo tutti gli sconti applicati. 5) Se vedi colonne QTA.V e QTA.F usa QTA.V come quantita. 6) Somma tutti i TOTALE DOCUMENTO per il totale finale. 7) Includi TUTTI i prodotti: alimentari, vini, detersivi, materiali pulizia, tutto. 8) Per vini e bottiglie usa unita "bottiglia" e prezzo per bottiglia. Rispondi SOLO con JSON valido senza markdown: {"fornitore":"nome","numero":"numero","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"nome prodotto pulito","quantita":0.0,"unita":"kg","prezzoUnitario":0.00}]}'
+                  text: `Sei un esperto contabile italiano. Analizza questa fattura MARR o simile. STRUTTURA COLONNE: Cod.Articolo | Descrizione | UM | Quantità | Prezzo | Sconti | Importo. REGOLE: 1) Ignora i codici numerici iniziali (es. 626691), usa solo la descrizione. 2) Il prezzo unitario è nella colonna PREZZO (es. 9,80000 = 9.80). 3) La UM indica l'unità: N=numero/pezzo, KG=chilogrammo, LT=litro. 4) Se UM=N il prezzo è per pezzo/confezione. 5) Pulisci i nomi: togli pesi/volumi dalla descrizione (es. "MIELE AGRESTE CASTAGNO 420 g" → "Miele Castagno"). 6) Includi TUTTI i prodotti: alimentari, bevande, detersivi, tutto. 7) Per sconti: prezzo netto = prezzo × (1 - sconto%). 8) Totale documento è in fondo. Rispondi SOLO con JSON valido, NO markdown, NO backtick: {"fornitore":"MARR SPA","numero":"AR019432","data":"2026-02-26","totale":1201.84,"iva":127.16,"prodotti":[{"nome":"nome pulito","quantita":6.0,"unita":"pz","prezzoUnitario":9.80}]}`
                 }
               ]
             }],
-            max_tokens: 1024
+            max_tokens: 2048
           })
         }
       )
@@ -957,16 +972,20 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
 
       function guessRegioneVino(nome) {
         const n = nome.toLowerCase()
-        if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte/.test(n)) return "Piemonte"
-        if (/chianti|brunello|vernaccia|bolgheri|morellino|toscana|supertuscan/.test(n)) return "Toscana"
-        if (/prosecco|soave|amarone|valpolicella|bardolino|lugana|veneto/.test(n)) return "Veneto"
-        if (/nero d.avola|nerello|etna|sicilia/.test(n)) return "Sicilia"
-        if (/aglianico|greco di tufo|fiano|campania|taurasi/.test(n)) return "Campania"
-        if (/vermentino|cannonau|sardegna|carignano/.test(n)) return "Sardegna"
-        if (/franciacorta|oltrepò|lombardia/.test(n)) return "Lombardia"
-        if (/primitivo|negroamaro|puglia|salice/.test(n)) return "Puglia"
+        if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto/.test(n)) return "Piemonte"
+        if (/valle d.aosta|aoste|torrette|enfer/.test(n)) return "Valle d'Aosta"
+        if (/chianti|brunello|vernaccia|bolgheri|morellino|toscana|supertuscan|sassicaia|ornellaia|tignanello/.test(n)) return "Toscana"
+        if (/prosecco|soave|amarone|valpolicella|bardolino|lugana|veneto|ripasso/.test(n)) return "Veneto"
+        if (/friuli|collio|grave|isonzo|ribolla|malvasia istriana/.test(n)) return "Friuli Venezia Giulia"
+        if (/trentino|alto adige|sudtirol|teroldego|lagrein|gewurz|müller/.test(n)) return "Trentino Alto Adige"
+        if (/franciacorta|oltrepò|lombardia|valtellina|sforzato/.test(n)) return "Lombardia"
+        if (/pigato|vermentino ligure|rossese|liguria|cinque terre/.test(n)) return "Liguria"
+        if (/nero d.avola|nerello|etna|sicilia|marsala/.test(n)) return "Sicilia"
+        if (/aglianico|greco di tufo|fiano|campania|taurasi|falanghina/.test(n)) return "Campania"
+        if (/vermentino|cannonau|sardegna|carignano|nuragus/.test(n)) return "Sardegna"
+        if (/primitivo|negroamaro|puglia|salice|negro amaro/.test(n)) return "Puglia"
         if (/cirò|calabria|gaglioppo/.test(n)) return "Calabria"
-        if (/champagne|bordeaux|borgogna|alsace|côtes|chablis|france|loire|rhône/.test(n)) return "Francia"
+        if (/champagne|bordeaux|borgogna|alsace|côtes|chablis|france|loire|rhône|bourgogne|sancerre/.test(n)) return "Francia"
         return "Altre regioni"
       }
 
@@ -1014,20 +1033,27 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
         return matches / Math.max(sa.length, sb.length)
       }
 
-      function findBestMatch(nome) {
+      function findBestMatch(nome, fornitureSup) {
         let best = null, bestScore = 0
         for (const ing of ings) {
           const score = similarity(nome, ing.name)
+          if (score < 0.35) continue
+          // Se l'ingrediente ha un fornitore salvato, verifica che corrisponda
+          if (ing.fornitore && fornitureSup) {
+            const supLow = fornitureSup.toLowerCase()
+            const ingFornLow = ing.fornitore.toLowerCase()
+            // Se fornitori diversi e score non altissimo → non abbinare
+            if (!supLow.includes(ingFornLow.split(" ")[0]) && !ingFornLow.includes(supLow.split(" ")[0]) && score < 0.85) continue
+          }
           if (score > bestScore) { bestScore = score; best = ing }
         }
-        // Soglia abbassata a 0.35 per catturare varianti tipografiche
-        return bestScore >= 0.35 ? best : null
+        return best
       }
 
       // Analisi prodotti
       const prodotti = parsed.prodotti || []
       const foundList = prodotti.filter(p => p && p.nome).map(p => {
-        const existing = findBestMatch(p.nome)
+        const existing = findBestMatch(p.nome, parsed.fornitore || "")
         if (existing) {
           return {
             nome: p.nome, nomeEdit: p.nome, quantita: p.quantita, unita: p.unita,
@@ -1093,7 +1119,8 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
         unit: p.cat === "Vini" ? "bottiglia" : (p.unita || "kg"),
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
-        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni" } : {})
+        fornitore: fattura.sup.trim() || "",
+        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Alte regioni" } : {})
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
@@ -1518,11 +1545,26 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, isMob
                           onBlur={e => {
                             const newPrice = parseFloat(e.target.value)
                             if (!isNaN(newPrice) && newPrice !== p.prezzoUnitario) {
+                              // Aggiorna fattura
                               setInvs(prev => prev.map(inv => inv.id === detailInv.id
                                 ? { ...inv, prodotti: inv.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }
                                 : inv
                               ))
                               setDetailInv(prev => ({ ...prev, prodotti: prev.prodotti.map((x, j) => j === i ? { ...x, prezzoUnitario: newPrice } : x) }))
+                              // Aggiorna anche ingrediente nel magazzino tramite fuzzy matching
+                              const nomeProd = (p.nomeEdit || p.nome || "").toLowerCase().trim()
+                              const ingMatch = ings.reduce((best, ing) => {
+                                const nomeLow = ing.name.toLowerCase()
+                                const score = nomeLow.includes(nomeProd.split(" ")[0]) || nomeProd.includes(nomeLow.split(" ")[0]) ? 0.8 : 0
+                                return score > (best?.score || 0) ? { ing, score } : best
+                              }, null)
+                              if (ingMatch && ingMatch.score >= 0.8) {
+                                setIngs(prev => prev.map(ing => {
+                                  if (ing.id !== ingMatch.ing.id) return ing
+                                  const newAvg = Math.round(((ing.avg * 0.7) + (newPrice * 0.3)) * 100) / 100
+                                  return { ...ing, prev: ing.cur, cur: newPrice, avg: newAvg }
+                                }))
+                              }
                             }
                           }}
                         />
@@ -1602,13 +1644,19 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
   // ── Shared ────────────────────────────────────
   const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
-  const VINO_REGIONI = ["Piemonte", "Toscana", "Veneto", "Sicilia", "Campania", "Sardegna", "Lombardia", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const VINO_REGIONI_ORDER = {
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+  }
+  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
+  const VINO_REGIONI = ["Piemonte", "Valle d'Aosta", "Toscana", "Veneto", "Friuli Venezia Giulia", "Trentino Alto Adige", "Lombardia", "Liguria", "Sicilia", "Campania", "Sardegna", "Puglia", "Calabria", "Altre regioni", "Francia"]
   const UNITS = ["kg", "g", "l", "ml", "pz"]
   const r2 = n => Math.round(n * 100) / 100
   const uid2 = () => Math.random().toString(36).slice(2, 7)
 
   function toIngUnit(qty, rowUnit, ingUnit) {
-    // Normalizza unità
     const norm = u => {
       if (!u) return "kg"
       const s = u.toLowerCase().trim()
@@ -1617,14 +1665,24 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
       return s
     }
     const ru = norm(rowUnit)
-    const iu = norm(ingUnit)
-    if (ru === iu) return qty
-    if (ru === "g"  && iu === "kg") return qty / 1000
-    if (ru === "kg" && iu === "g")  return qty * 1000
-    if (ru === "ml" && iu === "l")  return qty / 1000
-    if (ru === "l"  && iu === "ml") return qty * 1000
-    // Se unità incompatibili (es. g vs l) restituisce qty senza conversione
-    return qty
+    let iu = norm(ingUnit)
+
+    // Normalizza: se ingrediente salvato in g trattalo come kg, se in ml come l
+    // (i prezzi nei ristoranti sono sempre per kg o litro, mai per g o ml)
+    let ingScale = 1
+    if (iu === "g")  { iu = "kg"; ingScale = 1000 } // prezzo per g → converti a kg
+    if (iu === "ml") { iu = "l";  ingScale = 1000 } // prezzo per ml → converti a l
+
+    // Converti quantità da rowUnit a iu
+    let qtyConverted = qty
+    if (ru === "g"  && iu === "kg") qtyConverted = qty / 1000
+    else if (ru === "kg" && iu === "g")  qtyConverted = qty * 1000
+    else if (ru === "ml" && iu === "l")  qtyConverted = qty / 1000
+    else if (ru === "l"  && iu === "ml") qtyConverted = qty * 1000
+    else if (ru === iu) qtyConverted = qty
+
+    // Applica scala ingrediente (se era in g, il prezzo va diviso per 1000)
+    return qtyConverted / ingScale
   }
 
   // ── FOOD COST state ───────────────────────────
@@ -1994,7 +2052,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
               <Fld label="Seleziona da magazzino vini">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngVino(e.target.value)}>
                   <option value="">— oppure inserisci manualmente —</option>
-                  {viniIng.map(i => <option key={i.id} value={i.id}>{i.name} · {F(i.cur)}/bottiglia</option>)}
+                  {viniIng.map(i => {
+                    const alreadyDone = dishes.some(d => (d.cat === "vino") && (d.name === i.name || (d.bottlePrice && d.bottlePrice === i.cur)))
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "✓ " : ""}{i.name} · {F(i.cur)}/bottiglia</option>
+                  })}
                 </select>
               </Fld>
             )}
@@ -2055,9 +2116,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
 
 function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   const TEMPLATES = [
-    { id: "classic",  label: "Classico",   desc: "Serif elegante, bordi sottili" },
-    { id: "modern",   label: "Moderno",    desc: "Sans-serif, minimalista" },
-    { id: "rustic",   label: "Rustico",    desc: "Testo grande, stile trattoria" },
+    { id: "semplice", label: "Semplice",      desc: "Solo testo centrato" },
+    { id: "linea",    label: "Linea",         desc: "Linea sottile sotto titolo" },
+    { id: "bordo",    label: "Bordo",         desc: "Bordo esterno classico" },
+    { id: "doppio",   label: "Doppio bordo",  desc: "Bordo doppio toni caldi" },
   ]
   const FONT_SIZES = ["Piccolo", "Medio", "Grande"]
   const ANNI = (() => {
@@ -2084,12 +2146,13 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   const [step, setStep]           = useState(1) // 1=config, 2=selezione
   const [counts, setCounts]       = useState({ Speciali:0, Antipasti:2, Primi:3, Secondi:3, Dolci:2, Cocktail:0 })
   const [selDishes, setSelDishes] = useState({})
+  const [sigle, setSigle] = useState({}) // { dishId: 'A'|'C'|'D'|'' }
 
   // Carta vini state
   const [selVini, setSelVini]     = useState({})
 
   // Print options
-  const [template, setTemplate]   = useState("classic")
+  const [template, setTemplate]   = useState("semplice")
   const [fontSize, setFontSize]   = useState("Medio")
 
   const uid2 = () => Math.random().toString(36).slice(2, 9)
@@ -2135,7 +2198,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       id: "m" + uid2(), type: "menu", label: "Menu del " + nowStr(),
       date: nowISO(), template, fontSize, selected
     }, ...prev])
-    setView("home"); setStep(1); setSelDishes({}); setSelVini({})
+    setView("home"); setStep(1); setSelDishes({}); setSigle({}); setSelVini({})
   }
 
   // Save carta vini
@@ -2213,78 +2276,136 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
   // ── Build print HTML ──────────────────────────
   function buildPrintHTML(item) {
-    const fsMap = { Piccolo: "13px", Medio: "15px", Grande: "17px" }
-    const fs = fsMap[item.fontSize] || "15px"
-    const isClassic = item.template === "classic"
-    const isRustic  = item.template === "rustic"
-    const ff = isClassic ? "Georgia, serif" : isRustic ? "'Times New Roman', serif" : "system-ui, sans-serif"
-    const accent = isRustic ? "#8B4513" : "#1a1a1a"
+    const fs = item.fontSize === "Piccolo" ? "13px" : item.fontSize === "Grande" ? "17px" : "15px"
+    const t = item.template || "semplice"
 
+    // Stili per template
+    const styles = {
+      semplice: {
+        wrap: "background:#fff;max-width:580px;margin:0 auto;padding:48px 40px;",
+        title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;margin-bottom:36px;",
+        cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#666;margin-bottom:20px;",
+        sep: "",
+      },
+      linea: {
+        wrap: "background:#fff;max-width:580px;margin:0 auto;padding:48px 40px;",
+        title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;padding-bottom:14px;border-bottom:1px solid #1a1a1a;margin-bottom:36px;",
+        cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#666;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:20px;",
+        sep: "<div style='text-align:center;color:#ddd;font-size:10px;letter-spacing:6px;margin:6px 0'>— — —</div>",
+      },
+      bordo: {
+        wrap: "background:#fefefe;max-width:580px;margin:0 auto;padding:44px 40px;border:1px solid #bbb;",
+        title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;margin-bottom:8px;",
+        cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#555;margin-bottom:20px;",
+        sep: "<div style='text-align:center;color:#ccc;font-size:11px;letter-spacing:6px;margin:6px 0'>· · ·</div>",
+        titleExtra: "<div style='display:flex;align-items:center;gap:12px;margin-bottom:32px'><hr style='flex:1;border:none;border-top:1px solid #ccc'><span style='font-size:10px;color:#ccc;letter-spacing:4px'>✦</span><hr style='flex:1;border:none;border-top:1px solid #ccc'></div>",
+      },
+      doppio: {
+        wrap: "background:#fffdf9;max-width:580px;margin:0 auto;padding:36px 32px;border:1px solid #c0a878;box-shadow:inset 0 0 0 5px #fffdf9,inset 0 0 0 6px #e8d8b8;",
+        title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#2a1f0e;margin-bottom:4px;",
+        titleSub: "<div style='text-align:center;font-family:Georgia,serif;font-size:0.72em;color:#c0a878;letter-spacing:0.15em;margin-bottom:28px;font-style:italic'>della casa</div>",
+        cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#a08858;padding-bottom:8px;border-bottom:1px solid #e8d8b8;margin-bottom:20px;",
+        sep: "",
+        legendColor: "#c0a878",
+      },
+    }
+    const st = styles[t] || styles.semplice
+
+    // Build body
     let body = ""
     if (item.type === "menu") {
       Object.entries(item.selected || {}).forEach(([cat, piatti]) => {
         if (!piatti || piatti.length === 0) return
-        body += `<div class="section"><h2>${cat}</h2>`
-        piatti.forEach(p => {
-          body += `<div class="item">
-            <span class="name">${p.name}${p.nameEn ? `<br><span class="name-en">${p.nameEn}</span>` : ""}</span>
-            <span class="price">${p.price > 0 ? "€ " + p.price.toFixed(2).replace(".",",") : ""}</span>
+        body += `<div style="page-break-before:always;padding-top:48px">`
+        body += `<div style="${st.cat}">${cat}</div>`
+        piatti.forEach((p, idx) => {
+          const siglaLabel = p.sigla ? ` <span style="font-size:0.8em;color:#aaa">(${p.sigla})</span>` : ""
+          if (idx > 0 && st.sep) body += st.sep
+          body += `<div style="text-align:center;margin-bottom:20px">
+            <div style="font-family:Georgia,serif;font-size:${fs};color:#1a1a1a;margin-bottom:3px;line-height:1.55">${p.name}${siglaLabel}</div>
+            ${p.nameEn ? `<div style="font-size:0.78em;color:#aaa;font-style:italic;margin-bottom:4px">${p.nameEn}</div>` : ""}
+            <div style="font-size:0.88em;font-weight:600;color:#1a1a1a">${p.price > 0 ? "€ " + p.price.toFixed(2).replace(".",",") : ""}</div>
           </div>`
         })
+        const hasSigle = piatti.some(p => p.sigla)
+        if (hasSigle) {
+          const lc = st.legendColor || "#bbb"
+          body += `<div style="font-size:0.68em;color:${lc};font-style:italic;text-align:center;margin-top:20px;padding-top:10px;border-top:1px dotted #ddd">(A) Abbattuto · (C) Congelato · (D) Decongelato</div>`
+        }
         body += `</div>`
       })
     } else {
+      // Carta dei vini (existing logic unchanged)
+      const REGIONI_ORDER = {
+        Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni"],
+        Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni"],
+        "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni"],
+        Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+      }
       Object.entries(item.selected || {}).forEach(([tipo, regioni]) => {
-        const rows = Object.entries(regioni || {})
-        if (rows.length === 0) return
-        body += `<div class="section"><h2>${tipo}</h2>`
-        rows.forEach(([reg, vini]) => {
-          if (!vini || vini.length === 0) return
-          body += `<div class="regione">${reg}</div>`
-          vini.forEach(v => {
-            if (v.priceBottle) {
-              body += `<div class="item-vino"><span class="name">${v.name}</span><span class="col-bottiglia">€ ${v.priceBottle.toFixed(2).replace(".",",")}</span><span class="col-calice">cal. € ${v.priceCalice ? v.priceCalice.toFixed(2).replace(".",",") : "—"}</span></div>`
-            } else {
-              body += `<div class="item"><span class="name">${v.name}</span><span class="price">—</span></div>`
-            }
+        const order = REGIONI_ORDER[tipo] || Object.keys(regioni || {})
+        const regsNoFr = order.filter(r => r !== "Francia")
+        const rowsNoFr = regsNoFr.map(reg => [reg, (regioni||{})[reg]]).filter(([,v]) => v?.length > 0)
+        if (tipo === "Bollicine") {
+          const frVini = (regioni||{})["Francia"]
+          const allRows = frVini?.length > 0 ? [["Francia", frVini], ...rowsNoFr] : rowsNoFr
+          if (allRows.length === 0) return
+          body += `<div style="page-break-before:always;padding-top:48px"><div style="${st.cat}">${tipo}</div>`
+          allRows.forEach(([reg, vini]) => {
+            body += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${reg}</div>`
+            vini.forEach(v => {
+              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;text-align:center;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") : "—"}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+            })
           })
-        })
-        body += `</div>`
+          body += `</div>`
+        } else {
+          if (rowsNoFr.length === 0) return
+          body += `<div style="page-break-before:always;padding-top:48px"><div style="${st.cat}">${tipo}</div>`
+          rowsNoFr.forEach(([reg, vini]) => {
+            body += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${reg}</div>`
+            vini.forEach(v => {
+              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") : "—"}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+            })
+          })
+          body += `</div>`
+        }
       })
+      // Francia separata
+      const franciaTipi = ["Rossi","Bianchi","Rosé"]
+      let hasFrancia = false
+      let franciaBody = ""
+      franciaTipi.forEach(tipo => {
+        const vini = (item.selected?.[tipo]||{})["Francia"]
+        if (vini?.length > 0) {
+          if (!hasFrancia) { franciaBody += `<div style="page-break-before:always;padding-top:48px"><div style="${st.cat}">Vini Francesi</div>`; hasFrancia = true }
+          franciaBody += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${tipo}</div>`
+          vini.forEach(v => {
+            franciaBody += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") : "—"}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+          })
+        }
+      })
+      if (hasFrancia) franciaBody += `</div>`
+      body += franciaBody
     }
 
     return `<!DOCTYPE html><html><head><meta charset="UTF-8">
 <style>
   @page { margin: 2cm; }
-  body { font-family: ${ff}; font-size: ${fs}; color: #1a1a1a; max-width: 600px; margin: 0 auto; line-height: 1.6; }
-  .print-tip { background: #f5f5f5; border: 1px solid #ddd; border-radius: 8px; padding: 12px 16px; margin-bottom: 24px; font-size: 13px; color: #555; text-align: center; }
-  .print-tip strong { color: #333; }
-  @media print { .print-tip { display: none; } }
-  h1 { text-align: center; font-size: 1.6em; letter-spacing: 0.15em; text-transform: uppercase; border-bottom: ${isClassic ? "2px solid #1a1a1a" : "1px solid #ccc"}; padding-bottom: 8px; margin-bottom: 24px; }
-  .section { margin-bottom: 28px; }
-  h2 { font-size: 1em; text-transform: uppercase; letter-spacing: 0.12em; color: ${accent}; border-bottom: 1px solid #ddd; padding-bottom: 4px; margin-bottom: 12px; }
-  .regione { font-size: 0.8em; color: #888; font-style: italic; margin: 10px 0 4px; }
-  .item { display: grid; grid-template-columns: 1fr auto; align-items: baseline; padding: 5px 0; border-bottom: 1px dotted #e0e0e0; gap: 16px; }
-  .name { font-weight: ${isClassic ? "normal" : "500"}; }
-  .name-en { font-size: 0.82em; color: #888; font-style: italic; font-weight: normal; }
-  .price { font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .price-calice { font-size: 0.85em; color: #666; font-weight: normal; }
-  .item-vino { display: grid; grid-template-columns: 1fr auto auto; align-items: baseline; padding: 5px 0; border-bottom: 1px dotted #e0e0e0; gap: 16px; }
-  .col-bottiglia { font-weight: 600; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  .col-calice { font-size: 0.85em; color: #666; text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
-  @media print { body { -webkit-print-color-adjust: exact; } .no-print { display: none; } }
+  body { font-family: Georgia,serif; font-size: ${fs}; color: #1a1a1a; margin: 0; padding: 20px; }
+  @media print { .no-print { display:none; } }
 </style></head><body>
-<div class="print-tip">
-  Per salvare come PDF: tocca i <strong>tre puntini</strong> del browser → <strong>Stampa</strong> → seleziona <strong>Salva come PDF</strong>.<br>
-  Poi condividi il PDF via WhatsApp.
+<div class="no-print" style="background:#f5f5f5;border:1px solid #ddd;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#555;text-align:center;font-family:system-ui">
+  Per salvare come PDF: tocca i <strong>tre puntini</strong> del browser → <strong>Stampa</strong> → <strong>Salva come PDF</strong>
 </div>
-<h1>${item.type === "menu" ? "Menu" : "Carta dei Vini"}</h1>
-${body}
-<div class="no-print" style="text-align:center;margin-top:32px;padding-bottom:24px;">
-  <button onclick="window.print()" style="padding:12px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit;">
-    Salva come PDF / Stampa
-  </button>
-  <p style="font-size:12px;color:#888;margin-top:10px;">Su iPhone: tocca Condividi → Salva su File o Stampa<br>Su Android: menu browser → Stampa → Salva come PDF</p>
+<div style="${st.wrap}">
+  <div style="${st.title}">${item.type === "menu" ? "Menu" : "Carta dei Vini"}</div>
+  ${t === "bordo" && styles.bordo.titleExtra ? styles.bordo.titleExtra : ""}
+  ${t === "doppio" && styles.doppio.titleSub ? styles.doppio.titleSub : ""}
+  ${body}
+</div>
+<div class="no-print" style="text-align:center;margin-top:32px;padding-bottom:24px">
+  <button onclick="window.print()" style="padding:12px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit">Salva come PDF / Stampa</button>
+  <p style="font-size:12px;color:#888;margin-top:10px;font-family:system-ui">Su iPhone: tocca Condividi → Salva su File o Stampa<br>Su Android: menu browser → Stampa → Salva come PDF</p>
 </div>
 </body></html>`
   }
@@ -2495,24 +2616,39 @@ ${body}
                 const isSel = sel.includes(d.id)
                 const inSeason = (d.stagioni||[]).includes(curStagione)
                 return (
-                  <div key={d.id} onClick={() => {
-                    if (!isSel && sel.length >= max) return
-                    setSelDishes(prev => ({
-                      ...prev,
-                      [cat]: isSel ? sel.filter(x => x !== d.id) : [...sel, d.id]
-                    }))
-                  }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: S.bds, cursor: sel.length >= max && !isSel ? "not-allowed" : "pointer", opacity: sel.length >= max && !isSel ? 0.4 : 1 }}>
-                    <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>✓</span>}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={row({ gap: 6 })}>
-                        <span style={{ fontSize: 13, color: S.t1 }}>{d.name}</span>
-                        {inSeason && <span style={{ fontSize: 9, color: S.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>stagione</span>}
+                  <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: S.bds }}>
+                    <div onClick={() => {
+                      if (!isSel && sel.length >= max) return
+                      setSelDishes(prev => ({
+                        ...prev,
+                        [cat]: isSel ? sel.filter(x => x !== d.id) : [...sel, d.id]
+                      }))
+                    }} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: sel.length >= max && !isSel ? "not-allowed" : "pointer", opacity: sel.length >= max && !isSel ? 0.4 : 1 }}>
+                      <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>✓</span>}
                       </div>
-                      {d.margin > 0 && <span style={{ fontSize: 10, color: S.t3 }}>margine {F(d.margin)}</span>}
+                      <div style={{ flex: 1 }}>
+                        <div style={row({ gap: 6 })}>
+                          <span style={{ fontSize: 13, color: S.t1 }}>{d.name}</span>
+                          {inSeason && <span style={{ fontSize: 9, color: S.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>stagione</span>}
+                        </div>
+                        {d.margin > 0 && <span style={{ fontSize: 10, color: S.t3 }}>margine {F(d.margin)}</span>}
+                      </div>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : "—"}</span>
                     </div>
-                    <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : "—"}</span>
+                    {/* Sigla conservazione */}
+                    {isSel && (
+                      <select
+                        onClick={e => e.stopPropagation()}
+                        value={sigle[d.id] || ""}
+                        onChange={e => setSigle(prev => ({ ...prev, [d.id]: e.target.value }))}
+                        style={{ padding: "3px 4px", background: S.el, border: S.bd, borderRadius: S.r, color: sigle[d.id] ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer", width: 44, flexShrink: 0 }}>
+                        <option value="">—</option>
+                        <option value="A">(A)</option>
+                        <option value="C">(C)</option>
+                        <option value="D">(D)</option>
+                      </select>
+                    )}
                   </div>
                 )
               })}
@@ -2524,7 +2660,11 @@ ${body}
           // Costruisci selected
           const sel = {}
           FOOD_CATS.forEach(cat => {
-            sel[cat] = (selDishes[cat] || []).map(id => dishes.find(d => d.id === id)).filter(Boolean)
+            sel[cat] = (selDishes[cat] || []).map(id => {
+              const d = dishes.find(x => x.id === id)
+              if (!d) return null
+              return { ...d, sigla: sigle[id] || "" }
+            }).filter(Boolean)
           })
           setPendingSelected(sel)
           // Chiedi traduzione AI
@@ -2599,7 +2739,7 @@ ${body}
                 const selected = {}
                 FOOD_CATS.forEach(cat => { selected[cat] = (pendingSelected[cat] || []) })
                 setMenus(prev => [{ id: "m" + uid2(), type: "menu", label: "Menu del " + nowStr(), date: nowISO(), template, fontSize, selected }, ...prev])
-                setView("home"); setStep(1); setSelDishes({}); setPendingSelected(null); setTranslations({})
+                setView("home"); setStep(1); setSelDishes({}); setSigle({}); setPendingSelected(null); setTranslations({})
               }}>Salta traduzioni</button>
               <button style={{ ...btn("p"), flex: 1, justifyContent: "center" }} onClick={() => {
                 // Salva con traduzioni
@@ -2608,7 +2748,7 @@ ${body}
                   selected[cat] = (pendingSelected[cat] || []).map(d => ({ ...d, nameEn: translations[d.id] || "" }))
                 })
                 setMenus(prev => [{ id: "m" + uid2(), type: "menu", label: "Menu del " + nowStr(), date: nowISO(), template, fontSize, selected }, ...prev])
-                setView("home"); setStep(1); setSelDishes({}); setPendingSelected(null); setTranslations({})
+                setView("home"); setStep(1); setSelDishes({}); setSigle({}); setPendingSelected(null); setTranslations({})
               }}>Salva Menu</button>
             </div>
           </>
@@ -2652,7 +2792,7 @@ ${body}
             return (
               <div key={tipo} style={card({ padding: 16, marginBottom: 12 })}>
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>{tipo}</div>
-                {VINO_REGIONI.map(reg => {
+                {(getRegioniOrder ? getRegioniOrder(tipo) : VINO_REGIONI).map(reg => {
                   const byReg = byTipo.filter(v => v.regioneVino === reg)
                   if (byReg.length === 0) return null
                   const key = tipo + "|" + reg
@@ -2759,7 +2899,10 @@ function AIInsights({ dishes, ings, isMobile }) {
       const ingData = ings.map(i => {
         const ref = i.prev !== undefined ? i.prev : i.avg
         const var_pct = ref > 0 ? Math.round(((i.cur - ref) / ref) * 1000) / 10 : 0
-        return { nome: i.name, cat: i.cat, prezzoAttuale: i.cur, variazione: var_pct, unita: i.unit }
+        return {
+          nome: i.fornitore ? i.name + " (" + i.fornitore + ")" : i.name,
+          cat: i.cat, prezzoAttuale: i.cur, variazione: var_pct, unita: i.unit
+        }
       })
 
       if (dishData.length === 0 && ingData.length === 0) {
