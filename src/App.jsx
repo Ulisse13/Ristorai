@@ -3617,11 +3617,30 @@ export default function App() {
           if (d.menus)     setMenus(d.menus)
           if (d.fornitori)  setFornitori(d.fornitori)
           if (d.spesa)      setSpesa(d.spesa)
-          // Utente esistente — salta onboarding
           setOnboarded(true)
         } else {
-          // Nuovo utente — mostra onboarding
-          setOnboarded(false)
+          // Prova a migrare dal vecchio percorso app/ristorai_data
+          try {
+            const oldSnap = await getDoc(doc(db, "app", "ristorai_data"))
+            if (oldSnap.exists()) {
+              const d = oldSnap.data()
+              if (d.ings)      setIngs(d.ings)
+              if (d.dishes)    setDishes(d.dishes)
+              if (d.invs)      setInvs(d.invs)
+              if (d.menus)     setMenus(d.menus)
+              if (d.fornitori)  setFornitori(d.fornitori)
+              if (d.spesa)      setSpesa(d.spesa)
+              setOnboarded(true)
+              // Salva subito nel nuovo percorso
+              await setDoc(doc(db, "users", user.uid, "data", "main"), { ...d, onboarded: true }, { merge: true })
+              console.log("Migrazione dati completata da app/ristorai_data")
+            } else {
+              setOnboarded(false)
+            }
+          } catch(migErr) {
+            console.log("Migrazione fallita:", migErr)
+            setOnboarded(false)
+          }
         }
       } catch (e) { console.log("Load error:", e) }
       setReady(true)
