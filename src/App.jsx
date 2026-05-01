@@ -153,6 +153,8 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
   const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
   const [selTipo, setSelTipo] = useState(null)
+  const [editVino, setEditVino] = useState(null) // vino in modifica
+  const [editVinoForm, setEditVinoForm] = useState({ name: "", tipoVino: "Rossi", regioneVino: "Piemonte", produttore: "", cur: "" })
   // Trova prezzi per fornitore per un ingrediente
   function prezziPerFornitore(ing) {
     const result = []
@@ -410,16 +412,75 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                 {byReg.map(ing => (
                   <div key={ing.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }), display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{ing.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: ing.produttore ? 2 : 0 }}>{ing.name}</div>
+                      {ing.produttore && <div style={{ fontSize: 11, color: S.ac, fontStyle: "italic", marginBottom: 2 }}>{ing.produttore}</div>}
                       <div style={{ fontSize: 11, color: S.t3 }}>{F(ing.cur)}/{ing.unit}</div>
                     </div>
-                    <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
+                        style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
+                    </div>
                   </div>
                 ))}
               </div>
             )
           })
         )}
+        {/* Modal modifica vino */}
+        {editVino && (
+          <div onClick={e => e.target === e.currentTarget && setEditVino(null)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
+            <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 440 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px 0" }}>
+                <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>Modifica vino</span>
+                <button onClick={() => setEditVino(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+              </div>
+              <div style={{ padding: "16px 22px" }}>
+                <Fld label="Nome">
+                  <input style={inp()} value={editVinoForm.name} onChange={e => setEditVinoForm(f => ({ ...f, name: e.target.value }))} />
+                </Fld>
+                <Fld label="Produttore / Cantina">
+                  <input style={inp()} value={editVinoForm.produttore} onChange={e => setEditVinoForm(f => ({ ...f, produttore: e.target.value }))} placeholder="es. Giacomo Conterno" />
+                </Fld>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Fld label="Tipologia">
+                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={editVinoForm.tipoVino} onChange={e => setEditVinoForm(f => ({ ...f, tipoVino: e.target.value }))}>
+                      {["Rossi","Bianchi","Rosé","Bollicine"].map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </Fld>
+                  <Fld label="Regione">
+                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={editVinoForm.regioneVino} onChange={e => setEditVinoForm(f => ({ ...f, regioneVino: e.target.value }))}>
+                      {["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"].map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </Fld>
+                </div>
+                <Fld label="Prezzo attuale (€/bottiglia)">
+                  <input style={inp()} type="number" step="0.01" value={editVinoForm.cur} onChange={e => setEditVinoForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
+                </Fld>
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "0 22px 18px" }}>
+                <button style={btn("g")} onClick={() => setEditVino(null)}>Annulla</button>
+                <button style={btn("p")} onClick={() => {
+                  const newCur = parseFloat(editVinoForm.cur) || editVino.cur
+                  const newAvg = Math.round(((editVino.avg * 0.7) + (newCur * 0.3)) * 100) / 100
+                  setIngs(prev => prev.map(i => i.id === editVino.id ? {
+                    ...i,
+                    name: editVinoForm.name.trim() || i.name,
+                    tipoVino: editVinoForm.tipoVino,
+                    regioneVino: editVinoForm.regioneVino,
+                    produttore: editVinoForm.produttore.trim(),
+                    cur: newCur,
+                    avg: newCur !== editVino.cur ? newAvg : i.avg,
+                    prev: newCur !== editVino.cur ? editVino.cur : i.prev,
+                  } : i))
+                  setEditVino(null)
+                }}>Salva</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {delTarget && (
           <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
@@ -1454,7 +1515,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
         fornitore: fattura.sup.trim() || "",
-        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Alte regioni", produttore: p.produttore || "" } : {})
+        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
