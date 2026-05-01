@@ -145,13 +145,13 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
-  const VINO_REGIONI = ["Piemonte", "Valle d'Aosta", "Toscana", "Veneto", "Friuli Venezia Giulia", "Trentino Alto Adige", "Lombardia", "Liguria", "Sicilia", "Campania", "Sardegna", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
   const [selTipo, setSelTipo] = useState(null)
   // Trova prezzi per fornitore per un ingrediente
   function prezziPerFornitore(ing) {
@@ -383,10 +383,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     // Tipo selected — show by regione
     const byTipo = vini.filter(v => v.tipoVino === selTipo)
     const REGIONI_IT_ING = {
-      Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+      Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
       Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-      "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
-      Bollicine:["Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni","Francia"],
+      "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+      Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     }
     const regioniOrdinate = REGIONI_IT_ING[selTipo] || VINO_REGIONI
     return (
@@ -572,13 +572,13 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
-  const VINO_REGIONI = ["Piemonte", "Valle d'Aosta", "Toscana", "Veneto", "Friuli Venezia Giulia", "Trentino Alto Adige", "Lombardia", "Liguria", "Sicilia", "Campania", "Sardegna", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
 
   const [selCat, setSelCat]       = useState(null)
   const [detail, setDetail]       = useState(null)
@@ -625,6 +625,8 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
         {CATS.map(cat => {
           const list = dishesByCat(cat)
           const overTarget = list.filter(d => d.fc > 0 && d.fc > d.target).length
+          const isVini = cat === "Vini"
+          const tipiCount = isVini ? ["Rossi","Bianchi","Rosé","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
           return (
             <div key={cat} onClick={() => setSelCat(cat)}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
@@ -632,7 +634,14 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: overTarget > 0 ? "linear-gradient(90deg," + S.red + ",transparent)" : "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
               
               <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
-              <div style={{ fontSize: 12, color: S.t3 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
+              <div style={{ fontSize: 12, color: S.t3, marginBottom: isVini && tipiCount.length > 0 ? 6 : 0 }}>{list.length} {isVini ? "vini" : "piatt" + (list.length !== 1 ? "i" : "o")}</div>
+              {isVini && tipiCount.length > 0 && (
+                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {tipiCount.map(({ t, n }) => (
+                    <div key={t} style={{ fontSize: 10, color: S.t3 }}>{t}: {n}</div>
+                  ))}
+                </div>
+              )}
               {overTarget > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>! {overTarget} sopra target</div>}
             </div>
           )
@@ -664,10 +673,10 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                 <div style={{ fontSize: 13, fontWeight: 700, color: S.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: S.bds }}>{tipo}</div>
                 {(() => {
                   const REGIONI_IT_D = {
-                    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
+                    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
                     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-                    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
-                    Bollicine:["Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni","Francia"],
+                    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+                    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
                   }
                   return (REGIONI_IT_D[tipo] || VINO_REGIONI)
                 })().map(reg => {
@@ -680,7 +689,8 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                         <div key={v.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }) }}>
                           <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 6 }}>{v.name}</div>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: v.produttore ? 2 : 6 }}>{v.name}</div>
+                              {v.produttore && <div style={{ fontSize: 11, color: S.ac, fontStyle: "italic", marginBottom: 6 }}>{v.produttore}</div>}
                               {/* KPI vino */}
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
                                 {[
@@ -1204,7 +1214,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                 },
                 {
                   type: "text",
-                  text: `Sei un esperto contabile italiano. Analizza questa fattura MARR o simile. STRUTTURA COLONNE: Cod.Articolo | Descrizione | UM | Quantità | Prezzo | Sconti | Importo. REGOLE: 1) Ignora i codici numerici iniziali (es. 626691), usa solo la descrizione. 2) Il prezzo unitario è nella colonna PREZZO (es. 9,80000 = 9.80). 3) La UM indica l'unità: N=numero/pezzo, KG=chilogrammo, LT=litro. 4) Se UM=N il prezzo è per pezzo/confezione. 5) Pulisci i nomi: togli pesi/volumi dalla descrizione (es. "MIELE AGRESTE CASTAGNO 420 g" → "Miele Castagno"). 6) Includi TUTTI i prodotti: alimentari, bevande, detersivi, tutto. 7) Per sconti: prezzo netto = prezzo × (1 - sconto%). 8) Totale documento è in fondo. Rispondi SOLO con JSON valido, NO markdown, NO backtick: {"fornitore":"MARR SPA","numero":"AR019432","data":"2026-02-26","totale":1201.84,"iva":127.16,"prodotti":[{"nome":"nome pulito","quantita":6.0,"unita":"pz","prezzoUnitario":9.80}]}`
+                  text: `Sei un esperto contabile italiano. Analizza questa fattura MARR o simile. STRUTTURA COLONNE: Cod.Articolo | Descrizione | UM | Quantità | Prezzo | Sconti | Importo. REGOLE: 1) Ignora i codici numerici iniziali (es. 626691), usa solo la descrizione. 2) Il prezzo unitario lordo è nella colonna PREZZO (es. 9,80000 = 9.80). 3) La UM indica l'unità: N=numero/pezzo, KG=chilogrammo, LT=litro. 4) Se UM=N il prezzo è per pezzo/confezione. 5) Pulisci i nomi: togli pesi/volumi dalla descrizione (es. "MIELE AGRESTE CASTAGNO 420 g" → "Miele Castagno"). 6) Per i VINI: separa il nome del vino dal produttore/cantina. Es: "BAROLO GIACOMO CONTERNO 2018" → nome="Barolo 2018", produttore="Giacomo Conterno". Es: "CHIANTI CLASSICO ANTINORI" → nome="Chianti Classico", produttore="Antinori". 7) Includi TUTTI i prodotti: alimentari, bevande, detersivi, tutto. 8) SCONTI — REGOLA CRITICA: se nella colonna Sconti c'è uno sconto (es. 10%, 5+2%, 10+5%), DEVI calcolare il prezzoUnitario NETTO applicando lo sconto al prezzo lordo. Esempi: prezzo=10.00 sconto=10% → prezzoUnitario=9.00. Prezzo=10.00 sconto=5+2% → prezzoUnitario=10.00×0.95×0.98=9.31. Se non c'è sconto, prezzoUnitario = prezzo lordo. Il prezzoUnitario nel JSON deve essere SEMPRE il prezzo finale netto già scontato, MAI il prezzo lordo. 9) Totale documento è in fondo. Rispondi SOLO con JSON valido, NO markdown, NO backtick: {"fornitore":"MARR SPA","numero":"AR019432","data":"2026-02-26","totale":1201.84,"iva":127.16,"prodotti":[{"nome":"nome pulito","produttore":"nome cantina o produttore, stringa vuota se non vino","quantita":6.0,"unita":"pz","prezzoUnitario":9.80,"sconto":"10%","tipoVino":"Rossi o Bianchi o Rosé o Bollicine, stringa vuota se non vino","regioneVino":"regione italiana o Francia, stringa vuota se non vino"}]}`
                 }
               ]
             }],
@@ -1262,28 +1272,50 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
 
       function guessTipoVino(nome) {
         const n = nome.toLowerCase()
-        if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|perlage/.test(n)) return "Bollicine"
-        if (/rosato|rosé|cerasuolo|ramato/.test(n)) return "Rosé"
-        if (/bianco|pinot grigio|vermentino|soave|lugana|chardonnay|sauvignon|gewurz|riesling|chablis|borgogna blanc|vernaccia|trebbiano|greco di|fiano|pecorino/.test(n)) return "Bianchi"
+        if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|perlage|trento doc|oltrepo metodo|trentodoc|charmat|martinotti|pas dose|brut nature|extra brut|blanc de blancs|blanc de noirs|millesimato|asti spumante|moscato spumante|brachetto spumante/.test(n)) return "Bollicine"
+        if (/rosato|rosé|rose |cerasuolo|ramato|chiaretto|lagrein rosato|pinot nero rosato|sangiovese rosato|nerello rosato|primitivo rosato|negroamaro rosato/.test(n)) return "Rosé"
+        if (/bianco|pinot grigio|vermentino|soave|lugana|chardonnay|sauvignon|gewurz|riesling|chablis|borgogna blanc|vernaccia|trebbiano|greco di tufo|fiano|fiano di avellino|pecorino|arneis|gavi|cortese|falanghina|greco|ribolla|ribolla gialla|friulano|malvasia bianca|garganega|catarratto|grillo|carricante|zibibbo|insolia|nuragus|verdicchio|passerina|pecorino abruzzese|timorasso|erbaluce|nascetta|favorita|pigato|albarola|bosco|vermentino di gallura|torbato|nasco|malvasia di cagliari|cannonau bianco|traminer|muller thurgau|nosiola|kerner|sylvaner|veltliner|pinot bianco|pinot blanc|auxerrois|roussanne|marsanne|viognier|grenache blanc|rolle|picpoul|clairette|muscadet|aligoté|melon de bourgogne|pouilly|sancerre|blanc/.test(n)) return "Bianchi"
         return "Rossi"
       }
 
       function guessRegioneVino(nome) {
         const n = nome.toLowerCase()
-        if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto|conterno|giacosa|ceretto|vietti|sandrone|mascarello|gaja|vajra|marcarini|altare|scavino/.test(n)) return "Piemonte"
-        if (/valle d.aosta|aoste|torrette|enfer/.test(n)) return "Valle d'Aosta"
-        if (/chianti|brunello|vernaccia|bolgheri|morellino|toscana|supertuscan|sassicaia|ornellaia|tignanello|antinori|frescobaldi|banfi|ruffino|ricasoli|biondi santi|pertimali|casanova|le pupille|col d.orcia|fonterutoli|isole e olena/.test(n)) return "Toscana"
-        if (/prosecco|soave|amarone|valpolicella|bardolino|lugana|veneto|ripasso/.test(n)) return "Veneto"
-        if (/friuli|collio|grave|isonzo|ribolla|malvasia istriana/.test(n)) return "Friuli Venezia Giulia"
-        if (/trentino|alto adige|sudtirol|teroldego|lagrein|gewurz|müller/.test(n)) return "Trentino Alto Adige"
-        if (/franciacorta|oltrepò|lombardia|valtellina|sforzato/.test(n)) return "Lombardia"
-        if (/pigato|vermentino ligure|rossese|liguria|cinque terre/.test(n)) return "Liguria"
-        if (/nero d.avola|nerello|etna|sicilia|marsala|donnafugata|tasca|planeta|cusumano|firriato|duca di salaparuta|corvo|florio/.test(n)) return "Sicilia"
-        if (/aglianico|greco di tufo|fiano|campania|taurasi|falanghina/.test(n)) return "Campania"
-        if (/vermentino|cannonau|sardegna|carignano|nuragus/.test(n)) return "Sardegna"
-        if (/primitivo|negroamaro|puglia|salice|negro amaro/.test(n)) return "Puglia"
-        if (/cirò|calabria|gaglioppo/.test(n)) return "Calabria"
-        if (/champagne|bordeaux|borgogna|alsace|côtes|chablis|france|loire|rhône|bourgogne|sancerre/.test(n)) return "Francia"
+        // Piemonte — più ricco
+        if (/barolo|barbaresco|barbera d.asti|barbera d.alba|barbera del monferrato|nebbiolo|moscato d.asti|asti spumante|langhe|piemonte|gavi|gavi di gavi|cortese|roero|roero arneis|dolcetto|dolcetto d.alba|dolcetto d.asti|brachetto|grignolino|ruche|ruché|freisa|pelaverga|timorasso|erbaluce|nascetta|favorita|arneis|conterno|giacosa|ceretto|vietti|sandrone|mascarello|gaja|vajra|marcarini|altare|scavino|einaudi|cogno|aldo conterno|giacomo conterno|paolo scavino|elio grasso|bruno giacosa|luciano sandrone|roberto voerzio|braida|coppo|fontanafredda|martini|canelli|nizza|alba|asti|cuneo|novara|torino/.test(n)) return "Piemonte"
+        // Valle d Aosta
+        if (/valle d.aosta|aoste|torrette|enfer|donnas|arnad|montjovet|chambave|nus|morgex|la salle/.test(n)) return "Valle d'Aosta"
+        // Toscana
+        if (/chianti|chianti classico|chianti rufina|brunello|brunello di montalcino|rosso di montalcino|vernaccia di san gimignano|bolgheri|morellino|morellino di scansano|toscana|supertuscan|sassicaia|ornellaia|masseto|tignanello|solaia|antinori|frescobaldi|banfi|ruffino|ricasoli|biondi santi|pertimali|casanova|le pupille|col d.orcia|fonterutoli|isole e olena|poggio antuco|avignonesi|poliziano|salcheto|montepulciano|vino nobile|vino nobile di montepulciano|montalcino|san gimignano|maremma|carmignano|pomino|elba|bolgheri|castagneto|suvereto|montescudaio|val di cornia|colli di luni|candia|colli apuani/.test(n)) return "Toscana"
+        // Trentino Alto Adige
+        if (/trentino|alto adige|sudtirol|sud tirol|teroldego|lagrein|gewurz|gewürztraminer|müller|muller thurgau|kerner|sylvaner|veltliner|nosiola|schiava|vernatsch|pinot nero trentino|pinot grigio trentino|chardonnay trentino|trento doc|trentodoc|mezzocorona|cavit|ferrari|foradori|pojer|sandri|elena walch|alois lageder|hofstatter|tiefenbrunner/.test(n)) return "Trentino Alto Adige"
+        // Friuli Venezia Giulia
+        if (/friuli|collio|grave|isonzo|ribolla|ribolla gialla|friulano|malvasia istriana|refosco|pignolo|schioppettino|tazzelenghe|picolit|ramandolo|carso|terrano|vitovska|jermann|livio felluga|marco felluga|russiz superiore|schiopetto|venica|radikon|gravner|dario raccaro|miani|zidarich|edi kante/.test(n)) return "Friuli Venezia Giulia"
+        // Sicilia
+        if (/nero d.avola|nerello mascalese|nerello cappuccio|etna|etna rosso|etna bianco|sicilia|marsala|passito di pantelleria|zibibbo|grillo|catarratto|carricante|inzolia|insolia|donnafugata|tasca d.almerita|planeta|cusumano|firriato|duca di salaparuta|corvo|florio|benanti|passopisciaro|terre nere|cornelissen|occhipinti|cos|arianna|gulfi|morgante/.test(n)) return "Sicilia"
+        // Campania
+        if (/aglianico|taurasi|greco di tufo|fiano di avellino|falanghina|campania|sannio|irpinia|campi flegrei|vesuvio|lacryma christi|biancolella|forastera|feudi di san gregorio|mastroberardino|terredora|villa matilde|galardi|montevetrano|luigi maffini|marisa cuomo|cantine del notaio/.test(n)) return "Campania"
+        // Veneto
+        if (/prosecco|prosecco di conegliano|prosecco di valdobbiadene|soave|soave classico|amarone|amarone della valpolicella|valpolicella|bardolino|lugana|veneto|ripasso|recioto|custoza|bianco di custoza|durello|lessini|gambellara|pinot grigio veneto|allegrini|masi|bertani|zenato|pieropan|gini|inama|tedeschi|speri|tommasi|zonin|santa margherita|bisol|nino franco/.test(n)) return "Veneto"
+        // Lombardia
+        if (/franciacorta|oltrepo|oltrepò|valtellina|sforzato|sforzato di valtellina|sfursat|lugana|lombard|ca del bosco|bellavista|berlucchi|guido berlucchi|nino negri|ar.pe.pe|arpepe|mamete prevostini|rainoldi/.test(n)) return "Lombardia"
+        // Liguria
+        if (/pigato|vermentino ligure|rossese|liguria|cinque terre|sciacchetrà|colli di luni|colline di levanto|golfo del tigullio|pornassio|ormeasco/.test(n)) return "Liguria"
+        // Sardegna
+        if (/cannonau|cannonau di sardegna|vermentino di gallura|vermentino di sardegna|carignano del sulcis|carignano|nuragus|torbato|nasco|malvasia di cagliari|girò|monica|bovale|sardegna|argiolas|sella e mosca|santadi|capichera|pala|cantina di santadi|antonio argiolas/.test(n)) return "Sardegna"
+        // Puglia
+        if (/primitivo|primitivo di manduria|negroamaro|salice salentino|negro amaro|puglia|salento|five roses|locorotondo|martina franca|castel del monte|uva di troia|bombino|minutolo|verdeca|leone de castris|tormaresca|rivera|feudi di ugento|varvaglione/.test(n)) return "Puglia"
+        // Calabria
+        if (/cirò|cirò rosso|cirò bianco|calabria|gaglioppo|greco di bianco|savuto|lamezia|scavigna|verbicaro|pellaro|librandi|statti|ippolito|odoardi/.test(n)) return "Calabria"
+        // Altre regioni italiane
+        if (/marche|verdicchio|verdicchio dei castelli di jesi|verdicchio di matelica|rosso conero|rosso piceno|lacrima di morro|offida|umani ronchi|garofoli|velenosi|fattoria le terrazze/.test(n)) return "Altre regioni"
+        if (/abruzzo|montepulciano d.abruzzo|trebbiano d.abruzzo|cerasuolo d.abruzzo|pecorino abruzzese|valentini|illuminati|masciarelli|cataldi madonna/.test(n)) return "Altre regioni"
+        if (/umbria|sagrantino|montefalco|torgiano|orvieto|lungarotti|arnaldo caprai|antinori umbria|castello della sala/.test(n)) return "Altre regioni"
+        if (/lazio|frascati|cesanese|est est est|falerno|marino/.test(n)) return "Altre regioni"
+        if (/basilicata|aglianico del vulture|vulture|elena fucci|paternoster|d.angelo/.test(n)) return "Altre regioni"
+        if (/molise|tintilia|di majo norante/.test(n)) return "Altre regioni"
+        if (/emilia|lambrusco|sangiovese di romagna|pignoletto|albana|colli bolognesi|colli piacentini|reggiano|cavicchioli|cleto chiarli/.test(n)) return "Altre regioni"
+        // Francia
+        if (/champagne|bordeaux|borgogna|bourgogne|alsace|côtes|cotes|chablis|france|loire|rhône|rhone|bourgogne|sancerre|pouilly|muscadet|vouvray|chinon|saint emilion|pomerol|medoc|pauillac|margaux|saint julien|gevrey|chambolle|vosne|nuits|meursault|montrachet|puligny|chassagne|corton|pommard|volnay|beaune|santenay|macon|beaujolais|cotes du rhone|chateauneuf|gigondas|vacqueyras|hermitage|crozes|condrieu|cote rotie|languedoc|roussillon|provence|bandol|cassis|palette/.test(n)) return "Francia"
         return "Altre regioni"
       }
 
@@ -1366,7 +1398,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
             prezzoUnitario: p.prezzoUnitario,
             tipo: "new", ingId: null, ingName: null,
             cat, include: true,
-            ...(cat === "Vini" ? { tipoVino: guessTipoVino(p.nome), regioneVino: guessRegioneVino(p.nome) } : {})
+            ...(cat === "Vini" ? { 
+              tipoVino: p.tipoVino || guessTipoVino(p.nome),
+              regioneVino: p.regioneVino || guessRegioneVino(p.nome),
+              produttore: p.produttore || ""
+            } : {})
           }
         }
       })
@@ -1418,7 +1454,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
         fornitore: fattura.sup.trim() || "",
-        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Alte regioni" } : {})
+        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Alte regioni", produttore: p.produttore || "" } : {})
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
@@ -1515,8 +1551,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                     <div style={row({ gap: 8 })}>
                       <button onClick={() => { setForniEdit(f); setForniForm({ name: f.name, tel: f.tel||"", email: f.email||"", cat: f.cat||"" }); setForniOpen(true) }}
                         style={{ background: "none", border: "none", color: S.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Modifica</button>
-                      <button onClick={() => { if(window.confirm("Eliminare " + f.name + "?")) { setFornitori(prev => prev.filter(x => x.id !== f.id)); setSelFornitore(null) } }}
-                        style={{ background: "none", border: "none", color: S.red, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Elimina</button>
+
                     </div>
                   </div>
                   {[["Nome", f.name], ["Telefono", f.tel||"—"], ["Email", f.email||"—"], ["Categoria", f.cat||"—"]].map(([l,v]) => (
@@ -1558,6 +1593,20 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                     ))}
                   </div>
                 )}
+
+                {/* Bottone elimina fornitore */}
+                <div style={{ marginTop: 24, paddingTop: 16, borderTop: S.bds }}>
+                  <button
+                    onClick={() => {
+                      if (window.confirm("Eliminare il fornitore " + f.name + "? Le fatture associate rimarranno nell'archivio.")) {
+                        setFornitori(prev => prev.filter(x => x.id !== f.id))
+                        setSelFornitore(null)
+                      }
+                    }}
+                    style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)", width: "100%", justifyContent: "center", padding: "10px" }}>
+                    Elimina fornitore
+                  </button>
+                </div>
               </div>
             )
           })()}
@@ -1953,13 +2002,13 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
   const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
-  const VINO_REGIONI = ["Piemonte", "Valle d'Aosta", "Toscana", "Veneto", "Friuli Venezia Giulia", "Trentino Alto Adige", "Lombardia", "Liguria", "Sicilia", "Campania", "Sardegna", "Puglia", "Calabria", "Altre regioni", "Francia"]
+  const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
   const UNITS = ["kg", "g", "l", "ml", "pz"]
   const r2 = n => Math.round(n * 100) / 100
   const uid2 = () => Math.random().toString(36).slice(2, 7)
@@ -2092,6 +2141,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
   const [dSaved, setDSaved] = useState(false)
 
   const viniIng = ings.filter(i => i.cat === "Vini")
+  const bevIng  = ings.filter(i => i.cat === "Bevande")
 
   // When an ingredient vino is selected, auto-fill price, tipo, regione
   function onSelIngVino(ingId) {
@@ -2104,6 +2154,18 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
       bottlePrice: String(ing.cur),
       tipo: ing.tipoVino || "Rossi",
       regione: ing.regioneVino || "Altre regioni",
+    }))
+  }
+
+  // When a bevanda ingredient is selected, auto-fill price and name
+  function onSelIngBev(ingId) {
+    const ing = ings.find(i => i.id === ingId)
+    if (!ing) { setDForm(f => ({ ...f, selIngId: "", bottlePrice: "", name: "" })); return }
+    setDForm(f => ({
+      ...f,
+      selIngId: ingId,
+      name: ing.name,
+      bottlePrice: String(ing.cur),
     }))
   }
 
@@ -2344,7 +2406,19 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
             <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Dati voce</div>
 
             <Fld label="Nome *">
-              <input style={inp()} value={dForm.name} onChange={e => setDForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Barolo Giacomo Conterno 2018" />
+              <input style={inp()} value={dForm.name}
+                onChange={e => {
+                  const nome = e.target.value
+                  const isVino = !["Cocktail","Bevanda"].includes(dForm.tipo)
+                  if (isVino && nome.length > 3) {
+                    const tipoGuess = guessTipoVino(nome)
+                    const regGuess  = guessRegioneVino(nome)
+                    setDForm(f => ({ ...f, name: nome, tipo: tipoGuess, regione: regGuess }))
+                  } else {
+                    setDForm(f => ({ ...f, name: nome }))
+                  }
+                }}
+                placeholder="es. Barolo Giacomo Conterno 2018" />
               {dErr.name && <span style={{ fontSize: 11, color: S.red }}>{dErr.name}</span>}
             </Fld>
 
@@ -2355,7 +2429,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                   {[...VINO_TIPI, "Cocktail", "Bevanda"].map(t => <option key={t}>{t}</option>)}
                 </select>
               </Fld>
-              {dForm.tipo !== "Cocktail" && (
+              {!["Cocktail","Bevanda"].includes(dForm.tipo) && (
                 <Fld label="Regione">
                   <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.regione} onChange={e => setDForm(f => ({ ...f, regione: e.target.value }))}>
                     {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
@@ -2365,13 +2439,26 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
             </div>
 
             {/* Collegamento a ingrediente vino */}
-            {dForm.tipo !== "Cocktail" && viniIng.length > 0 && (
+            {!["Cocktail", "Bevanda"].includes(dForm.tipo) && viniIng.length > 0 && (
               <Fld label="Seleziona da magazzino vini">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngVino(e.target.value)}>
                   <option value="">— oppure inserisci manualmente —</option>
                   {viniIng.map(i => {
                     const alreadyDone = dishes.some(d => (d.cat === "vino") && (d.name === i.name || (d.bottlePrice && d.bottlePrice === i.cur)))
                     return <option key={i.id} value={i.id}>{alreadyDone ? "✓ " : ""}{i.name} · {F(i.cur)}/bottiglia</option>
+                  })}
+                </select>
+              </Fld>
+            )}
+
+            {/* Collegamento a ingrediente bevanda */}
+            {dForm.tipo === "Bevanda" && bevIng.length > 0 && (
+              <Fld label="Seleziona da magazzino bevande">
+                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngBev(e.target.value)}>
+                  <option value="">— oppure inserisci manualmente —</option>
+                  {bevIng.map(i => {
+                    const alreadyDone = dishes.some(d => d.cat === "bevanda" && d.name === i.name)
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "✓ " : ""}{i.name} · {F(i.cur)}/{i.unit}</option>
                   })}
                 </select>
               </Fld>
@@ -2394,7 +2481,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
               </Fld>
             </div>
 
-            {dForm.tipo !== "Cocktail" && (
+            {!["Cocktail","Bevanda"].includes(dForm.tipo) && (
               <Fld label="Calici per bottiglia">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.calici} onChange={e => setDForm(f => ({ ...f, calici: e.target.value }))}>
                   {["4","5","6","7","8"].map(v => <option key={v}>{v}</option>)}
@@ -2407,12 +2494,12 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
           {dForm.bottlePrice && +dForm.bottlePrice > 0 && (
             <div style={card({ padding: 14, marginBottom: 16 })}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
-              <div style={{ display: "grid", gridTemplateColumns: dForm.tipo !== "Cocktail" ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8 }}>
+              <div style={{ display: "grid", gridTemplateColumns: !["Cocktail","Bevanda"].includes(dForm.tipo) ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8 }}>
                 {[
                   { l: "Costo netto (IVA esclusa)", v: F(r2(dPriceNet)), c: S.t1 },
                   { l: "Costo lordo (IVA inclusa)", v: F(dPriceGross), c: S.t2 },
                   { l: "Prezzo vendita bottiglia", v: F(dSellBottle), c: S.ac },
-                  ...(dForm.tipo !== "Cocktail" ? [{ l: "Prezzo al calice", v: F(dSellCalice), c: S.green }] : []),
+                  ...(!["Cocktail","Bevanda"].includes(dForm.tipo) ? [{ l: "Prezzo al calice", v: F(dSellCalice), c: S.green }] : []),
                 ].map((k, i) => (
                   <div key={i} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "12px 12px" }}>
                     <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
@@ -2453,10 +2540,10 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   const VINO_TIPI = ["Rossi","Bianchi","Rosé","Bollicine"]
   const VINO_REGIONI = ["Piemonte","Toscana","Veneto","Sicilia","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"]
   const VINO_REGIONI_ORDER_MENU = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
+    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER_MENU[tipo] || VINO_REGIONI }
 
@@ -2678,7 +2765,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni"],
         Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni"],
         "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni"],
-        Bollicine:["Francia","Piemonte","Toscana","Trentino Alto Adige","Lombardia","Veneto","Sicilia","Valle d'Aosta","Altre regioni"],
+        Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
       }
       Object.entries(item.selected || {}).forEach(([tipo, regioni]) => {
         const order = REGIONI_ORDER[tipo] || Object.keys(regioni || {})
