@@ -1074,7 +1074,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
-  const GEMINI_KEY = "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"
+  const GEMINI_KEY = import.meta.env.VITE_GROQ_KEY
 
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
   const [selFornitore, setSelFornitore] = useState(null)
