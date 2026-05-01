@@ -4016,9 +4016,7 @@ export default function App() {
   async function deleteAccount() {
     if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non è reversibile.")) return
     try {
-      // Cancella dati Firestore
       await deleteDoc(doc(db, "users", user.uid, "data", "main"))
-      // Cancella account Firebase Auth
       await deleteUser(user)
     } catch(e) {
       if (e.code === "auth/requires-recent-login") {
@@ -4027,6 +4025,156 @@ export default function App() {
         alert("Errore: " + e.message)
       }
     }
+  }
+
+  const [settingsOpen, setSettingsOpen] = useState(false)
+
+  async function sendPasswordReset() {
+    try {
+      await sendPasswordResetEmail(auth, user.email)
+      alert("Email di reset inviata a " + user.email + " — controlla la casella (anche spam).")
+    } catch(e) {
+      alert("Errore: " + e.message)
+    }
+  }
+
+  function SettingsPanel() {
+    const createdAt = user?.metadata?.creationTime
+      ? new Date(user.metadata.creationTime).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })
+      : "—"
+    const lastLogin = user?.metadata?.lastSignInTime
+      ? new Date(user.metadata.lastSignInTime).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
+      : "—"
+    const provider = user?.providerData?.[0]?.providerId === "google.com" ? "Google" : "Email / Password"
+
+    const sections = [
+      {
+        title: "Account",
+        items: [
+          { label: "Email", value: user?.email || "—" },
+          { label: "Accesso con", value: provider },
+          { label: "Registrato il", value: createdAt },
+          { label: "Ultimo accesso", value: lastLogin },
+        ]
+      },
+      {
+        title: "Piano",
+        items: [
+          { label: "Piano attivo", value: "Professional" },
+          { label: "Versione app", value: "FoodMargin v1.0" },
+          { label: "Dati salvati su", value: "Firebase / Google Cloud" },
+        ]
+      },
+      {
+        title: "Privacy e dati",
+        items: [
+          { label: "Dati personali", value: "Salvati in modo sicuro su Firebase" },
+          { label: "Accesso ai dati", value: "Solo tu puoi vedere i tuoi dati" },
+          { label: "Backup automatico", value: "Ogni modifica viene salvata" },
+        ]
+      }
+    ]
+
+    const Wrap = isMobile ? ({ children }) => (
+      <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", flexDirection: "column", justifyContent: "flex-end", zIndex: 9999 }}>
+        <div style={{ background: S.surf, borderRadius: "22px 22px 0 0", maxHeight: "92vh", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: 40, height: 4, background: S.el, borderRadius: 999, margin: "12px auto 0", flexShrink: 0 }} />
+          {children}
+        </div>
+      </div>
+    ) : ({ children }) => (
+      <div onClick={e => e.target === e.currentTarget && setSettingsOpen(false)}
+        style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 9999 }}>
+        <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+          {children}
+        </div>
+      </div>
+    )
+
+    return (
+      <Wrap>
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0", flexShrink: 0 }}>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Impostazioni</div>
+          <button onClick={() => setSettingsOpen(false)} style={{ background: S.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: S.t3, fontSize: 18 }}>✕</button>
+        </div>
+
+        {/* Avatar + email */}
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 22px", borderBottom: S.bds, flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: S.acg, border: "2px solid " + S.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 22, color: S.ac, flexShrink: 0 }}>
+            {user?.email?.[0]?.toUpperCase() || "U"}
+          </div>
+          <div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{user?.email?.split("@")[0] || "Utente"}</div>
+            <div style={{ fontSize: 12, color: S.t3 }}>{user?.email || "—"}</div>
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{ overflowY: "auto", flex: 1, padding: "8px 22px 0" }}>
+
+          {/* Info sections */}
+          {sections.map((sec, si) => (
+            <div key={si} style={{ marginBottom: 20 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, marginTop: 16 }}>{sec.title}</div>
+              <div style={{ background: S.el, border: S.bd, borderRadius: S.r2, overflow: "hidden" }}>
+                {sec.items.map(({ label, value }, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", borderBottom: i < sec.items.length - 1 ? S.bds : "none" }}>
+                    <span style={{ fontSize: 13, color: S.t3 }}>{label}</span>
+                    <span style={{ fontSize: 13, color: S.t1, fontWeight: 500, maxWidth: "55%", textAlign: "right" }}>{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          {/* Azioni account */}
+          <div style={{ marginBottom: 20 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, marginTop: 16 }}>Azioni</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+
+              {/* Reset password — solo se non Google */}
+              {provider !== "Google" && (
+                <button onClick={sendPasswordReset}
+                  style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2 }}>
+                  <div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: S.t1, textAlign: "left" }}>Reimposta password</div>
+                    <div style={{ fontSize: 11, color: S.t3, marginTop: 2, textAlign: "left" }}>Ricevi un'email per cambiare la password</div>
+                  </div>
+                  <span style={{ color: S.t3, fontSize: 14 }}>›</span>
+                </button>
+              )}
+
+              {/* Logout */}
+              <button onClick={() => { setSettingsOpen(false); signOut(auth) }}
+                style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2 }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: S.t1, textAlign: "left" }}>Esci dall'account</div>
+                  <div style={{ fontSize: 11, color: S.t3, marginTop: 2, textAlign: "left" }}>Rimani registrato, esci solo da questo dispositivo</div>
+                </div>
+                <span style={{ color: S.t3, fontSize: 14 }}>›</span>
+              </button>
+
+              {/* Elimina account */}
+              <button onClick={() => { setSettingsOpen(false); deleteAccount() }}
+                style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2, background: S.rd, borderColor: "rgba(248,113,113,0.3)" }}>
+                <div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: S.red, textAlign: "left" }}>Elimina account</div>
+                  <div style={{ fontSize: 11, color: S.t3, marginTop: 2, textAlign: "left" }}>Cancella tutti i dati in modo permanente</div>
+                </div>
+                <span style={{ color: S.red, fontSize: 14 }}>›</span>
+              </button>
+
+            </div>
+          </div>
+
+          <div style={{ fontSize: 11, color: S.t3, textAlign: "center", paddingBottom: 24 }}>
+            FoodMargin · Tutti i dati sono crittografati e al sicuro
+          </div>
+
+        </div>
+      </Wrap>
+    )
   }
 
   if (!authReady) return (
@@ -4072,13 +4220,13 @@ export default function App() {
       <div style={{ height: 52, background: S.surf, borderBottom: S.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>FoodMargin</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Esci</button>
-          <button onClick={deleteAccount} style={{ background: "none", border: "none", color: S.t3, fontFamily: "inherit", fontSize: 10, cursor: "pointer", padding: "4px 6px" }} title="Elimina account">✕ account</button>
+          <button onClick={() => setSettingsOpen(true)} style={{ background: S.el, border: S.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: S.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚙</button>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
         {renderPage()}
       </div>
+      {settingsOpen && <SettingsPanel />}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: S.surf, borderTop: S.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
         {NAV.map(n => (
           <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", background: page === n.id ? "rgba(90,89,99,0.25)" : "none", border: "none", borderRadius: 10, cursor: "pointer", color: page === n.id ? S.t3 : S.ac }}>
@@ -4151,14 +4299,14 @@ export default function App() {
               <div style={{ width: 22, height: 22, borderRadius: 5, background: S.acg, border: "1px solid " + S.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 11, color: S.ac }}>{user?.email?.[0]?.toUpperCase() || "U"}</div>
               <span style={{ fontSize: 12, fontWeight: 500, color: S.t1 }}>{user?.email?.split("@")[0] || "User"}</span>
             </div>
-            <button onClick={() => signOut(auth)} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "5px 12px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Esci</button>
-            <button onClick={deleteAccount} style={{ background: "none", border: "none", color: S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer", padding: "5px 8px" }} title="Elimina account">✕ account</button>
+            <button onClick={() => setSettingsOpen(true)} style={{ background: S.el, border: S.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: S.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }} title="Impostazioni">⚙</button>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 48px" }}>
           {renderPage()}
         </div>
       </div>
+      {settingsOpen && <SettingsPanel />}
     </div>
   )
 }
