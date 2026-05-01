@@ -1145,17 +1145,41 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         setStep("upload"); return
       }
 
-      // Comprimi sempre
-      setProg(15); setProgLabel("Compressione immagine...")
-      const fileToSend = isImage ? await compressImage(f) : f
+      // PDF.js per PDF, compressione per immagini
+      setProg(15); setProgLabel("Preparazione documento...")
+      let base64 = ""
 
-      setProg(30); setProgLabel("Lettura immagine...")
-      const base64 = await new Promise((res, rej) => {
-        const reader = new FileReader()
-        reader.onload  = () => res(reader.result.split(",")[1])
-        reader.onerror = () => rej(new Error("Lettura file fallita"))
-        reader.readAsDataURL(fileToSend)
-      })
+      if (isPdf) {
+        setProg(20); setProgLabel("Conversione PDF in immagine...")
+        if (!window.pdfjsLib) {
+          await new Promise((res, rej) => {
+            const script = document.createElement("script")
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+            script.onload = res; script.onerror = rej
+            document.head.appendChild(script)
+          })
+          window.pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+        }
+        const arrayBuffer = await f.arrayBuffer()
+        const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise
+        const page = await pdfDoc.getPage(1)
+        const viewport = page.getViewport({ scale: 2.0 })
+        const canvas = document.createElement("canvas")
+        canvas.width = viewport.width; canvas.height = viewport.height
+        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise
+        base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
+        setProg(40); setProgLabel("PDF convertito — invio a Groq...")
+      } else {
+        setProg(15); setProgLabel("Compressione immagine...")
+        const fileToSend = await compressImage(f)
+        setProg(30); setProgLabel("Lettura immagine...")
+        base64 = await new Promise((res, rej) => {
+          const reader = new FileReader()
+          reader.onload  = () => res(reader.result.split(",")[1])
+          reader.onerror = () => rej(new Error("Lettura file fallita"))
+          reader.readAsDataURL(fileToSend)
+        })
+      }
 
       setProg(50); setProgLabel("Invio a Groq AI...")
       const controller = new AbortController()
@@ -1176,7 +1200,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
               content: [
                 {
                   type: "image_url",
-                  image_url: { url: "data:" + (isPdf ? "application/pdf" : "image/jpeg") + ";base64," + base64 }
+                  image_url: { url: "data:image/jpeg;base64," + base64 }
                 },
                 {
                   type: "text",
