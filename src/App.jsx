@@ -1446,11 +1446,17 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const foundList = prodotti.filter(p => p && p.nome).map(p => {
         const existing = findBestMatch(p.nome, parsed.fornitore || "")
         if (existing) {
+          const cat = existing.cat
           return {
             nome: p.nome, nomeEdit: p.nome, quantita: p.quantita, unita: p.unita,
             prezzoUnitario: p.prezzoUnitario,
             tipo: "update", ingId: existing.id, ingName: existing.name,
-            cat: existing.cat, include: true
+            cat, include: true,
+            ...(cat === "Vini" ? {
+              tipoVino: p.tipoVino || guessTipoVino(p.nome),
+              regioneVino: p.regioneVino || guessRegioneVino(p.nome),
+              produttore: p.produttore || existing.produttore || ""
+            } : {})
           }
         } else {
           const cat = guessCat(p.nome)
@@ -1500,7 +1506,13 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (!match) return ing
         const newCur = match.prezzoUnitario
         const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg }
+        // Se è un vino, aggiorna anche tipoVino e regioneVino se disponibili
+        const vinoFields = ing.cat === "Vini" ? {
+          ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
+          ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
+          ...(match.produttore ? { produttore: match.produttore } : {}),
+        } : {}
+        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg, ...vinoFields }
       }))
     }
 
