@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { lookupWine } from "./winesDB"
 import { db, auth, googleProvider } from "./firebase"
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore"
 import {
@@ -475,6 +476,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     prev: newCur !== editVino.cur ? editVino.cur : i.prev,
                   } : i))
                   setEditVino(null)
+                  setSelTipo(null)
                 }}>Salva</button>
               </div>
             </div>
@@ -1233,13 +1235,30 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         }
         const arrayBuffer = await f.arrayBuffer()
         const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise
-        const page = await pdfDoc.getPage(1)
-        const viewport = page.getViewport({ scale: 2.0 })
+        const numPages = pdfDoc.numPages
+        const scale = 2.0
+        // Calcola altezza totale per tutte le pagine
+        const viewports = []
+        for (let i = 1; i <= numPages; i++) {
+          const pg = await pdfDoc.getPage(i)
+          viewports.push(pg.getViewport({ scale }))
+        }
+        const totalHeight = viewports.reduce((sum, vp) => sum + vp.height, 0)
+        const maxWidth = Math.max(...viewports.map(vp => vp.width))
+        // Canvas unico con tutte le pagine impilate
         const canvas = document.createElement("canvas")
-        canvas.width = viewport.width; canvas.height = viewport.height
-        await page.render({ canvasContext: canvas.getContext("2d"), viewport }).promise
+        canvas.width = maxWidth; canvas.height = totalHeight
+        const ctx = canvas.getContext("2d")
+        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, maxWidth, totalHeight)
+        let offsetY = 0
+        for (let i = 1; i <= numPages; i++) {
+          const pg = await pdfDoc.getPage(i)
+          const vp = viewports[i - 1]
+          await pg.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, 0, offsetY] }).promise
+          offsetY += vp.height
+        }
         base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
-        setProg(40); setProgLabel("PDF convertito — invio a Groq...")
+        setProg(40); setProgLabel("PDF " + numPages + " pagine convertite — invio a Groq...")
       } else {
         setProg(15); setProgLabel("Compressione immagine...")
         const fileToSend = await compressImage(f)
@@ -1332,6 +1351,9 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       }
 
       function guessTipoVino(nome) {
+        // Prima cerca nel database vini
+        const dbResult = lookupWine(nome)
+        if (dbResult) return dbResult.tipo
         const n = nome.toLowerCase()
         if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|perlage|trento doc|oltrepo metodo|trentodoc|charmat|martinotti|pas dose|brut nature|extra brut|blanc de blancs|blanc de noirs|millesimato|asti spumante|moscato spumante|brachetto spumante/.test(n)) return "Bollicine"
         if (/rosato|rosé|rose |cerasuolo|ramato|chiaretto|lagrein rosato|pinot nero rosato|sangiovese rosato|nerello rosato|primitivo rosato|negroamaro rosato/.test(n)) return "Rosé"
@@ -1340,6 +1362,9 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       }
 
       function guessRegioneVino(nome) {
+        // Prima cerca nel database vini
+        const dbResult = lookupWine(nome)
+        if (dbResult) return dbResult.regione
         const n = nome.toLowerCase()
         // Piemonte — più ricco
         if (/barolo|barbaresco|barbera d.asti|barbera d.alba|barbera del monferrato|nebbiolo|moscato d.asti|asti spumante|langhe|piemonte|gavi|gavi di gavi|cortese|roero|roero arneis|dolcetto|dolcetto d.alba|dolcetto d.asti|brachetto|grignolino|ruche|ruché|freisa|pelaverga|timorasso|erbaluce|nascetta|favorita|arneis|conterno|giacosa|ceretto|vietti|sandrone|mascarello|gaja|vajra|marcarini|altare|scavino|einaudi|cogno|aldo conterno|giacomo conterno|paolo scavino|elio grasso|bruno giacosa|luciano sandrone|roberto voerzio|braida|coppo|fontanafredda|martini|canelli|nizza|alba|asti|cuneo|novara|torino/.test(n)) return "Piemonte"
@@ -1827,11 +1852,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                 {fattErr.date && <span style={{ fontSize: 11, color: S.red }}>{fattErr.date}</span>}
               </Fld>
               <Fld label="Totale €">
-                <input style={inp()} type="number" step="0.01" value={fattura.total} onChange={e => setFattura(f => ({ ...f, total: e.target.value }))} placeholder="0.00" />
+                <input style={inp()} type="text" inputMode="decimal" value={fattura.total} onChange={e => setFattura(f => ({ ...f, total: e.target.value.replace(",", ".") }))} placeholder="0.00" />
                 {fattErr.total && <span style={{ fontSize: 11, color: S.red }}>{fattErr.total}</span>}
               </Fld>
               <Fld label="IVA €">
-                <input style={inp()} type="number" step="0.01" value={fattura.vat} onChange={e => setFattura(f => ({ ...f, vat: e.target.value }))} placeholder="0.00" />
+                <input style={inp()} type="text" inputMode="decimal" value={fattura.vat} onChange={e => setFattura(f => ({ ...f, vat: e.target.value.replace(",", ".") }))} placeholder="0.00" />
               </Fld>
             </div>
           </div>
@@ -1969,11 +1994,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                       />
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, alignItems: "center" }}>
                         <div style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</div>
-                        <input type="number" step="0.01" min="0"
+                        <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12.5, padding: "5px 8px" })}
                           defaultValue={p.prezzoUnitario}
                           onBlur={e => {
-                            const newPrice = parseFloat(e.target.value)
+                            const newPrice = parseFloat(e.target.value.replace(",", "."))
                             if (!isNaN(newPrice) && newPrice !== p.prezzoUnitario) {
                               // Aggiorna fattura
                               setInvs(prev => prev.map(inv => inv.id === detailInv.id
@@ -2484,9 +2509,11 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                   const nome = e.target.value
                   const isVino = !["Cocktail","Bevanda"].includes(dForm.tipo)
                   if (isVino && nome.length > 3) {
-                    const tipoGuess = guessTipoVino(nome)
-                    const regGuess  = guessRegioneVino(nome)
-                    setDForm(f => ({ ...f, name: nome, tipo: tipoGuess, regione: regGuess }))
+                    const dbRes    = lookupWine(nome)
+                    const tipoGuess = dbRes ? dbRes.tipo    : guessTipoVino(nome)
+                    const regGuess  = dbRes ? dbRes.regione : guessRegioneVino(nome)
+                    const prodGuess = dbRes?.produttore || f.selIngId ? f.produttore : ""
+                    setDForm(f => ({ ...f, name: nome, tipo: tipoGuess, regione: regGuess, ...(prodGuess ? { produttore: prodGuess } : {}) }))
                   } else {
                     setDForm(f => ({ ...f, name: nome }))
                   }
