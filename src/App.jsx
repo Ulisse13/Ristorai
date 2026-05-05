@@ -969,7 +969,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
         method: "POST", signal: controller.signal,
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: "meta-llama/llama-4-maverick-17b-128e-instruct",
           max_tokens: 800,
           messages: [{
             role: "user",
@@ -1273,7 +1273,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
             max_tokens: 4096,
             messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
           })
@@ -1305,7 +1305,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
             max_tokens: 4096,
             messages: [{
               role: "user",
@@ -1827,18 +1827,16 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                   </div>
                   {p.include && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                      {p.tipo === "new" && (
-                        <div>
-                          <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
-                            Categoria <span style={{ color: S.green, fontSize: 9 }}>✓ AI</span>
-                          </label>
-                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: S.acd })}
-                            value={p.cat}
-                            onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
-                            {CATS.map(c => <option key={c}>{c}</option>)}
-                          </select>
-                        </div>
-                      )}
+                      <div>
+                        <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
+                          Categoria <span style={{ color: S.green, fontSize: 9 }}>✓ AI</span>
+                        </label>
+                        <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: S.acd })}
+                          value={p.cat}
+                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
+                          {CATS.map(c => <option key={c}>{c}</option>)}
+                        </select>
+                      </div>
                       {(p.sotto1 || p.sotto2) && (
                         <div style={{ gridColumn: "1/-1", display: "flex", gap: 6, marginTop: 4 }}>
                           {p.sotto1 && <span style={{ fontSize: 10, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "2px 7px" }}>{p.sotto1}</span>}
@@ -1849,11 +1847,26 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                         <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Prezzo unitario €</label>
                         <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12, padding: "5px 8px" })}
-                          value={p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario).replace(".", ",")}
+                          value={p.prezzoStr !== undefined ? p.prezzoStr : (p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario).replace(".", ","))}
                           onChange={e => {
                             const val = e.target.value
-                            const num = parseFloat(val.replace(",", ".")) || 0
-                            setFound(prev => prev.map((x, j) => j === i ? { ...x, prezzoUnitario: val === "" ? 0 : num } : x))
+                            // Permette di digitare liberamente (es. "9,", "9,8")
+                            const cleaned = val.replace(",", ".")
+                            const num = parseFloat(cleaned)
+                            setFound(prev => prev.map((x, j) => j === i ? {
+                              ...x,
+                              prezzoStr: val,
+                              prezzoUnitario: isNaN(num) ? x.prezzoUnitario : Math.round(num * 100) / 100
+                            } : x))
+                          }}
+                          onBlur={e => {
+                            // Al blur pulisce la stringa
+                            const num = parseFloat(e.target.value.replace(",", "."))
+                            setFound(prev => prev.map((x, j) => j === i ? {
+                              ...x,
+                              prezzoStr: undefined,
+                              prezzoUnitario: isNaN(num) ? x.prezzoUnitario : Math.round(num * 100) / 100
+                            } : x))
                           }}
                           placeholder="0,00"
                         />
@@ -3157,7 +3170,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
               body: JSON.stringify({
-                model: "meta-llama/llama-4-scout-17b-16e-instruct",
+                model: "meta-llama/llama-4-maverick-17b-128e-instruct",
                 max_tokens: 500,
                 messages: [{ role: "user", content: 'Traduci questi nomi di piatti italiani in inglese per un menu di ristorante. Rispondi SOLO con JSON valido senza markdown: {"traduzioni":{"nome italiano":"english translation"}}. Piatti: ' + JSON.stringify(nomi) }]
               })
@@ -3427,7 +3440,7 @@ Rispondi SOLO con JSON valido senza markdown:
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: "meta-llama/llama-4-maverick-17b-128e-instruct",
           max_tokens: 1000,
           messages: [{ role: "user", content: prompt }]
         })
