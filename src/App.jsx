@@ -524,18 +524,27 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
       ) : isMobile ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
           {list.map(ing => {
-            const spiked = (ing.cur - ing.avg) / ing.avg > 0.10
+            const avg = ing.avg || ing.cur || 0
+            const spiked = avg > 0 && (ing.cur - avg) / avg > 0.10
             return (
               <div key={ing.id} style={card({ padding: "14px 16px" })}>
-                <div style={row({ justifyContent: "space-between", marginBottom: 6 })}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{ing.name}</div>
-                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{ing.name}</div>
+                    {(ing.sotto1 || ing.sotto2) && (
+                      <div style={row({ gap: 6, marginBottom: 4 })}>
+                        {ing.sotto1 && <span style={{ fontSize: 10, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "1px 6px" }}>{ing.sotto1}</span>}
+                        {ing.sotto2 && <span style={{ fontSize: 10, color: S.t2, background: S.el, border: S.bds, borderRadius: 4, padding: "1px 6px" }}>{ing.sotto2}</span>}
+                      </div>
+                    )}
+                  </div>
+                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}>✕</button>
                 </div>
                 <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
                   <span style={{ fontSize: 14, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>
                     {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
                   </span>
-                  <span style={{ fontSize: 12, color: S.t3 }}>prec. {F(ing.prev||ing.avg)}/{ing.unit}</span>
+                  <span style={{ fontSize: 12, color: S.t3 }}>prec. {F(ing.prev || ing.avg || ing.cur || 0)}/{ing.unit}</span>
                 </div>
                 {ing.fornitore && <div style={{ fontSize: 10, color: S.t3, marginBottom: 2 }}>📦 {ing.fornitore}</div>}
                 {(() => {
@@ -572,12 +581,19 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
             </tr></thead>
             <tbody>
               {list.map(ing => {
-                const spiked = (ing.cur - ing.avg) / ing.avg > 0.10
+                const avg = ing.avg || ing.cur || 0
+            const spiked = avg > 0 && (ing.cur - avg) / avg > 0.10
                 return (
                   <tr key={ing.id}>
                     <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>
-                      {ing.name}
-                      {ing.confPrice && <span style={{ fontSize: 10, color: S.t3, marginLeft: 6 }}>conf. {F(ing.confPrice)}</span>}
+                      <div>{ing.name}</div>
+                      {(ing.sotto1 || ing.sotto2) && (
+                        <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
+                          {ing.sotto1 && <span style={{ fontSize: 9, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
+                          {ing.sotto2 && <span style={{ fontSize: 9, color: S.t2, background: S.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
+                        </div>
+                      )}
+                      {ing.confPrice && <span style={{ fontSize: 10, color: S.t3 }}>conf. {F(ing.confPrice)}</span>}
                       {ing.fornitore && <div style={{ fontSize: 10, color: S.t3, marginTop: 2 }}>{ing.fornitore}</div>}
                     </td>
                     <td style={{ padding: "10px 16px", color: spiked ? S.red : S.t1, fontWeight: spiked ? 600 : 400, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
@@ -1145,7 +1161,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
 // ── INVOICES ──────────────────────────────────────────────────────────────────
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Latticini", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
   const [selFornitore, setSelFornitore] = useState(null)
@@ -1386,7 +1402,10 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       return {
         nome: p.nome, nomeEdit: p.nome,
         quantita: p.quantita, unita: p.unita,
-        prezzoUnitario: p.prezzoUnitario || 0,
+        prezzoUnitario: (() => {
+          const raw = String(p.prezzoUnitario || "0").replace(",", ".")
+          return Math.round(parseFloat(raw) * 100) / 100
+        })(),
         sconto: p.sconto || "",
         sotto1: p.sotto1 || "", sotto2: p.sotto2 || "",
         tipo: existing ? "update" : "new",
@@ -1830,13 +1849,15 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                         <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Prezzo unitario €</label>
                         <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12, padding: "5px 8px" })}
-                          value={p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario)}
+                          value={p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario).replace(".", ",")}
                           onChange={e => {
                             const val = e.target.value
-                            setFound(prev => prev.map((x, j) => j === i ? { ...x, prezzoUnitario: val === "" ? 0 : parseFloat(val.replace(",", ".")) || 0 } : x))
+                            const num = parseFloat(val.replace(",", ".")) || 0
+                            setFound(prev => prev.map((x, j) => j === i ? { ...x, prezzoUnitario: val === "" ? 0 : num } : x))
                           }}
-                          placeholder="0.00"
+                          placeholder="0,00"
                         />
+                        {p.sconto && <div style={{ fontSize: 9, color: S.t3, marginTop: 2 }}>sconto: {p.sconto}</div>}
                       </div>
                     </div>
                   )}
@@ -2336,7 +2357,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                           </div>
                           <div style={{ overflowY: "auto", flex: 1 }}>
                             {!row._cat ? (
-                              ["Carni","Pesce","Verdure","Latticini","Surgelati","Scatolame","Detersivi","Vini","Bevande"]
+                              ["Carni","Pesce","Frutta e Verdura","Latticini","Freschi","Surgelati","Vini","Bevande","Scatolame","Detersivi"]
                                 .filter(c => ings.some(i => i.cat === c))
                                 .map(c => (
                                   <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c })}
@@ -2349,8 +2370,14 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) 
                               ings.filter(i => i.cat === row._cat).map(i => (
                                 <div key={i.id} onClick={() => fUpdateRow(row.id, { ingId: i.id, _open: false })}
                                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: S.bds, cursor: "pointer", background: row.ingId === i.id ? S.acg : "" }}>
-                                  <div>
-                                    <div style={{ fontSize: 14, color: row.ingId === i.id ? S.ac : S.t1, fontWeight: row.ingId === i.id ? 600 : 400 }}>{i.name}</div>
+                                  <div style={{ flex: 1 }}>
+                                    <div style={{ fontSize: 14, color: row.ingId === i.id ? S.ac : S.t1, fontWeight: row.ingId === i.id ? 600 : 400, marginBottom: 2 }}>{i.name}</div>
+                                    {(i.sotto1 || i.sotto2) && (
+                                      <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
+                                        {i.sotto1 && <span style={{ fontSize: 9, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 3, padding: "1px 5px" }}>{i.sotto1}</span>}
+                                        {i.sotto2 && <span style={{ fontSize: 9, color: S.t2, background: S.el, borderRadius: 3, padding: "1px 5px" }}>{i.sotto2}</span>}
+                                      </div>
+                                    )}
                                     <div style={{ fontSize: 11, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
                                   </div>
                                   {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}>✓</span>}
@@ -3663,7 +3690,7 @@ function LoginPage() {
 
 
 function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Latticini", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
   const uid2 = () => Math.random().toString(36).slice(2, 7)
@@ -3733,9 +3760,15 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                     borderColor: inList ? S.acd : "#1f1f25",
                     background: inList ? S.acg : S.surf }}>
                   <div style={row({ justifyContent: "space-between" })}>
-                    <div>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: inList ? S.ac : S.t1 }}>{ing.name}</div>
-                      <div style={{ fontSize: 11, color: S.t3 }}>{ing.cur > 0 ? "€ " + ing.cur.toFixed(2) + "/" + ing.unit : ing.unit}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: inList ? S.ac : S.t1, marginBottom: 2 }}>{ing.name}</div>
+                      {(ing.sotto1 || ing.sotto2) && (
+                        <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
+                          {ing.sotto1 && <span style={{ fontSize: 9, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
+                          {ing.sotto2 && <span style={{ fontSize: 9, color: S.t2, background: S.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
+                        </div>
+                      )}
+                      <div style={{ fontSize: 11, color: S.t3 }}>{ing.cur > 0 ? "€ " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
                     <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? S.ac : "#2a2a31"), background: inList ? S.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>✓</span>}
