@@ -969,7 +969,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
         method: "POST", signal: controller.signal,
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           max_tokens: 800,
           messages: [{
             role: "user",
@@ -1273,7 +1273,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
-            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
             messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
           })
@@ -1305,7 +1305,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
-            model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
             messages: [{
               role: "user",
@@ -3170,7 +3170,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
               method: "POST",
               headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
               body: JSON.stringify({
-                model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+                model: "meta-llama/llama-4-scout-17b-16e-instruct",
                 max_tokens: 500,
                 messages: [{ role: "user", content: 'Traduci questi nomi di piatti italiani in inglese per un menu di ristorante. Rispondi SOLO con JSON valido senza markdown: {"traduzioni":{"nome italiano":"english translation"}}. Piatti: ' + JSON.stringify(nomi) }]
               })
@@ -3440,7 +3440,7 @@ Rispondi SOLO con JSON valido senza markdown:
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           max_tokens: 1000,
           messages: [{ role: "user", content: prompt }]
         })
