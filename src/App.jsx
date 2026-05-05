@@ -1338,6 +1338,32 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       return "Scatolame"
     }
 
+    function guessTipoVino(nome) {
+      const dbResult = lookupWine(nome)
+      if (dbResult) return dbResult.tipo
+      const n = nome.toLowerCase()
+      if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante/.test(n)) return "Bollicine"
+      if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Rosé"
+      if (/bianco|pinot grigio|vermentino|soave|chardonnay|sauvignon|gewurz|riesling|vernaccia|trebbiano|greco|fiano|falanghina|arneis|gavi|ribolla|grillo|catarratto|nuragus|verdicchio/.test(n)) return "Bianchi"
+      return "Rossi"
+    }
+
+    function guessRegioneVino(nome) {
+      const dbResult = lookupWine(nome)
+      if (dbResult) return dbResult.regione
+      const n = nome.toLowerCase()
+      if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto|arneis|conterno|giacosa|ceretto|vietti|gaja/.test(n)) return "Piemonte"
+      if (/chianti|brunello|vernaccia|bolgheri|toscana|sassicaia|ornellaia|tignanello|antinori|frescobaldi|banfi/.test(n)) return "Toscana"
+      if (/prosecco|soave|amarone|valpolicella|veneto|lugana|ripasso/.test(n)) return "Veneto"
+      if (/franciacorta|lombardia|valtellina/.test(n)) return "Lombardia"
+      if (/friuli|collio|ribolla/.test(n)) return "Friuli Venezia Giulia"
+      if (/trentino|alto adige|teroldego|lagrein|trento doc/.test(n)) return "Trentino Alto Adige"
+      if (/nero d.avola|nerello|etna|sicilia|donnafugata|planeta/.test(n)) return "Sicilia"
+      if (/aglianico|taurasi|greco di tufo|fiano di avellino|falanghina|campania/.test(n)) return "Campania"
+      if (/champagne|bordeaux|borgogna|alsace|france|loire/.test(n)) return "Francia"
+      return "Altre regioni"
+    }
+
     const fatturaData = {
       sup:   parsed.fornitore || "",
       num:   parsed.numero    || "",
