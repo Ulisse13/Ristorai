@@ -143,7 +143,7 @@ function Dashboard({ ings, isMobile }) {
 }
 
 function Ingredients({ ings, setIngs, invs, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Latticini", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
@@ -895,8 +895,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
 function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
-  const GROQ_KEY = import.meta.env.VITE_GROQ_KEY
-
+  
   const [bStep, setBStep]         = useState("list")
   const [bProg, setBProg]         = useState(0)
   const [bProgLabel, setBProgLabel] = useState("")
@@ -952,7 +951,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
       const timeout = setTimeout(() => controller.abort(), 60000)
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST", signal: controller.signal,
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_KEY },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
           model: "meta-llama/llama-4-scout-17b-16e-instruct",
           max_tokens: 800,
@@ -1147,8 +1146,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, isMobile }) {
   const CATS = ["Carni", "Pesce", "Verdure", "Latticini", "Surgelati", "Scatolame", "Detersivi", "Vini", "Bevande"]
-  const GEMINI_KEY = import.meta.env.VITE_GROQ_KEY
-
+  
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
   const [selFornitore, setSelFornitore] = useState(null)
   const [forniForm, setForniForm]   = useState({ name: "", tel: "", email: "", cat: "" })
@@ -1186,7 +1184,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         const url = URL.createObjectURL(file)
         img.onload = () => {
           try {
-            const MAX_W = 1600, MAX_H = 2200
+            const MAX_W = 1600, MAX_H = 2400
             let w = img.width, h = img.height
             if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W }
             if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H }
@@ -1194,7 +1192,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
             canvas.width = w; canvas.height = h
             canvas.getContext("2d").drawImage(img, 0, 0, w, h)
             URL.revokeObjectURL(url)
-            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.85)
+            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.90)
           } catch(e) { URL.revokeObjectURL(url); res(file) }
         }
         img.onerror = () => { URL.revokeObjectURL(url); res(file) }
@@ -1203,13 +1201,21 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     })
   }
 
-  // ── Analisi OCR ───────────────────────────────────
+  // ── Leggi prompt da Firebase ───────────────────────
+  async function loadPrompt() {
+    try {
+      const snap = await getDoc(doc(db, "config", "prompts"))
+      if (snap.exists() && snap.data().prompt_fattura) return snap.data().prompt_fattura
+    } catch(e) { console.log("Prompt Firebase non disponibile, uso fallback") }
+    return null
+  }
+
+  // ── Analisi IA ────────────────────────────────────
   async function handleFile(f) {
     if (!f) return
-    setStep("loading"); setProg(5); setProgLabel("Preparazione immagine..."); setOcrError(null)
+    setStep("loading"); setProg(5); setProgLabel("Caricamento in corso..."); setOcrError(null)
 
     try {
-      // Samsung può restituire f.type vuoto — assumiamo immagine
       const typeGuess = f.type || (f.name && f.name.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg")
       const isImage = typeGuess.startsWith("image/")
       const isPdf   = typeGuess === "application/pdf"
@@ -1218,12 +1224,14 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         setStep("upload"); return
       }
 
-      // PDF.js per PDF, compressione per immagini
-      setProg(15); setProgLabel("Preparazione documento...")
-      let base64 = ""
+      // Carica prompt da Firebase
+      setProg(10); setProgLabel("Caricamento prompt AI...")
+      const promptBase = await loadPrompt()
+      const PROMPT = promptBase || `Sei un esperto contabile specializzato nel settore della ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown: {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"Carni o Pesce o Frutta e Verdura o Latticini o Freschi o Surgelati o Vini o Bevande o Scatolame o Detersivi","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o pz o l","prezzoUnitario":0.00,"sconto":""}]}`
 
       if (isPdf) {
-        setProg(20); setProgLabel("Conversione PDF in immagine...")
+        // ── PDF: estrai testo e manda a Groq come testo ──────────
+        setProg(20); setProgLabel("Estrazione testo dal PDF...")
         if (!window.pdfjsLib) {
           await new Promise((res, rej) => {
             const script = document.createElement("script")
@@ -1235,281 +1243,158 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         }
         const arrayBuffer = await f.arrayBuffer()
         const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise
-        const numPages = pdfDoc.numPages
-        const scale = 2.0
-        // Calcola altezza totale per tutte le pagine
-        const viewports = []
-        for (let i = 1; i <= numPages; i++) {
-          const pg = await pdfDoc.getPage(i)
-          viewports.push(pg.getViewport({ scale }))
+        let fullText = ""
+        for (let i = 1; i <= pdfDoc.numPages; i++) {
+          const page = await pdfDoc.getPage(i)
+          const tc = await page.getTextContent()
+          fullText += tc.items.map(item => item.str).join(" ") + "\n"
         }
-        const totalHeight = viewports.reduce((sum, vp) => sum + vp.height, 0)
-        const maxWidth = Math.max(...viewports.map(vp => vp.width))
-        // Canvas unico con tutte le pagine impilate
-        const canvas = document.createElement("canvas")
-        canvas.width = maxWidth; canvas.height = totalHeight
-        const ctx = canvas.getContext("2d")
-        ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, maxWidth, totalHeight)
-        let offsetY = 0
-        for (let i = 1; i <= numPages; i++) {
-          const pg = await pdfDoc.getPage(i)
-          const vp = viewports[i - 1]
-          await pg.render({ canvasContext: ctx, viewport: vp, transform: [1, 0, 0, 1, 0, offsetY] }).promise
-          offsetY += vp.height
-        }
-        base64 = canvas.toDataURL("image/jpeg", 0.85).split(",")[1]
-        setProg(40); setProgLabel("PDF " + numPages + " pagine convertite — invio a Groq...")
-      } else {
-        setProg(15); setProgLabel("Compressione immagine...")
-        const fileToSend = await compressImage(f)
-        setProg(30); setProgLabel("Lettura immagine...")
-        base64 = await new Promise((res, rej) => {
-          const reader = new FileReader()
-          reader.onload  = () => res(reader.result.split(",")[1])
-          reader.onerror = () => rej(new Error("Lettura file fallita"))
-          reader.readAsDataURL(fileToSend)
-        })
-      }
 
-      setProg(50); setProgLabel("Invio a Groq AI...")
-      const controller = new AbortController()
-      const timeout = setTimeout(() => controller.abort(), 60000)
-      const response = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          signal: controller.signal,
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": "Bearer " + GEMINI_KEY
-          },
+        setProg(45); setProgLabel("Analisi AI in corso...")
+        const ctrl = new AbortController()
+        const to = setTimeout(() => ctrl.abort(), 90000)
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST", signal: ctrl.signal,
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            max_tokens: 4096,
+            messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
+          })
+        })
+        clearTimeout(to)
+        const data = await res.json()
+        if (data.error) throw new Error(data.error.message || "Errore Groq")
+        const raw = data.choices?.[0]?.message?.content || ""
+        const match = raw.match(/\{[\s\S]*\}/)
+        if (!match) throw new Error("Risposta AI non valida — riprova")
+        processResult(JSON.parse(match[0]))
+
+      } else {
+        // ── IMMAGINE: comprimi e manda a Groq con visione ────────
+        setProg(20); setProgLabel("Compressione immagine...")
+        const compressed = await compressImage(f)
+        setProg(35); setProgLabel("Lettura immagine...")
+        const base64 = await new Promise((res, rej) => {
+          const reader = new FileReader()
+          reader.onload = () => res(reader.result.split(",")[1])
+          reader.onerror = () => rej(new Error("Lettura fallita"))
+          reader.readAsDataURL(compressed)
+        })
+
+        setProg(50); setProgLabel("Analisi AI in corso...")
+        const ctrl = new AbortController()
+        const to = setTimeout(() => ctrl.abort(), 90000)
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST", signal: ctrl.signal,
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
+          body: JSON.stringify({
+            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            max_tokens: 4096,
             messages: [{
               role: "user",
               content: [
-                {
-                  type: "image_url",
-                  image_url: { url: "data:image/jpeg;base64," + base64 }
-                },
-                {
-                  type: "text",
-                  text: `Sei un esperto contabile italiano. Analizza questa fattura MARR o simile. STRUTTURA COLONNE: Cod.Articolo | Descrizione | UM | Quantità | Prezzo | Sconti | Importo. REGOLE: 1) Ignora i codici numerici iniziali (es. 626691), usa solo la descrizione. 2) Il prezzo unitario lordo è nella colonna PREZZO (es. 9,80000 = 9.80). 3) La UM indica l'unità: N=numero/pezzo, KG=chilogrammo, LT=litro. 4) Se UM=N il prezzo è per pezzo/confezione. 5) Pulisci i nomi: togli pesi/volumi dalla descrizione (es. "MIELE AGRESTE CASTAGNO 420 g" → "Miele Castagno"). 6) Per i VINI: separa il nome del vino dal produttore/cantina. Es: "BAROLO GIACOMO CONTERNO 2018" → nome="Barolo 2018", produttore="Giacomo Conterno". Es: "CHIANTI CLASSICO ANTINORI" → nome="Chianti Classico", produttore="Antinori". 7) Includi TUTTI i prodotti: alimentari, bevande, detersivi, tutto. 8) SCONTI — REGOLA CRITICA: se nella colonna Sconti c'è uno sconto (es. 10%, 5+2%, 10+5%), DEVI calcolare il prezzoUnitario NETTO applicando lo sconto al prezzo lordo. Esempi: prezzo=10.00 sconto=10% → prezzoUnitario=9.00. Prezzo=10.00 sconto=5+2% → prezzoUnitario=10.00×0.95×0.98=9.31. Se non c'è sconto, prezzoUnitario = prezzo lordo. Il prezzoUnitario nel JSON deve essere SEMPRE il prezzo finale netto già scontato, MAI il prezzo lordo. 9) Totale documento è in fondo. Rispondi SOLO con JSON valido, NO markdown, NO backtick: {"fornitore":"MARR SPA","numero":"AR019432","data":"2026-02-26","totale":1201.84,"iva":127.16,"prodotti":[{"nome":"nome pulito","produttore":"nome cantina o produttore, stringa vuota se non vino","quantita":6.0,"unita":"pz","prezzoUnitario":9.80,"sconto":"10%","tipoVino":"Rossi o Bianchi o Rosé o Bollicine, stringa vuota se non vino","regioneVino":"regione italiana o Francia, stringa vuota se non vino"}]}`
-                }
+                { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
+                { type: "text", text: PROMPT }
               ]
-            }],
-            max_tokens: 2048
+            }]
           })
-        }
-      )
-
-      clearTimeout(timeout)
-      setProg(80); setProgLabel("Analisi risposta AI...")
-      const data = await response.json()
-
-      if (data.error) throw new Error(data.error.message || "Errore Groq")
-
-      const raw = data.choices?.[0]?.message?.content || ""
-      if (!raw) throw new Error("Nessuna risposta da Groq")
-
-      // Pulizia e parsing JSON sicuro
-      const jsonMatch = raw.match(/\{[\s\S]*\}/)
-      if (!jsonMatch) throw new Error("Groq non ha restituito un JSON valido")
-      let parsed
-      try {
-        parsed = JSON.parse(jsonMatch[0])
-      } catch(parseErr) {
-        throw new Error("JSON malformato — riprova con una foto più nitida")
+        })
+        clearTimeout(to)
+        const data = await res.json()
+        if (data.error) throw new Error(data.error.message || "Errore Groq")
+        const raw = data.choices?.[0]?.message?.content || ""
+        const match = raw.match(/\{[\s\S]*\}/)
+        if (!match) throw new Error("Risposta AI non valida — riprova con foto più nitida")
+        processResult(JSON.parse(match[0]))
       }
-
-      setProg(90); setProgLabel("Confronto con magazzino...")
-
-      // Compila campi fattura
-      const fatturaData = {
-        sup:   parsed.fornitore || "",
-        num:   parsed.numero    || "",
-        date:  parsed.data      || "",
-        total: parsed.totale ? String(parsed.totale) : "",
-        vat:   parsed.iva    ? String(parsed.iva)    : "",
-      }
-      setFattura(fatturaData)
-      try { localStorage.setItem("fm_ocr_fattura", JSON.stringify(fatturaData)) } catch(e) {}
-
-      // Auto-categorizzazione ingrediente per nome (categorie aggiornate)
-      function guessCat(nome) {
-        const n = nome.toLowerCase()
-        if (/detersiv|sapone|piatti|bucato|ammorbident|candegg|disinfett|multiuso|sgrassator|lavastoviglie|lavatrice|spugna|strofinaccio|carta igien|scottex|sacchetti|brillantante|wc gel|disincrost|panno|bobina|guanti nitr|tovaglioli/.test(n)) return "Detersivi"
-        if (/surgelat|gelo|gelato|congelat|misto mare surgelato|verdure surgelate|piselli surgelati|fagiolini surgelati|spinaci gelo|mais surgelato/.test(n)) return "Surgelati"
-        if (/pelati|passata|conserva|tonno scatola|sardine scatola|fagioli scatola|ceci scatola|lenticchie scatola|acciughe scatola|pomodori scatola|sugo pronto|legumi/.test(n)) return "Scatolame"
-        if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|nastro|moretti|lattina|acqua minerale|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin|vodka|rum|whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|rhum|tequila|mezcal/.test(n)) return "Bevande"
-        if (/vino |vini |barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|montepulciano|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|côtes|chablis|rosso di|bianco di|bollicine|spumante|cava|docg|doc |igt |vdt |cantina|tenuta|castello|podere|fattoria|abbazia|donnafugata|antinori|gaja|sassicaia|ornellaia|tignanello|conterno|giacosa|ceretto|vietti|sandrone|mascarello|allegrini|masi|bertani|zonin|frescobaldi|banfi|ruffino|melini|ricasoli|biondi santi|pertimali|casanova|salicutti|le pupille|morellino|vernaccia|lacryma|aglianico|greco|fiano|falanghina|moscato|asti|dolcetto|grignolino|ruché|timorasso|arneis|gavi|roero|sforzato|valtellina|franciacorta|lugana|soave|ripasso|corvina|rondinella|garganega|trebbiano|verdicchio|montepulciano d|lacryma christi|taurasi|greco di tufo|fiano di avellino/.test(n)) return "Vini"
-        if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|salsicc|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|prosciutto|salame|mortadella|bresaola|coppa|speck|roast.beef|noce b/.test(n)) return "Carni"
-        if (/pesce|merluzzo|salmone|tonno|branzino|orata|sogliola|baccalà|acciuga|sarda|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
-        if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais|zucca|porri|cetrioli|avocado|verdura|fave/.test(n)) return "Verdure"
-        if (/parmigiano|mozzarella|grana|pecorino|burro|latte|panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|uova|uovo|toma|tuorlo/.test(n)) return "Latticini"
-        return "Scatolame"
-      }
-
-      function guessTipoVino(nome) {
-        // Prima cerca nel database vini
-        const dbResult = lookupWine(nome)
-        if (dbResult) return dbResult.tipo
-        const n = nome.toLowerCase()
-        if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|perlage|trento doc|oltrepo metodo|trentodoc|charmat|martinotti|pas dose|brut nature|extra brut|blanc de blancs|blanc de noirs|millesimato|asti spumante|moscato spumante|brachetto spumante/.test(n)) return "Bollicine"
-        if (/rosato|rosé|rose |cerasuolo|ramato|chiaretto|lagrein rosato|pinot nero rosato|sangiovese rosato|nerello rosato|primitivo rosato|negroamaro rosato/.test(n)) return "Rosé"
-        if (/bianco|pinot grigio|vermentino|soave|lugana|chardonnay|sauvignon|gewurz|riesling|chablis|borgogna blanc|vernaccia|trebbiano|greco di tufo|fiano|fiano di avellino|pecorino|arneis|gavi|cortese|falanghina|greco|ribolla|ribolla gialla|friulano|malvasia bianca|garganega|catarratto|grillo|carricante|zibibbo|insolia|nuragus|verdicchio|passerina|pecorino abruzzese|timorasso|erbaluce|nascetta|favorita|pigato|albarola|bosco|vermentino di gallura|torbato|nasco|malvasia di cagliari|cannonau bianco|traminer|muller thurgau|nosiola|kerner|sylvaner|veltliner|pinot bianco|pinot blanc|auxerrois|roussanne|marsanne|viognier|grenache blanc|rolle|picpoul|clairette|muscadet|aligoté|melon de bourgogne|pouilly|sancerre|blanc/.test(n)) return "Bianchi"
-        return "Rossi"
-      }
-
-      function guessRegioneVino(nome) {
-        // Prima cerca nel database vini
-        const dbResult = lookupWine(nome)
-        if (dbResult) return dbResult.regione
-        const n = nome.toLowerCase()
-        // Piemonte — più ricco
-        if (/barolo|barbaresco|barbera d.asti|barbera d.alba|barbera del monferrato|nebbiolo|moscato d.asti|asti spumante|langhe|piemonte|gavi|gavi di gavi|cortese|roero|roero arneis|dolcetto|dolcetto d.alba|dolcetto d.asti|brachetto|grignolino|ruche|ruché|freisa|pelaverga|timorasso|erbaluce|nascetta|favorita|arneis|conterno|giacosa|ceretto|vietti|sandrone|mascarello|gaja|vajra|marcarini|altare|scavino|einaudi|cogno|aldo conterno|giacomo conterno|paolo scavino|elio grasso|bruno giacosa|luciano sandrone|roberto voerzio|braida|coppo|fontanafredda|martini|canelli|nizza|alba|asti|cuneo|novara|torino/.test(n)) return "Piemonte"
-        // Valle d Aosta
-        if (/valle d.aosta|aoste|torrette|enfer|donnas|arnad|montjovet|chambave|nus|morgex|la salle/.test(n)) return "Valle d'Aosta"
-        // Toscana
-        if (/chianti|chianti classico|chianti rufina|brunello|brunello di montalcino|rosso di montalcino|vernaccia di san gimignano|bolgheri|morellino|morellino di scansano|toscana|supertuscan|sassicaia|ornellaia|masseto|tignanello|solaia|antinori|frescobaldi|banfi|ruffino|ricasoli|biondi santi|pertimali|casanova|le pupille|col d.orcia|fonterutoli|isole e olena|poggio antuco|avignonesi|poliziano|salcheto|montepulciano|vino nobile|vino nobile di montepulciano|montalcino|san gimignano|maremma|carmignano|pomino|elba|bolgheri|castagneto|suvereto|montescudaio|val di cornia|colli di luni|candia|colli apuani/.test(n)) return "Toscana"
-        // Trentino Alto Adige
-        if (/trentino|alto adige|sudtirol|sud tirol|teroldego|lagrein|gewurz|gewürztraminer|müller|muller thurgau|kerner|sylvaner|veltliner|nosiola|schiava|vernatsch|pinot nero trentino|pinot grigio trentino|chardonnay trentino|trento doc|trentodoc|mezzocorona|cavit|ferrari|foradori|pojer|sandri|elena walch|alois lageder|hofstatter|tiefenbrunner/.test(n)) return "Trentino Alto Adige"
-        // Friuli Venezia Giulia
-        if (/friuli|collio|grave|isonzo|ribolla|ribolla gialla|friulano|malvasia istriana|refosco|pignolo|schioppettino|tazzelenghe|picolit|ramandolo|carso|terrano|vitovska|jermann|livio felluga|marco felluga|russiz superiore|schiopetto|venica|radikon|gravner|dario raccaro|miani|zidarich|edi kante/.test(n)) return "Friuli Venezia Giulia"
-        // Sicilia
-        if (/nero d.avola|nerello mascalese|nerello cappuccio|etna|etna rosso|etna bianco|sicilia|marsala|passito di pantelleria|zibibbo|grillo|catarratto|carricante|inzolia|insolia|donnafugata|tasca d.almerita|planeta|cusumano|firriato|duca di salaparuta|corvo|florio|benanti|passopisciaro|terre nere|cornelissen|occhipinti|cos|arianna|gulfi|morgante/.test(n)) return "Sicilia"
-        // Campania
-        if (/aglianico|taurasi|greco di tufo|fiano di avellino|falanghina|campania|sannio|irpinia|campi flegrei|vesuvio|lacryma christi|biancolella|forastera|feudi di san gregorio|mastroberardino|terredora|villa matilde|galardi|montevetrano|luigi maffini|marisa cuomo|cantine del notaio/.test(n)) return "Campania"
-        // Veneto
-        if (/prosecco|prosecco di conegliano|prosecco di valdobbiadene|soave|soave classico|amarone|amarone della valpolicella|valpolicella|bardolino|lugana|veneto|ripasso|recioto|custoza|bianco di custoza|durello|lessini|gambellara|pinot grigio veneto|allegrini|masi|bertani|zenato|pieropan|gini|inama|tedeschi|speri|tommasi|zonin|santa margherita|bisol|nino franco/.test(n)) return "Veneto"
-        // Lombardia
-        if (/franciacorta|oltrepo|oltrepò|valtellina|sforzato|sforzato di valtellina|sfursat|lugana|lombard|ca del bosco|bellavista|berlucchi|guido berlucchi|nino negri|ar.pe.pe|arpepe|mamete prevostini|rainoldi/.test(n)) return "Lombardia"
-        // Liguria
-        if (/pigato|vermentino ligure|rossese|liguria|cinque terre|sciacchetrà|colli di luni|colline di levanto|golfo del tigullio|pornassio|ormeasco/.test(n)) return "Liguria"
-        // Sardegna
-        if (/cannonau|cannonau di sardegna|vermentino di gallura|vermentino di sardegna|carignano del sulcis|carignano|nuragus|torbato|nasco|malvasia di cagliari|girò|monica|bovale|sardegna|argiolas|sella e mosca|santadi|capichera|pala|cantina di santadi|antonio argiolas/.test(n)) return "Sardegna"
-        // Puglia
-        if (/primitivo|primitivo di manduria|negroamaro|salice salentino|negro amaro|puglia|salento|five roses|locorotondo|martina franca|castel del monte|uva di troia|bombino|minutolo|verdeca|leone de castris|tormaresca|rivera|feudi di ugento|varvaglione/.test(n)) return "Puglia"
-        // Calabria
-        if (/cirò|cirò rosso|cirò bianco|calabria|gaglioppo|greco di bianco|savuto|lamezia|scavigna|verbicaro|pellaro|librandi|statti|ippolito|odoardi/.test(n)) return "Calabria"
-        // Altre regioni italiane
-        if (/marche|verdicchio|verdicchio dei castelli di jesi|verdicchio di matelica|rosso conero|rosso piceno|lacrima di morro|offida|umani ronchi|garofoli|velenosi|fattoria le terrazze/.test(n)) return "Altre regioni"
-        if (/abruzzo|montepulciano d.abruzzo|trebbiano d.abruzzo|cerasuolo d.abruzzo|pecorino abruzzese|valentini|illuminati|masciarelli|cataldi madonna/.test(n)) return "Altre regioni"
-        if (/umbria|sagrantino|montefalco|torgiano|orvieto|lungarotti|arnaldo caprai|antinori umbria|castello della sala/.test(n)) return "Altre regioni"
-        if (/lazio|frascati|cesanese|est est est|falerno|marino/.test(n)) return "Altre regioni"
-        if (/basilicata|aglianico del vulture|vulture|elena fucci|paternoster|d.angelo/.test(n)) return "Altre regioni"
-        if (/molise|tintilia|di majo norante/.test(n)) return "Altre regioni"
-        if (/emilia|lambrusco|sangiovese di romagna|pignoletto|albana|colli bolognesi|colli piacentini|reggiano|cavicchioli|cleto chiarli/.test(n)) return "Altre regioni"
-        // Francia
-        if (/champagne|bordeaux|borgogna|bourgogne|alsace|côtes|cotes|chablis|france|loire|rhône|rhone|bourgogne|sancerre|pouilly|muscadet|vouvray|chinon|saint emilion|pomerol|medoc|pauillac|margaux|saint julien|gevrey|chambolle|vosne|nuits|meursault|montrachet|puligny|chassagne|corton|pommard|volnay|beaune|santenay|macon|beaujolais|cotes du rhone|chateauneuf|gigondas|vacqueyras|hermitage|crozes|condrieu|cote rotie|languedoc|roussillon|provence|bandol|cassis|palette/.test(n)) return "Francia"
-        return "Altre regioni"
-      }
-
-      // Normalizza stringa per confronto
-      function normalizeStr(s) {
-        return s.toLowerCase()
-          .replace(/[àáâã]/g, "a").replace(/[èéêë]/g, "e")
-          .replace(/[ìíîï]/g, "i").replace(/[òóôõ]/g, "o")
-          .replace(/[ùúûü]/g, "u")
-          .replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim()
-      }
-
-      // Algoritmo fuzzy matching migliorato
-      function similarity(a, b) {
-        const na = normalizeStr(a)
-        const nb = normalizeStr(b)
-        // Match esatto dopo normalizzazione
-        if (na === nb) return 1.0
-        // Uno contiene l'altro
-        if (na.includes(nb) || nb.includes(na)) return 0.95
-        // Confronto per parole
-        const sa = na.split(" ").filter(w => w.length >= 3)
-        const sb = nb.split(" ").filter(w => w.length >= 3)
-        if (sa.length === 0 || sb.length === 0) return 0
-        let matches = 0
-        for (const wa of sa) {
-          for (const wb of sb) {
-            // Match esatto
-            if (wa === wb) { matches += 1; break }
-            // Una parola contiene l'altra (min 4 chars)
-            if (wa.length >= 4 && wb.includes(wa)) { matches += 0.9; break }
-            if (wb.length >= 4 && wa.includes(wb)) { matches += 0.9; break }
-            // Levenshtein semplificato: differenza di 1 carattere
-            if (Math.abs(wa.length - wb.length) <= 1) {
-              let diff = 0
-              const shorter = wa.length <= wb.length ? wa : wb
-              const longer  = wa.length <= wb.length ? wb : wa
-              for (let i = 0; i < shorter.length; i++) {
-                if (shorter[i] !== longer[i]) diff++
-              }
-              if (diff <= 1) { matches += 0.85; break }
-            }
-          }
-        }
-        return matches / Math.max(sa.length, sb.length)
-      }
-
-      function findBestMatch(nome, fornitureSup) {
-        let best = null, bestScore = 0
-        for (const ing of ings) {
-          const score = similarity(nome, ing.name)
-          if (score < 0.35) continue
-          // Se l'ingrediente ha un fornitore salvato, verifica che corrisponda
-          if (ing.fornitore && fornitureSup) {
-            const supLow = fornitureSup.toLowerCase()
-            const ingFornLow = ing.fornitore.toLowerCase()
-            // Se fornitori diversi e score non altissimo → non abbinare
-            if (!supLow.includes(ingFornLow.split(" ")[0]) && !ingFornLow.includes(supLow.split(" ")[0]) && score < 0.85) continue
-          }
-          if (score > bestScore) { bestScore = score; best = ing }
-        }
-        return best
-      }
-
-      // Analisi prodotti
-      const prodotti = parsed.prodotti || []
-      const foundList = prodotti.filter(p => p && p.nome).map(p => {
-        const existing = findBestMatch(p.nome, parsed.fornitore || "")
-        if (existing) {
-          const cat = existing.cat
-          return {
-            nome: p.nome, nomeEdit: p.nome, quantita: p.quantita, unita: p.unita,
-            prezzoUnitario: p.prezzoUnitario,
-            tipo: "update", ingId: existing.id, ingName: existing.name,
-            cat, include: true,
-            ...(cat === "Vini" ? {
-              tipoVino: p.tipoVino || guessTipoVino(p.nome),
-              regioneVino: p.regioneVino || guessRegioneVino(p.nome),
-              produttore: p.produttore || existing.produttore || ""
-            } : {})
-          }
-        } else {
-          const cat = guessCat(p.nome)
-          return {
-            nome: p.nome, nomeEdit: p.nome, quantita: p.quantita, unita: p.unita,
-            prezzoUnitario: p.prezzoUnitario,
-            tipo: "new", ingId: null, ingName: null,
-            cat, include: true,
-            ...(cat === "Vini" ? { 
-              tipoVino: p.tipoVino || guessTipoVino(p.nome),
-              regioneVino: p.regioneVino || guessRegioneVino(p.nome),
-              produttore: p.produttore || ""
-            } : {})
-          }
-        }
-      })
-
-      setFound(foundList)
-      setProg(100); setProgLabel("Completato!")
-      setStep("review")
 
     } catch(e) {
       const msg = e.name === "AbortError"
-        ? "Timeout: Groq non ha risposto in 60 secondi. Riprova con una foto più nitida."
-        : "Errore OCR: " + e.message
+        ? "Timeout: l'AI non ha risposto. Riprova."
+        : "Errore: " + e.message
       setOcrError(msg)
       setStep("upload")
     }
+  }
+
+  // ── Processa risultato AI ──────────────────────────
+  function processResult(parsed) {
+    setProg(85); setProgLabel("Smistamento prodotti...")
+
+    function guessCat(nome) {
+      const n = nome.toLowerCase()
+      if (/detersiv|sapone|candegg|disinfett|multiuso|sgrassator|lavastoviglie|spugna|strofinaccio|carta igien|scottex|sacchetti|brillantante|wc gel|disincrost|panno|bobina|guanti nitr|tovaglioli|piastrelle|paviment/.test(n)) return "Detersivi"
+      if (/surgelat|gelo|frozen/.test(n)) return "Surgelati"
+      if (/pelati|passata|conserva|tonno scatol|sardine scatol|fagioli scatol|ceci scatol|lenticchie|acciughe scatol|sugo pronto|legumi in/.test(n)) return "Scatolame"
+      if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|moretti|acqua mineral|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin |vodka|rum |whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|tequila|mezcal|lipton|baileys|marsala/.test(n)) return "Bevande"
+      if (/barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|chablis|bollicine|spumante|cava|docg|doc |igt |cantina|tenuta|castello|donnafugata|antinori|gaja|sassicaia|ornellaia|tignanello|conterno|giacosa|ceretto|vietti|sandrone|mascarello|allegrini|masi|bertani|frescobaldi|banfi|ruffino|ricasoli|biondi santi|aglianico|fiano|falanghina|moscato d.asti|arneis|gavi|roero/.test(n)) return "Vini"
+      if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|wurstel|cotechino|pancetta|lardo|guanciale|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato|cinghiale|anatra|piccione|quaglia|roast.beef/.test(n)) return "Carni"
+      if (/prosciutto|salame|mortadella|bresaola|coppa|speck|affettat|salumi|uova|uovo|pastorizzat|tuorlo|albume/.test(n)) return "Freschi"
+      if (/pesce|merluzzo|salmone|tonno fresc|branzino|orata|sogliola|baccala|acciuga fresc|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|anguilla|dentice|spigola/.test(n)) return "Pesce"
+      if (/mela|pera|pesca|albicocca|ciliegia|arancia|limone|kiwi|ananas|banana|fragola|uva |mango|melone|cocomero|fico|frutta/.test(n)) return "Frutta e Verdura"
+      if (/pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais |zucca|porri|cetrioli|avocado|verdura|fave|peperoni|olive/.test(n)) return "Frutta e Verdura"
+      if (/parmigiano|mozzarella|grana |burro|latte |panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|toma |pecorino|castelmagno|taleggio|stracchino/.test(n)) return "Latticini"
+      return "Scatolame"
+    }
+
+    const fatturaData = {
+      sup:   parsed.fornitore || "",
+      num:   parsed.numero    || "",
+      date:  parsed.data      || "",
+      total: parsed.totale    ? String(parsed.totale) : "",
+      vat:   parsed.iva       ? String(parsed.iva)    : "",
+    }
+    setFattura(fatturaData)
+    try { localStorage.setItem("fm_ocr_fattura", JSON.stringify(fatturaData)) } catch(e) {}
+
+    const prodotti = parsed.prodotti || []
+    const foundList = prodotti.filter(p => p && p.nome).map(p => {
+      // Usa categoria dall'AI, fallback a guessCat
+      const cat = normCat(p.categoria) || guessCat(p.nome)
+      const nameLower = p.nome.toLowerCase()
+      const existing = ings.find(i =>
+        i.name.toLowerCase().includes(nameLower.split(" ")[0]) ||
+        nameLower.includes(i.name.toLowerCase().split(" ")[0])
+      )
+      return {
+        nome: p.nome, nomeEdit: p.nome,
+        quantita: p.quantita, unita: p.unita,
+        prezzoUnitario: p.prezzoUnitario || 0,
+        sconto: p.sconto || "",
+        sotto1: p.sotto1 || "", sotto2: p.sotto2 || "",
+        tipo: existing ? "update" : "new",
+        ingId: existing ? existing.id : null,
+        ingName: existing ? existing.name : null,
+        cat, include: true,
+        ...(cat === "Vini" ? {
+          tipoVino: p.sotto1 || guessTipoVino(p.nome),
+          regioneVino: p.sotto2 || guessRegioneVino(p.nome),
+          produttore: p.produttore || ""
+        } : {})
+      }
+    })
+
+    setFound(foundList)
+    setProg(100); setProgLabel("Completato!")
+    setStep("review")
+  }
+
+  // ── Normalizza categoria dall'AI ───────────────────
+  function normCat(cat) {
+    if (!cat) return null
+    const c = cat.toLowerCase().trim()
+    if (c.includes("carne") || c === "carni") return "Carni"
+    if (c.includes("pesce")) return "Pesce"
+    if (c.includes("frutta") || c.includes("verdura")) return "Frutta e Verdura"
+    if (c.includes("latticin")) return "Latticini"
+    if (c.includes("fresco") || c.includes("freschi")) return "Freschi"
+    if (c.includes("surgel")) return "Surgelati"
+    if (c.includes("vino") || c.includes("vini")) return "Vini"
+    if (c.includes("bevand")) return "Bevande"
+    if (c.includes("scatol")) return "Scatolame"
+    if (c.includes("detersiv")) return "Detersivi"
+    return null
   }
 
   // ── Salva tutto ───────────────────────────────────
@@ -1552,7 +1437,9 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
         fornitore: fattura.sup.trim() || "",
-        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
+        sotto1: p.sotto1 || "",
+        sotto2: p.sotto2 || "",
+        ...(p.cat === "Vini" ? { tipoVino: p.sotto1 || p.tipoVino || "Rossi", regioneVino: p.sotto2 || p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
@@ -1898,13 +1785,19 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                       {p.tipo === "new" && (
                         <div>
                           <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
-                            Categoria {p.cat !== "Scatolame" && <span style={{ color: S.green, fontSize: 9 }}>✓ rilevata</span>}
+                            Categoria <span style={{ color: S.green, fontSize: 9 }}>✓ AI</span>
                           </label>
-                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: p.cat !== "Scatolame" ? S.acd : "#2a2a31" })}
+                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: S.acd })}
                             value={p.cat}
                             onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
                             {CATS.map(c => <option key={c}>{c}</option>)}
                           </select>
+                        </div>
+                      )}
+                      {(p.sotto1 || p.sotto2) && (
+                        <div style={{ gridColumn: "1/-1", display: "flex", gap: 6, marginTop: 4 }}>
+                          {p.sotto1 && <span style={{ fontSize: 10, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "2px 7px" }}>{p.sotto1}</span>}
+                          {p.sotto2 && <span style={{ fontSize: 10, color: S.t2, background: S.el, border: S.bds, borderRadius: 4, padding: "2px 7px" }}>{p.sotto2}</span>}
                         </div>
                       )}
                       <div>
@@ -3207,10 +3100,9 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           try {
             const nomi = Object.values(sel).flat().map(d => d.name).filter(Boolean)
             if (nomi.length === 0) { saveMenu(); return }
-            const GROQ_KEY = "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"
-            const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                        const resp = await fetch("https://api.groq.com/openai/v1/chat/completions", {
               method: "POST",
-              headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_KEY },
+              headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
               body: JSON.stringify({
                 model: "meta-llama/llama-4-scout-17b-16e-instruct",
                 max_tokens: 500,
@@ -3478,10 +3370,9 @@ NON dare consigli generici come "verifica i fornitori" o "monitora i prezzi". Og
 Rispondi SOLO con JSON valido senza markdown:
 [{"titolo":"titolo specifico con nome piatto/ingrediente","problema":"analisi numerica precisa del problema","azioni":["azione concreta 1 con numeri","azione concreta 2 con numeri","alternativa ingrediente stagionale se applicabile"],"guadagno":0,"priorita":"alta|media|bassa"}]`
 
-      const GROQ_KEY = "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"
       const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + GROQ_KEY },
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
           model: "meta-llama/llama-4-scout-17b-16e-instruct",
           max_tokens: 1000,
