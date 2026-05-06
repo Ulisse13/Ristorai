@@ -76,8 +76,8 @@ function Dashboard({ ings, dishes, isMobile }) {
   const alerts = []
   if (increased.length > 0) alerts.push({ type: "warn", msg: increased.length + " ingredient" + (increased.length > 1 ? "i aumentati" : "e aumentato") + " di prezzo" })
   if (overTarget.length > 0) alerts.push({ type: "warn", msg: overTarget.length + " piatt" + (overTarget.length > 1 ? "i" : "o") + " sopra il target food cost" })
-  if (ings.length === 0) alerts.push({ type: "info", msg: "Nessun ingrediente â" inizia scansionando una fattura" })
-  if (dishes.length === 0 && ings.length > 0) alerts.push({ type: "info", msg: "Magazzino popolato â" ora crea le tue ricette" })
+  if (ings.length === 0) alerts.push({ type: "info", msg: "Nessun ingrediente  -  inizia scansionando una fattura" })
+  if (dishes.length === 0 && ings.length > 0) alerts.push({ type: "info", msg: "Magazzino popolato  -  ora crea le tue ricette" })
   if (avgFoodCost > 35) alerts.push({ type: "warn", msg: "Food cost medio alto: " + avgFoodCost + "%" })
   if (avgFoodCost > 0 && avgFoodCost <= 30) alerts.push({ type: "ok", msg: "Food cost medio ottimo: " + avgFoodCost + "%" })
 
@@ -97,7 +97,7 @@ function Dashboard({ ings, dishes, isMobile }) {
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, marginBottom: 20 }}>
-        {[["prezzi","ðŸ"   Prezzi"],["insights","â  ¦ Insights"]].map(([id, label]) => (
+        {[["prezzi","ðŸ"  Prezzi"],["insights","â ¦ Insights"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
             style={{ padding: "8px 20px", background: tab === id ? S.ac : S.el, color: tab === id ? "#0d0d0f" : S.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: tab === id ? 700 : 400, cursor: "pointer", borderRadius: id === "prezzi" ? "8px 0 0 8px" : "0 8px 8px 0" }}>
             {label}
@@ -112,7 +112,7 @@ function Dashboard({ ings, dishes, isMobile }) {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
             {[
               { label: "Aumenti",   count: increased.length, color: S.red,   bg: S.rd,  symbol: "â'" },
-              { label: "Ribassi",   count: decreased.length, color: S.green, bg: S.gd,  symbol: "â"" },
+              { label: "Ribassi",   count: decreased.length, color: S.green, bg: S.gd,  symbol: " - " },
               { label: "Invariati", count: stable.length,    color: S.ac,    bg: S.acg, symbol: "â--" },
             ].map((k, i) => (
               <div key={i} style={{ background: k.bg, border: "1px solid " + (i === 0 ? "rgba(248,113,113,0.25)" : i === 1 ? "rgba(74,222,128,0.25)" : S.acd), borderRadius: S.r2, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
@@ -138,7 +138,7 @@ function Dashboard({ ings, dishes, isMobile }) {
               return (
                 <div key={ing.id} style={{ background: S.surf, border: "1px solid #1f1f25", borderRadius: S.r, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ minWidth: 56, background: varBg, border: "1px solid " + varBorder, borderRadius: 6, padding: "4px 8px", textAlign: "center", flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, color: varColor, lineHeight: 1, fontWeight: 700 }}>{isUp ? "â'" : isDown ? "â"" : "â--"}</div>
+                    <div style={{ fontSize: 14, color: varColor, lineHeight: 1, fontWeight: 700 }}>{isUp ? "â'" : isDown ? " - " : "â--"}</div>
                     <div style={{ fontSize: 10, color: varColor, fontWeight: 700, marginTop: 1 }}>{varText}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -153,7 +153,7 @@ function Dashboard({ ings, dishes, isMobile }) {
               )
             })}
           </div>
-          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>Nessun ingrediente â" inizia scansionando una fattura</div>}
+          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>Nessun ingrediente  -  inizia scansionando una fattura</div>}
         </div>
       )}
 
@@ -167,7 +167,7 @@ function Dashboard({ ings, dishes, isMobile }) {
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
                 {alerts.map((a, i) => (
                   <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: S.r, background: a.type === "warn" ? S.rd : a.type === "ok" ? S.gd : S.el, border: "1px solid " + (a.type === "warn" ? "rgba(248,113,113,0.3)" : a.type === "ok" ? "rgba(74,222,128,0.3)" : S.acd) }}>
-                    <span style={{ fontSize: 14 }}>{a.type === "warn" ? "âš ï¸" : a.type === "ok" ? "â  ..." : "â¹ï¸"}</span>
+                    <span style={{ fontSize: 14 }}>{a.type === "warn" ? "âš ï¸" : a.type === "ok" ? "â ..." : "â¹ï¸"}</span>
                     <span style={{ fontSize: 13, color: a.type === "warn" ? S.red : a.type === "ok" ? S.green : S.t2 }}>{a.msg}</span>
                   </div>
                 ))}
@@ -241,10 +241,10 @@ function Dashboard({ ings, dishes, isMobile }) {
             </>
           )}
 
-          {/* Top 5 pi  ¹ cari */}
+          {/* Top 5 pi ¹ cari */}
           {topExpensive.length > 0 && (
             <>
-              <SectionTitle label="Ingredienti pi  ¹ costosi" />
+              <SectionTitle label="Ingredienti pi ¹ costosi" />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {topExpensive.map((ing, i) => (
                   <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: S.el, border: S.bds, borderRadius: S.r }}>
@@ -262,7 +262,7 @@ function Dashboard({ ings, dishes, isMobile }) {
             </>
           )}
 
-          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>Nessun dato â" inizia scansionando una fattura</div>}
+          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>Nessun dato  -  inizia scansionando una fattura</div>}
         </div>
       )}
     </div>
@@ -271,11 +271,11 @@ function Dashboard({ ings, dishes, isMobile }) {
 
 function Ingredients({ ings, setIngs, invs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ©", "Bollicine"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Ros ©", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
@@ -353,10 +353,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     if (form.unit === "confezione") {
       // calcola prezzo per kg o litro dalla confezione
       cur = Math.round((+form.confPrice / +form.confWeight) * 100) / 100
-      unitBase = "kg" // default â" utente pu  ² cambiarlo in futuro
+      unitBase = "kg" // default  -  utente pu ² cambiarlo in futuro
     } else {
       cur = +form.cur
-      // Normalizza unit   : salva sempre in kg o l per coerenza con food cost
+      // Normalizza unit  : salva sempre in kg o l per coerenza con food cost
       if (form.unit === "litri") unitBase = "l"
       else if (form.unit === "g") { unitBase = "kg"; cur = Math.round(cur * 1000 * 100) / 100 }
       else if (form.unit === "ml") { unitBase = "l"; cur = Math.round(cur * 1000 * 100) / 100 }
@@ -382,7 +382,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     setDelTarget(null)
   }
 
-  // â"â" CATEGORY VIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
     <div>
       <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", alignItems: "flex-start" })}>
@@ -430,7 +430,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     {CATS.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </Fld>
-                <Fld label="Unit    di misura">
+                <Fld label="Unit   di misura">
                   <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
                     {["kg", "litri", "confezione", "bottiglia"].map(u => <option key={u}>{u}</option>)}
                   </select>
@@ -458,7 +458,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
               ) : (
                 <>
                   <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: S.t2 }}>
-                    Inserisci il prezzo della confezione e il peso/volume netto â" il prezzo per kg/litro verr    calcolato automaticamente.
+                    Inserisci il prezzo della confezione e il peso/volume netto  -  il prezzo per kg/litro verr   calcolato automaticamente.
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                     <Fld label="Prezzo confezione (â¬) *">
@@ -489,7 +489,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     </div>
   )
 
-  // â"â" VINI VIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  VINI VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (selCat === "Vini") {
     const vini = ingsByCat("Vini")
     // If no tipo selected, show tipo cards
@@ -516,12 +516,12 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
         </div>
       </div>
     )
-    // Tipo selected â" show by regione
+    // Tipo selected  -  show by regione
     const byTipo = vini.filter(v => v.tipoVino === selTipo)
     const REGIONI_IT_ING = {
       Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
       Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-      "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+      "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
       Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     }
     const regioniOrdinate = REGIONI_IT_ING[selTipo] || VINO_REGIONI
@@ -553,7 +553,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
                         style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>â  </button>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>â </button>
                     </div>
                   </div>
                 ))}
@@ -580,7 +580,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <Fld label="Tipologia">
                     <select style={inp({ appearance: "none", cursor: "pointer" })} value={editVinoForm.tipoVino} onChange={e => setEditVinoForm(f => ({ ...f, tipoVino: e.target.value }))}>
-                      {["Rossi","Bianchi","Ros  ©","Bollicine"].map(t => <option key={t}>{t}</option>)}
+                      {["Rossi","Bianchi","Ros ©","Bollicine"].map(t => <option key={t}>{t}</option>)}
                     </select>
                   </Fld>
                   <Fld label="Regione">
@@ -633,10 +633,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     )
   }
 
-  // â"â" INGREDIENT LIST VIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  INGREDIENT LIST VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const catIngs = ingsByCat(selCat)
 
-  // Categorie con sotto1 â" mostra cards sotto1 se non selezionata
+  // Categorie con sotto1  -  mostra cards sotto1 se non selezionata
   if (CATS_WITH_SOTTO1.includes(selCat) && !selSotto1) {
     const sotto1List = [...new Set(catIngs.map(i => i.sotto1).filter(Boolean))].sort()
     const noSotto1 = catIngs.filter(i => !i.sotto1)
@@ -677,7 +677,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     )
   }
 
-  // Lista prodotti â" filtrata per sotto1 se selezionata
+  // Lista prodotti  -  filtrata per sotto1 se selezionata
   const list = selSotto1 === "__none__"
     ? catIngs.filter(i => !i.sotto1)
     : selSotto1
@@ -728,7 +728,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                       </div>
                     )}
                   </div>
-                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}>â  </button>
+                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}>â </button>
                 </div>
                 <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
                   <span style={{ fontSize: 14, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>
@@ -806,7 +806,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                       })()}
                     </td>
                     <td style={{ padding: "11px 16px", borderBottom: S.bds, textAlign: "right" }}>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">â  </button>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">â </button>
                     </td>
                   </tr>
                 )
@@ -823,7 +823,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
           <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
             <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina ingrediente</div>
             <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non   ¨ reversibile.
+              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non  ¨ reversibile.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
@@ -839,11 +839,11 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
 function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ©", "Bollicine"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Ros ©", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
@@ -883,19 +883,19 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
   }
 
 
-  // â"â" CATEGORY VIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
     <div>
       <div style={{ marginBottom: 20 }}>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 2 }}>Piatti</div>
-        <div style={{ fontSize: 12, color: S.t3 }}>{dishes.length} piatti nel menu â" aggiunti dalla sezione Ricette</div>
+        <div style={{ fontSize: 12, color: S.t3 }}>{dishes.length} piatti nel menu  -  aggiunti dalla sezione Ricette</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
         {CATS.map(cat => {
           const list = dishesByCat(cat)
           const overTarget = list.filter(d => d.fc > 0 && d.fc > d.target).length
           const isVini = cat === "Vini"
-          const tipiCount = isVini ? ["Rossi","Bianchi","Ros  ©","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
+          const tipiCount = isVini ? ["Rossi","Bianchi","Ros ©","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
           return (
             <div key={cat} onClick={() => setSelCat(cat)}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
@@ -919,7 +919,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
     </div>
   )
 
-  // â"â" VINI VIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  VINI VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (selCat === "Vini") {
     const vini = dishesByCat("Vini")
     return (
@@ -931,7 +931,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
         </div>
         {vini.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-            Nessun vino presente â" aggiungili dalla sezione Drink Cost
+            Nessun vino presente  -  aggiungili dalla sezione Drink Cost
           </div>
         ) : (
           VINO_TIPI.map(tipo => {
@@ -944,7 +944,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   const REGIONI_IT_D = {
                     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
                     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-                    "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+                    "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
                     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
                   }
                   return (REGIONI_IT_D[tipo] || VINO_REGIONI)
@@ -963,10 +963,10 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                               {/* KPI vino */}
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
                                 {[
-                                  { l: "Costo bottiglia", v: v.bottlePrice > 0 ? F(v.bottlePrice) : (v.cost > 0 ? F(r2(v.cost * (v.calici || 6))) : "â""), c: S.t2 },
-                                  { l: "Vendita bottiglia", v: v.priceBottle > 0 ? F(v.priceBottle) : "â"", c: S.ac },
-                                  { l: "Margine", v: v.priceBottle > 0 && v.bottlePrice > 0 ? F(r2(v.priceBottle - v.bottlePrice)) : "â"", c: S.green },
-                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? F(v.priceCalice) : "â"", c: S.t1 },
+                                  { l: "Costo bottiglia", v: v.bottlePrice > 0 ? F(v.bottlePrice) : (v.cost > 0 ? F(r2(v.cost * (v.calici || 6))) : " - "), c: S.t2 },
+                                  { l: "Vendita bottiglia", v: v.priceBottle > 0 ? F(v.priceBottle) : " - ", c: S.ac },
+                                  { l: "Margine", v: v.priceBottle > 0 && v.bottlePrice > 0 ? F(r2(v.priceBottle - v.bottlePrice)) : " - ", c: S.green },
+                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? F(v.priceCalice) : " - ", c: S.t1 },
                                 ].map((k, i) => (
                                   <div key={i} style={{ background: S.el, borderRadius: 6, padding: "6px 8px" }}>
                                     <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3, fontWeight: 600, marginBottom: 2 }}>{k.l}</div>
@@ -976,7 +976,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                               </div>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginLeft: 8, flexShrink: 0 }}>
-                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>â  </button>
+                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>â </button>
                               <button onClick={() => { if(setEditDish && setPage) { setEditDish(v); setPage("fc") } }}
                                 style={{ background: "none", border: "1px solid #2a2a31", color: S.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: S.r }}>Modifica</button>
                             </div>
@@ -1005,7 +1005,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
           <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
             <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
             <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non   ¨ reversibile.
+              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non  ¨ reversibile.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
@@ -1018,7 +1018,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
     )
   }
 
-  // â"â" DISH LIST VIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  DISH LIST VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const list = dishesByCat(selCat)
   return (
     <div>
@@ -1031,7 +1031,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 
       {list.length === 0 ? (
         <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-          Nessun piatto in questa categoria â" aggiungili dalla sezione Food Cost
+          Nessun piatto in questa categoria  -  aggiungili dalla sezione Food Cost
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1041,8 +1041,8 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{d.name}</div>
                   <div style={row({ gap: 10 })}>
-                    <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{d.price > 0 ? F(d.price) : "â""}</span>
-                    {d.ricarico > 0 && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}>  --{(d.ricarico/100).toFixed(1)}</span>}
+                    <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{d.price > 0 ? F(d.price) : " - "}</span>
+                    {d.ricarico > 0 && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}> --{(d.ricarico/100).toFixed(1)}</span>}
                     {d.fc > 0 && <span style={{ fontSize: 12, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{P(d.fc)} FC</span>}
                     {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
                   </div>
@@ -1050,7 +1050,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                 <div style={row({ gap: 8 })}>
                   <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
                     style={{ background: "none", border: "none", color: S.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: S.r, border: "1px solid #2a2a31" }}>Modifica</button>
-                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>â  </button>
+                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>â </button>
                 </div>
               </div>
               {/* Food cost bar */}
@@ -1060,9 +1060,9 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   <div style={{ position: "absolute", top: 0, bottom: 0, left: (d.target * 100) + "%", width: 1, background: S.t3 }} />
                 </div>
               )}
-              {/* Stagionalit    */}
+              {/* Stagionalit   */}
               <div style={{ borderTop: S.bds, paddingTop: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 6 }}>Stagionalit   </div>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 6 }}>Stagionalit  </div>
                 <div style={row({ flexWrap: "wrap", gap: 6 })}>
                   {STAGIONI.map(s => (
                     <button key={s} onClick={() => toggleStagione(d, s)}
@@ -1082,7 +1082,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
           <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
             <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
             <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non   ¨ reversibile.
+              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non  ¨ reversibile.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
@@ -1096,7 +1096,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 }
 
 
-// â"â" BANCHETTI TAB â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+//  -  -  BANCHETTI TAB  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
 
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
@@ -1165,7 +1165,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
             role: "user",
             content: [
               { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
-              { type: "text", text: `Sei un assistente per ristoranti italiani. Analizza questo documento di prenotazione banchetto o evento. Estrai tutte le informazioni e rispondi SOLO con JSON valido senza markdown: {"nome":"nome cliente o tipo evento","dataEvento":"YYYY-MM-DD","orario":"HH:MM","persone":0,"intolleranze":"lista allergie separate da virgola, vuoto se nessuna","caparra":0,"menu":"piatti o tipo menu concordato, vuoto se non presente","note":"altre note"}. Se un campo non   ¨ presente usa stringa vuota o 0. Data sempre in formato YYYY-MM-DD.` }
+              { type: "text", text: `Sei un assistente per ristoranti italiani. Analizza questo documento di prenotazione banchetto o evento. Estrai tutte le informazioni e rispondi SOLO con JSON valido senza markdown: {"nome":"nome cliente o tipo evento","dataEvento":"YYYY-MM-DD","orario":"HH:MM","persone":0,"intolleranze":"lista allergie separate da virgola, vuoto se nessuna","caparra":0,"menu":"piatti o tipo menu concordato, vuoto se non presente","note":"altre note"}. Se un campo non  ¨ presente usa stringa vuota o 0. Data sempre in formato YYYY-MM-DD.` }
             ]
           }]
         })
@@ -1176,13 +1176,13 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
       if (data.error) throw new Error(data.error.message || "Errore Groq")
       const raw = data.choices?.[0]?.message?.content || ""
       const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error("Risposta AI non valida â" riprova con foto pi  ¹ nitida")
+      if (!match) throw new Error("Risposta AI non valida  -  riprova con foto pi ¹ nitida")
       const parsed = JSON.parse(match[0])
       setForm({ nome: parsed.nome || "", dataEvento: parsed.dataEvento || "", orario: parsed.orario || "", persone: parsed.persone ? String(parsed.persone) : "", intolleranze: parsed.intolleranze || "", caparra: parsed.caparra ? String(parsed.caparra) : "", menu: parsed.menu || "", note: parsed.note || "" })
       setBProg(100); setBProgLabel("Completato!")
       setBStep("form")
     } catch(e) {
-      setBError(e.name === "AbortError" ? "Timeout â" riprova con una foto pi  ¹ nitida." : "Errore OCR: " + e.message)
+      setBError(e.name === "AbortError" ? "Timeout  -  riprova con una foto pi ¹ nitida." : "Errore OCR: " + e.message)
       setBStep("upload")
     }
   }
@@ -1240,7 +1240,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
         return (
           <div key={b.id} style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: S.r, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
             <span style={{ fontSize: 16 }}>ðŸ""</span>
-            <div style={{ fontSize: 13, color: S.red, fontWeight: 600 }}>{g === 0 ? "Oggi" : g === 1 ? "Domani" : "Dopodomani"} â" {b.nome}{b.persone ? ", " + b.persone + " persone" : ""}. Hai ordinato tutto?</div>
+            <div style={{ fontSize: 13, color: S.red, fontWeight: 600 }}>{g === 0 ? "Oggi" : g === 1 ? "Domani" : "Dopodomani"}  -  {b.nome}{b.persone ? ", " + b.persone + " persone" : ""}. Hai ordinato tutto?</div>
           </div>
         )
       })}
@@ -1252,7 +1252,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
         </div>
       </div>
       {futuri.length === 0 && passati.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun banchetto â" scansiona un documento o aggiungi manualmente</div>
+        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun banchetto  -  scansiona un documento o aggiungi manualmente</div>
       ) : (
         <>
           {futuri.length > 0 && <div style={{ marginBottom: 24 }}><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10, paddingBottom: 4, borderBottom: S.bds }}>Prossimi ({futuri.length})</div>{futuri.map(b => <BCard key={b.id} b={b} />)}</div>}
@@ -1267,7 +1267,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
               <button onClick={() => setDetailB(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14, flexShrink: 0, marginLeft: 8 }}>x</button>
             </div>
             <div style={{ padding: "16px 22px" }}>
-              {[["Data evento", detailB.dataEvento ? DL(detailB.dataEvento) : "â""], ["Orario", detailB.orario || "â""], ["Persone", detailB.persone || "â""], ["Intolleranze", detailB.intolleranze || "Nessuna"], ["Caparra", detailB.caparra > 0 ? F(detailB.caparra) : "â""]].map(([l, v]) => (
+              {[["Data evento", detailB.dataEvento ? DL(detailB.dataEvento) : " - "], ["Orario", detailB.orario || " - "], ["Persone", detailB.persone || " - "], ["Intolleranze", detailB.intolleranze || "Nessuna"], ["Caparra", detailB.caparra > 0 ? F(detailB.caparra) : " - "]].map(([l, v]) => (
                 <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: S.bds }}>
                   <span style={{ fontSize: 12, color: S.t3 }}>{l}</span>
                   <span style={{ fontSize: 13, color: l === "Intolleranze" && detailB.intolleranze ? S.ac : S.t1, fontWeight: l === "Intolleranze" && detailB.intolleranze ? 600 : 400, maxWidth: "60%", textAlign: "right" }}>{v}</span>
@@ -1325,7 +1325,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
       <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: editB ? 4 : bStep === "form" && form.nome ? 4 : 16 }}>
         {editB ? "Modifica banchetto" : bStep === "form" && form.nome ? "Controlla e salva" : "Nuovo banchetto"}
       </div>
-      {bStep === "form" && form.nome && !editB && <div style={{ fontSize: 12, color: S.green, marginBottom: 12 }}>â  " Dati estratti automaticamente â" correggi se necessario</div>}
+      {bStep === "form" && form.nome && !editB && <div style={{ fontSize: 12, color: S.green, marginBottom: 12 }}>â " Dati estratti automaticamente  -  correggi se necessario</div>}
       <div style={{ ...card({ padding: 16 }), marginBottom: 14 }}>
         <Fld label="Nome cliente / evento *"><input style={inp()} type="text" value={form.nome} placeholder="es. Matrimonio Rossi · Compleanno Marco" onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />{formErr.nome && <span style={{ fontSize: 11, color: S.red }}>{formErr.nome}</span>}</Fld>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -1337,7 +1337,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
           <Fld label="Caparra â¬"><input style={inp()} type="number" step="0.01" value={form.caparra} placeholder="0.00" onChange={e => setForm(f => ({ ...f, caparra: e.target.value }))} /></Fld>
         </div>
         <Fld label="Intolleranze / allergie"><input style={inp()} type="text" value={form.intolleranze} placeholder="es. glutine, lattosio, frutta secca" onChange={e => setForm(f => ({ ...f, intolleranze: e.target.value }))} /></Fld>
-        <Fld label="Menu concordato"><textarea style={{ ...inp(), minHeight: 80, resize: "vertical", lineHeight: 1.5 }} value={form.menu} placeholder="es. Antipasto misto · Risotto · Filetto · Tiramis  ¹" onChange={e => setForm(f => ({ ...f, menu: e.target.value }))} /></Fld>
+        <Fld label="Menu concordato"><textarea style={{ ...inp(), minHeight: 80, resize: "vertical", lineHeight: 1.5 }} value={form.menu} placeholder="es. Antipasto misto · Risotto · Filetto · Tiramis ¹" onChange={e => setForm(f => ({ ...f, menu: e.target.value }))} /></Fld>
         <Fld label="Note"><input style={inp()} type="text" value={form.note} placeholder="es. servizio al piatto, torta esterna" onChange={e => setForm(f => ({ ...f, note: e.target.value }))} /></Fld>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -1348,7 +1348,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
   )
 }
 
-// â"â" INVOICES â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+//  -  -  INVOICES  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, isMobile }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
@@ -1382,7 +1382,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     setFattErr({}); setFound([])
   }
 
-  // â"â" Comprimi immagine â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Comprimi immagine  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   async function compressImage(file) {
     return new Promise((res) => {
       try {
@@ -1407,7 +1407,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     })
   }
 
-  // â"â" Leggi prompt da Firebase â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Leggi prompt da Firebase  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   async function loadPrompt() {
     try {
       const snap = await getDoc(doc(db, "config", "prompts"))
@@ -1416,7 +1416,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     return null
   }
 
-  // â"â" Analisi IA â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Analisi IA  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   async function handleFile(f) {
     if (!f) return
     setStep("loading"); setProg(5); setProgLabel("Caricamento in corso..."); setOcrError(null)
@@ -1436,7 +1436,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const PROMPT = promptBase || `Sei un esperto contabile specializzato nel settore della ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown: {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"Carni o Pesce o Frutta e Verdura o Latticini o Freschi o Surgelati o Vini o Bevande o Scatolame o Detersivi","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o pz o l","prezzoUnitario":0.00,"sconto":""}]}`
 
       if (isPdf) {
-        // â"â" PDF: estrai testo e manda a Groq come testo â"â"â"â"â"â"â"â"â"â"
+        //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
         setProg(20); setProgLabel("Estrazione testo dal PDF...")
         if (!window.pdfjsLib) {
           await new Promise((res, rej) => {
@@ -1473,11 +1473,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (data.error) throw new Error(data.error.message || "Errore Groq")
         const raw = data.choices?.[0]?.message?.content || ""
         const match = raw.match(/\{[\s\S]*\}/)
-        if (!match) throw new Error("Risposta AI non valida â" riprova")
+        if (!match) throw new Error("Risposta AI non valida  -  riprova")
         processResult(JSON.parse(match[0]))
 
       } else {
-        // â"â" IMMAGINE: comprimi e manda a Groq con visione â"â"â"â"â"â"â"â"
+        //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
         setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
         setProg(35); setProgLabel("Lettura immagine...")
@@ -1511,7 +1511,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (data.error) throw new Error(data.error.message || "Errore Groq")
         const raw = data.choices?.[0]?.message?.content || ""
         const match = raw.match(/\{[\s\S]*\}/)
-        if (!match) throw new Error("Risposta AI non valida â" riprova con foto pi  ¹ nitida")
+        if (!match) throw new Error("Risposta AI non valida  -  riprova con foto pi ¹ nitida")
         processResult(JSON.parse(match[0]))
       }
 
@@ -1524,7 +1524,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     }
   }
 
-  // â"â" Processa risultato AI â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Processa risultato AI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function processResult(parsed) {
     setProg(85); setProgLabel("Smistamento prodotti...")
 
@@ -1553,7 +1553,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       if (dbResult) return dbResult.tipo
       const n = nome.toLowerCase()
       if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante/.test(n)) return "Bollicine"
-      if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Ros  ©"
+      if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Ros ©"
       if (/bianco|pinot grigio|vermentino|soave|chardonnay|sauvignon|gewurz|riesling|vernaccia|trebbiano|greco|fiano|falanghina|arneis|gavi|ribolla|grillo|catarratto|nuragus|verdicchio/.test(n)) return "Bianchi"
       return "Rossi"
     }
@@ -1624,7 +1624,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     setStep("review")
   }
 
-  // â"â" Normalizza categoria dall'AI â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Normalizza categoria dall'AI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function normCat(cat) {
     if (!cat) return null
     const c = cat.toLowerCase().trim()
@@ -1641,7 +1641,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     return null
   }
 
-  // â"â" Salva tutto â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Salva tutto  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function save() {
     const e = {}
     if (!fattura.sup.trim()) e.sup = "Obbligatorio"
@@ -1660,7 +1660,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (!match) return ing
         const newCur = match.prezzoUnitario
         const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-        // Se   ¨ un vino, aggiorna anche tipoVino e regioneVino se disponibili
+        // Se  ¨ un vino, aggiorna anche tipoVino e regioneVino se disponibili
         const vinoFields = ing.cat === "Vini" ? {
           ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
           ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
@@ -1705,7 +1705,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     if (supName) {
       setFornitori(prev => {
         const exists = prev.find(f => f.name.toLowerCase() === supName.toLowerCase())
-        if (exists) return prev // gi    presente
+        if (exists) return prev // gi   presente
         return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
       })
     }
@@ -1714,7 +1714,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     reset()
   }
 
-  // â"â" RENDER â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  RENDER  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const updCount = found.filter(p => p.include && p.tipo === "update").length
   const newCount = found.filter(p => p.include && p.tipo === "new").length
 
@@ -1749,12 +1749,12 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* â"â" TAB BANCHETTI â"â" */}
+      {/*  -  -  TAB BANCHETTI  -  -  */}
       {step === "list" && invTab === "banchetti" && (
         <BanchettiTab banchetti={banchetti} setBanchetti={setBanchetti} isMobile={isMobile} />
       )}
 
-      {/* â"â" TAB FORNITORI â"â" */}
+      {/*  -  -  TAB FORNITORI  -  -  */}
       {step === "list" && invTab === "fornitori" && (
         <div>
           {/* Fornitore detail */}
@@ -1783,7 +1783,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
 
                     </div>
                   </div>
-                  {[["Nome", f.name], ["Telefono", f.tel||"â""], ["Email", f.email||"â""], ["Categoria", f.cat||"â""]].map(([l,v]) => (
+                  {[["Nome", f.name], ["Telefono", f.tel||" - "], ["Email", f.email||" - "], ["Categoria", f.cat||" - "]].map(([l,v]) => (
                     <div key={l} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: S.bds })}>
                       <span style={{ fontSize: 12, color: S.t3 }}>{l}</span>
                       <span style={{ fontSize: 13, color: S.t1, fontWeight: 500 }}>{v}</span>
@@ -1813,7 +1813,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                       <div key={inv.id} style={card({ padding: "12px 14px" })} onClick={() => setDetailInv(inv)}>
                         <div style={row({ justifyContent: "space-between" })}>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{inv.num || "â""}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{inv.num || " - "}</div>
                             <div style={{ fontSize: 11, color: S.t3 }}>{D(inv.date)}</div>
                           </div>
                           <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1 }}>{F(inv.total)}</div>
@@ -1844,7 +1844,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           {!selFornitore && (
             fornitori.length === 0 ? (
               <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-                Nessun fornitore â" vengono creati automaticamente quando carichi una fattura
+                Nessun fornitore  -  vengono creati automaticamente quando carichi una fattura
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1856,7 +1856,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                       <div style={row({ justifyContent: "space-between" })}>
                         <div>
                           <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{f.name}</div>
-                          <div style={{ fontSize: 11, color: S.t3 }}>{f.cat || "â""} · {fInvs.length} fatture</div>
+                          <div style={{ fontSize: 11, color: S.t3 }}>{f.cat || " - "} · {fInvs.length} fatture</div>
                         </div>
                         <div style={{ textAlign: "right" }}>
                           <div style={{ fontSize: 13, color: S.t2 }}>Anno</div>
@@ -1903,7 +1903,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* â"â" STEP: UPLOAD â"â" */}
+      {/*  -  -  STEP: UPLOAD  -  -  */}
       {step === "upload" && (
         <div style={card({ padding: 24, maxWidth: 500 })}>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 16 }}>Scatta o carica la foto della fattura</div>
@@ -1934,7 +1934,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* â"â" STEP: LOADING â"â" */}
+      {/*  -  -  STEP: LOADING  -  -  */}
       {step === "loading" && (
         <div style={card({ padding: 32, maxWidth: 500 })}>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 20, textAlign: "center" }}>Analisi in corso...</div>
@@ -1946,13 +1946,13 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* â"â" STEP: REVIEW â"â" */}
+      {/*  -  -  STEP: REVIEW  -  -  */}
       {step === "review" && (
         <div style={{ maxWidth: 600 }}>
           {/* Riepilogo */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
             {[
-              { l: "Fattura", v: fattura.sup || "â"", sub: fattura.num },
+              { l: "Fattura", v: fattura.sup || " - ", sub: fattura.num },
               { l: "Prezzi aggiornati", v: String(updCount), sub: "ingredienti esistenti", c: updCount > 0 ? S.green : S.t3 },
               { l: "Nuovi ingredienti", v: String(newCount), sub: "da aggiungere", c: newCount > 0 ? S.ac : S.t3 },
             ].map((k, i) => (
@@ -1974,7 +1974,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                   {fattErr.sup && <span style={{ fontSize: 11, color: S.red }}>{fattErr.sup}</span>}
                 </Fld>
               </div>
-              <Fld label="N  ° Fattura *">
+              <Fld label="N ° Fattura *">
                 <input style={inp()} value={fattura.num} onChange={e => setFattura(f => ({ ...f, num: e.target.value }))} placeholder="2024/001" />
                 {fattErr.num && <span style={{ fontSize: 11, color: S.red }}>{fattErr.num}</span>}
               </Fld>
@@ -2028,7 +2028,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       <div>
                         <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
-                          Categoria <span style={{ color: S.green, fontSize: 9 }}>â  " AI</span>
+                          Categoria <span style={{ color: S.green, fontSize: 9 }}>â " AI</span>
                         </label>
                         <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: S.acd })}
                           value={p.cat}
@@ -2088,7 +2088,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* â"â" DETTAGLIO FATTURA â"â" */}
+      {/*  -  -  DETTAGLIO FATTURA  -  -  */}
       {detailInv && (
         <div onClick={e => e.target === e.currentTarget && setDetailInv(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "28px 20px", zIndex: 999, overflowY: "auto" }}>
@@ -2102,7 +2102,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
                 {[
                   { l: "Data", v: D(detailInv.date) },
-                  { l: "N  ° Fattura", v: detailInv.num || "â"" },
+                  { l: "N ° Fattura", v: detailInv.num || " - " },
                   { l: "Totale", v: F(detailInv.total) },
                   { l: "IVA", v: F(detailInv.vat || 0) },
                   { l: "Imponibile", v: F(detailInv.net || 0) },
@@ -2123,7 +2123,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                 <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
                   {/* Header */}
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, padding: "7px 12px", background: S.el, borderBottom: S.bds }}>
-                    {["Nome prodotto (modificabile)", "â¬/unit   "].map(h => (
+                    {["Nome prodotto (modificabile)", "â¬/unit  "].map(h => (
                       <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
                     ))}
                   </div>
@@ -2181,7 +2181,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                 </div>
               ) : (
                 <div style={{ textAlign: "center", padding: "20px 0", color: S.t3, fontSize: 13 }}>
-                  Nessun prodotto â" carica di nuovo la fattura per elaborarla
+                  Nessun prodotto  -  carica di nuovo la fattura per elaborarla
                 </div>
               )}
             </div>
@@ -2201,7 +2201,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* â"â" LISTA FATTURE â"â" */}
+      {/*  -  -  LISTA FATTURE  -  -  */}
       {step === "list" && invTab === "fatture" && (
         <>
           {isMobile ? (
@@ -2222,7 +2222,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           ) : (
             <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead><tr>{["Data", "Fornitore", "N  ° Fattura", "Imponibile", "Totale"].map(h => (
+                <thead><tr>{["Data", "Fornitore", "N ° Fattura", "Imponibile", "Totale"].map(h => (
                   <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
                 ))}</tr></thead>
                 <tbody>{invs.slice(0, 5).map(inv => (
@@ -2283,13 +2283,13 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) {
 function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, defaultTab, onBack }) {
   const [tab, setTab] = useState(defaultTab || "food") // "food" | "drink"
 
-  // â"â" Shared â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Shared  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ©", "Bollicine"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Ros ©", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
@@ -2315,7 +2315,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     if (iu === "g")  { iu = "kg"; ingScale = 1000 } // prezzo per g â' converti a kg
     if (iu === "ml") { iu = "l";  ingScale = 1000 } // prezzo per ml â' converti a l
 
-    // Converti quantit    da rowUnit a iu
+    // Converti quantit   da rowUnit a iu
     let qtyConverted = qty
     if (ru === "g"  && iu === "kg") qtyConverted = qty / 1000
     else if (ru === "kg" && iu === "g")  qtyConverted = qty * 1000
@@ -2327,7 +2327,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     return qtyConverted / ingScale
   }
 
-  // â"â" FOOD COST state â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  FOOD COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [fForm, setFForm]     = useState(() => {
     try { const s = localStorage.getItem("fm_fc_form"); return s ? JSON.parse(s) : { name: "", cat: "Secondi", ricarico: "300" } } catch(e) { return { name: "", cat: "Secondi", ricarico: "300" } }
   })
@@ -2367,7 +2367,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     return sum + toIngUnit(qty, rr.unit, ing.unit) * ing.cur * wasteMult
   }, 0)
   const fRicarico  = parseFloat(fForm.ricarico) || 300
-  const fSugPrice  = fLiveCost * (fRicarico / 100)  // moltiplicatore: 300% =   --3
+  const fSugPrice  = fLiveCost * (fRicarico / 100)  // moltiplicatore: 300% =  --3
   const fMargin    = fSugPrice - fLiveCost
   const fFoodCostPct = fSugPrice > 0 ? fLiveCost / fSugPrice : 0
 
@@ -2416,7 +2416,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     setTimeout(() => setFSaved(false), 3000)
   }
 
-  // â"â" DRINK COST state â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  DRINK COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [dForm, setDForm] = useState({
     name: "", tipo: "Rossi", regione: "Toscana",
     bottlePrice: "", iva: "10", ricarico: "200",
@@ -2458,7 +2458,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
   // Costo totale = prezzo netto + IVA
   const dPriceNet   = dForm.bottlePrice ? +dForm.bottlePrice : 0
   const dPriceGross = r2(dPriceNet * (1 + (+dForm.iva || 0) / 100))
-  const dSellBottle = r2(dPriceNet * ((+dForm.ricarico || 200) / 100)) // moltiplicatore: 200% =   --2
+  const dSellBottle = r2(dPriceNet * ((+dForm.ricarico || 200) / 100)) // moltiplicatore: 200% =  --2
   const dSellCalice = dForm.calici > 0 ? r2(dSellBottle / +dForm.calici) : 0
 
   function dSave() {
@@ -2493,7 +2493,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     setTimeout(() => setDSaved(false), 3000)
   }
 
-  // â"â" RENDER â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  RENDER  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   return (
     <div>
       {/* Header + back */}
@@ -2509,12 +2509,12 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         </div>
       </div>
 
-      {/* â"â" TAB: FOOD COST â"â" */}
+      {/*  -  -  TAB: FOOD COST  -  -  */}
       {tab === "food" && (
         <div style={{ maxWidth: 600 }}>
           {fSaved && (
             <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
-              Piatto salvato e aggiunto alla sezione Piatti â  "
+              Piatto salvato e aggiunto alla sezione Piatti â "
             </div>
           )}
 
@@ -2533,13 +2533,13 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
               </Fld>
               <Fld label="Ricarico %">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={fForm.ricarico} onChange={e => setFForm(f => ({ ...f, ricarico: e.target.value }))}>
-                  {[["100","  --1.0"],["150","  --1.5"],["200","  --2.0"],["250","  --2.5"],["300","  --3.0"],["350","  --3.5"],["400","  --4.0"],["450","  --4.5"],["500","  --5.0"],["600","  --6.0"],["700","  --7.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
+                  {[["100"," --1.0"],["150"," --1.5"],["200"," --2.0"],["250"," --2.5"],["300"," --3.0"],["350"," --3.5"],["400"," --4.0"],["450"," --4.5"],["500"," --5.0"],["600"," --6.0"],["700"," --7.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
                 </select>
               </Fld>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
                 <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "9px 12px", width: "100%" }}>
                   <div style={{ fontSize: 9.5, textTransform: "uppercase", color: S.t3, fontWeight: 600, marginBottom: 3 }}>Prezzo consigliato</div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>{fLiveCost > 0 ? F(fSugPrice) : "â""}</div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>{fLiveCost > 0 ? F(fSugPrice) : " - "}</div>
                 </div>
               </div>
             </div>
@@ -2555,7 +2555,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 
             {/* Header colonne */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
-              {["Ingrediente", "Qt    / Um", "Scarto %", ""].map(h => (
+              {["Ingrediente", "Qt   / Um", "Scarto %", ""].map(h => (
                 <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
               ))}
             </div>
@@ -2600,7 +2600,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                               <span style={{ fontSize: 15, fontWeight: 600, color: S.t1 }}>Scegli ingrediente</span>
                             )}
                             <button onClick={() => fUpdateRow(row.id, { _open: false })}
-                              style={{ background: S.el, border: S.bd, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14 }}>â  </button>
+                              style={{ background: S.el, border: S.bd, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14 }}>â </button>
                           </div>
                           <div style={{ overflowY: "auto", flex: 1 }}>
                             {!row._cat ? (
@@ -2662,7 +2662,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                     )}
                                     <div style={{ fontSize: 11, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
                                   </div>
-                                  {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}>â  "</span>}
+                                  {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}>â "</span>}
                                 </div>
                               ))}
                               </>
@@ -2681,7 +2681,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                       <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
                       <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: S.t3, pointerEvents: "none" }}>%</span>
                     </div>
-                    <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13, padding: 0 }}>  --</button>
+                    <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13, padding: 0 }}> --</button>
                   </div>
                 )
               })}
@@ -2720,12 +2720,12 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         </div>
       )}
 
-      {/* â"â" TAB: DRINK COST â"â" */}
+      {/*  -  -  TAB: DRINK COST  -  -  */}
       {tab === "drink" && (
         <div style={{ maxWidth: 600 }}>
           {dSaved && (
             <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
-              Voce salvata e aggiunta alla sezione Piatti â  "
+              Voce salvata e aggiunta alla sezione Piatti â "
             </div>
           )}
 
@@ -2771,10 +2771,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
             {!["Cocktail", "Bevanda"].includes(dForm.tipo) && viniIng.length > 0 && (
               <Fld label="Seleziona da magazzino vini">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngVino(e.target.value)}>
-                  <option value="">â" oppure inserisci manualmente â"</option>
+                  <option value=""> -  oppure inserisci manualmente  - </option>
                   {viniIng.map(i => {
                     const alreadyDone = dishes.some(d => (d.cat === "vino") && (d.name === i.name || (d.bottlePrice && d.bottlePrice === i.cur)))
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "â  " " : ""}{i.name} · {F(i.cur)}/bottiglia</option>
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "â " " : ""}{i.name} · {F(i.cur)}/bottiglia</option>
                   })}
                 </select>
               </Fld>
@@ -2784,10 +2784,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
             {dForm.tipo === "Bevanda" && bevIng.length > 0 && (
               <Fld label="Seleziona da magazzino bevande">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngBev(e.target.value)}>
-                  <option value="">â" oppure inserisci manualmente â"</option>
+                  <option value=""> -  oppure inserisci manualmente  - </option>
                   {bevIng.map(i => {
                     const alreadyDone = dishes.some(d => d.cat === "bevanda" && d.name === i.name)
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "â  " " : ""}{i.name} · {F(i.cur)}/{i.unit}</option>
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "â " " : ""}{i.name} · {F(i.cur)}/{i.unit}</option>
                   })}
                 </select>
               </Fld>
@@ -2866,12 +2866,12 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     Primavera: [2,3,4], Estate: [5,6,7], Autunno: [8,9,10], Inverno: [11,0,1]
   }
   const FOOD_CATS = ["Speciali","Antipasti","Primi","Secondi","Dolci","Cocktail"]
-  const VINO_TIPI = ["Rossi","Bianchi","Ros  ©","Bollicine"]
+  const VINO_TIPI = ["Rossi","Bianchi","Ros ©","Bollicine"]
   const VINO_REGIONI = ["Piemonte","Toscana","Veneto","Sicilia","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"]
   const VINO_REGIONI_ORDER_MENU = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER_MENU[tipo] || VINO_REGIONI }
@@ -2968,7 +2968,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       })
     })
     setMenus(prev => [{
-      id: "m" + uid2(), type: "vini", label: "Carta dei Vini â" " + nowStr(),
+      id: "m" + uid2(), type: "vini", label: "Carta dei Vini  -  " + nowStr(),
       date: nowISO(), template, fontSize, selected
     }, ...prev])
     setView("home"); setSelVini({})
@@ -2980,7 +2980,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   }
 
   function openPrintPreview(item) {
-    // Apre il menu in una nuova tab â" da l  ¬ si pu  ² stampare o salvare come PDF
+    // Apre il menu in una nuova tab  -  da l ¬ si pu ² stampare o salvare come PDF
     // e poi condividere il PDF via WhatsApp
     const html = buildPrintHTML(item)
     const win = window.open("", "_blank")
@@ -3007,7 +3007,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         // Share solo testo con link
         await navigator.share({
           title: item.label,
-          text: item.label + " â" " + new Date(item.date).toLocaleDateString("it-IT", { day:"2-digit", month:"long", year:"numeric" })
+          text: item.label + "  -  " + new Date(item.date).toLocaleDateString("it-IT", { day:"2-digit", month:"long", year:"numeric" })
         })
         return
       } catch(e) { /* utente ha annullato o non supportato */ }
@@ -3108,7 +3108,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         }
       } else {
         // Carta vini
-        const tipi = ["Rossi","Bianchi","Ros  ©","Bollicine"]
+        const tipi = ["Rossi","Bianchi","Ros ©","Bollicine"]
         for (const tipo of tipi) {
           const viniTipo = (item.vini || []).filter(v => v.tipoVino === tipo)
           if (viniTipo.length === 0) continue
@@ -3154,7 +3154,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     }
   }
 
-  // â"â" Build print HTML â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  Build print HTML  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function buildPrintHTML(item) {
     const fs = item.fontSize === "Piccolo" ? "13px" : item.fontSize === "Grande" ? "17px" : "15px"
     const t = item.template || "semplice"
@@ -3171,14 +3171,14 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         wrap: "background:#fff;max-width:580px;margin:0 auto;padding:48px 40px;",
         title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;padding-bottom:14px;border-bottom:1px solid #1a1a1a;margin-bottom:36px;",
         cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#666;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:20px;",
-        sep: "<div style='text-align:center;color:#ddd;font-size:10px;letter-spacing:6px;margin:6px 0'>â" â" â"</div>",
+        sep: "<div style='text-align:center;color:#ddd;font-size:10px;letter-spacing:6px;margin:6px 0'> -   -   - </div>",
       },
       bordo: {
         wrap: "background:#fefefe;max-width:580px;margin:0 auto;padding:44px 40px;border:1px solid #bbb;",
         title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;margin-bottom:8px;",
         cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#555;margin-bottom:20px;",
         sep: "<div style='text-align:center;color:#ccc;font-size:11px;letter-spacing:6px;margin:6px 0'>· · ·</div>",
-        titleExtra: "<div style='display:flex;align-items:center;gap:12px;margin-bottom:32px'><hr style='flex:1;border:none;border-top:1px solid #ccc'><span style='font-size:10px;color:#ccc;letter-spacing:4px'>â  ¦</span><hr style='flex:1;border:none;border-top:1px solid #ccc'></div>",
+        titleExtra: "<div style='display:flex;align-items:center;gap:12px;margin-bottom:32px'><hr style='flex:1;border:none;border-top:1px solid #ccc'><span style='font-size:10px;color:#ccc;letter-spacing:4px'>â ¦</span><hr style='flex:1;border:none;border-top:1px solid #ccc'></div>",
       },
       doppio: {
         wrap: "background:#fffdf9;max-width:580px;margin:0 auto;padding:36px 32px;border:1px solid #c0a878;box-shadow:inset 0 0 0 5px #fffdf9,inset 0 0 0 6px #e8d8b8;",
@@ -3219,7 +3219,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       const REGIONI_ORDER = {
         Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni"],
         Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni"],
-        "Ros  ©":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni"],
+        "Ros ©":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni"],
         Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
       }
       Object.entries(item.selected || {}).forEach(([tipo, regioni]) => {
@@ -3234,7 +3234,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           allRows.forEach(([reg, vini]) => {
             body += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${reg}</div>`
             vini.forEach(v => {
-              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;text-align:center;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "â¬ " + v.priceBottle.toFixed(2).replace(".",",") : "â""}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. â¬ " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;text-align:center;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "â¬ " + v.priceBottle.toFixed(2).replace(".",",") : " - "}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. â¬ " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
             })
           })
           body += `</div>`
@@ -3244,14 +3244,14 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           rowsNoFr.forEach(([reg, vini]) => {
             body += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${reg}</div>`
             vini.forEach(v => {
-              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "â¬ " + v.priceBottle.toFixed(2).replace(".",",") : "â""}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. â¬ " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "â¬ " + v.priceBottle.toFixed(2).replace(".",",") : " - "}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. â¬ " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
             })
           })
           body += `</div>`
         }
       })
       // Francia separata
-      const franciaTipi = ["Rossi","Bianchi","Ros  ©"]
+      const franciaTipi = ["Rossi","Bianchi","Ros ©"]
       let hasFrancia = false
       let franciaBody = ""
       franciaTipi.forEach(tipo => {
@@ -3260,7 +3260,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           if (!hasFrancia) { franciaBody += `<div style="page-break-before:always;padding-top:48px"><div style="${st.cat}">Vini Francesi</div>`; hasFrancia = true }
           franciaBody += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${tipo}</div>`
           vini.forEach(v => {
-            franciaBody += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "â¬ " + v.priceBottle.toFixed(2).replace(".",",") : "â""}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. â¬ " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+            franciaBody += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "â¬ " + v.priceBottle.toFixed(2).replace(".",",") : " - "}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. â¬ " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
           })
         }
       })
@@ -3290,7 +3290,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 </body></html>`
   }
 
-  // â"â" HOME â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  HOME  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "home") return (
     <div>
       <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 20 }}>Crea Menu</div>
@@ -3333,7 +3333,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
               <div style={row({ gap: 10, marginTop: 4 })}>
                 <button style={btn("s", { fontSize: 11, padding: "5px 14px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
                 <div style={row({ gap: 14, marginLeft: 4 })}>
-                  {/* Condividi â" apre menu nativo del telefono */}
+                  {/* Condividi  -  apre menu nativo del telefono */}
                   <button title="Condividi" onClick={() => shareMenu(m)}
                     style={{ background: "none", border: "none", cursor: "pointer", color: S.t2, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -3366,7 +3366,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     </div>
   )
 
-  // â"â" OPEN / PREVIEW â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  OPEN / PREVIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "open" && openItem) return (
     <div>
       <div style={row({ marginBottom: 16 })}>
@@ -3383,7 +3383,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
             {piatti.map((p, i) => (
               <div key={i} style={row({ justifyContent: "space-between", padding: "7px 0", borderBottom: S.bds })}>
                 <span style={{ fontSize: 14, color: S.t1 }}>{p.name}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{p.price > 0 ? F(p.price) : "â""}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{p.price > 0 ? F(p.price) : " - "}</span>
               </div>
             ))}
           </div>
@@ -3402,7 +3402,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                 {vini.map((v, i) => (
                   <div key={i} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: S.bds })}>
                     <span style={{ fontSize: 13, color: S.t1 }}>{v.name}</span>
-                    <span style={{ fontSize: 12, color: S.t2 }}>{v.priceBottle ? F(v.priceBottle) + " / " + F(v.priceCalice) : "â""}</span>
+                    <span style={{ fontSize: 12, color: S.t2 }}>{v.priceBottle ? F(v.priceBottle) + " / " + F(v.priceCalice) : " - "}</span>
                   </div>
                 ))}
               </div>
@@ -3418,7 +3418,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     </div>
   )
 
-  // â"â" CREATE MENU STEP 1: config â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  CREATE MENU STEP 1: config  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "create_menu" && step === 1) return (
     <div style={{ maxWidth: 500 }}>
       <div style={row({ marginBottom: 16 })}>
@@ -3433,7 +3433,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
             <span style={{ fontSize: 13, color: S.t1 }}>{cat}</span>
             <div style={row({ gap: 8 })}>
               <button onClick={() => setCounts(c => ({ ...c, [cat]: Math.max(0, (c[cat]||0)-1) }))}
-                style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>â  '</button>
+                style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>â '</button>
               <span style={{ width: 24, textAlign: "center", fontSize: 14, fontWeight: 600, color: S.t1 }}>{counts[cat]||0}</span>
               <button onClick={() => setCounts(c => ({ ...c, [cat]: (c[cat]||0)+1 }))}
                 style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>+</button>
@@ -3476,12 +3476,12 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
       <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }}
         onClick={() => { setSelDishes({}); setStep(2) }}>
-        Continua â" Selezione piatti
+        Continua  -  Selezione piatti
       </button>
     </div>
   )
 
-  // â"â" CREATE MENU STEP 2: selezione piatti â"â"â"â"â"â"â"
+  //  -  -  CREATE MENU STEP 2: selezione piatti  -  -  -  -  -  -  - 
   if (view === "create_menu" && step === 2) {
     const activeCats = FOOD_CATS.filter(cat => (counts[cat]||0) > 0)
     return (
@@ -3517,7 +3517,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                       }))
                     }} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: sel.length >= max && !isSel ? "not-allowed" : "pointer", opacity: sel.length >= max && !isSel ? 0.4 : 1 }}>
                       <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>â  "</span>}
+                        {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>â "</span>}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={row({ gap: 6 })}>
@@ -3526,7 +3526,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                         </div>
                         {d.margin > 0 && <span style={{ fontSize: 10, color: S.t3 }}>margine {F(d.margin)}</span>}
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : "â""}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : " - "}</span>
                     </div>
                     {/* Sigla conservazione */}
                     {isSel && (
@@ -3535,7 +3535,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                         value={sigle[d.id] || ""}
                         onChange={e => setSigle(prev => ({ ...prev, [d.id]: e.target.value }))}
                         style={{ padding: "3px 4px", background: S.el, border: S.bd, borderRadius: S.r, color: sigle[d.id] ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer", width: 44, flexShrink: 0 }}>
-                        <option value="">â"</option>
+                        <option value=""> - </option>
                         <option value="A">(A)</option>
                         <option value="C">(C)</option>
                         <option value="D">(D)</option>
@@ -3588,13 +3588,13 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           } catch(e) { console.log("translation error", e) }
           setTranslating(false)
         }}>
-          Continua â" Traduzioni
+          Continua  -  Traduzioni
         </button>
       </div>
     )
   }
 
-  // â"â" TRANSLATE STEP â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  TRANSLATE STEP  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "translate" && pendingSelected) {
     const allDishes = Object.values(pendingSelected).flat()
     return (
@@ -3603,7 +3603,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           <button onClick={() => { setView("create_menu"); setStep(2) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>â Modifica selezione</button>
         </div>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 4 }}>Traduzioni inglese</div>
-        <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>Correggi se necessario â" appariranno sotto ogni piatto nel menu</div>
+        <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>Correggi se necessario  -  appariranno sotto ogni piatto nel menu</div>
 
         {translating ? (
           <div style={{ textAlign: "center", padding: "32px 0", color: S.t3, fontSize: 13 }}>
@@ -3648,7 +3648,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     )
   }
 
-  // â"â" CREATE CARTA VINI â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  CREATE CARTA VINI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "create_vini") {
     const allVini = dishes.filter(d => (d.cat||"").toLowerCase() === "vino")
     return (
@@ -3683,7 +3683,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
         {allVini.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-            Nessun vino presente â" aggiungili dalla sezione Drink Cost
+            Nessun vino presente  -  aggiungili dalla sezione Drink Cost
           </div>
         ) : (
           VINO_TIPI.map(tipo => {
@@ -3708,7 +3708,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                             [key]: isSel ? sel.filter(x => x !== v.id) : [...sel, v.id]
                           }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: S.bds, cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>â  "</span>}
+                              {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>â "</span>}
                             </div>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 13, color: S.t1 }}>{v.name}</div>
@@ -3897,9 +3897,9 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
 
   async function shareSpesa(cat) {
     const items = cat ? spesa.filter(s => s.cat === cat) : spesa
-    const header = cat ? "Lista spesa â" " + cat : "Lista della spesa"
-    const text = items.map(s => (s.done ? "â  " " : "â--» ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
-    const full = header + " â" " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
+    const header = cat ? "Lista spesa  -  " + cat : "Lista della spesa"
+    const text = items.map(s => (s.done ? "â " " : "â--» ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
+    const full = header + "  -  " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
     if (navigator.share) {
       try { await navigator.share({ title: header, text: full }); return } catch(e) {}
     }
@@ -3914,7 +3914,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
 
   const doneItems = spesa.filter(s => s.done)
 
-  // â"â" SELEZIONE INGREDIENTI â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  SELEZIONE INGREDIENTI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (selCat !== null) {
     const catIngs = ings.filter(i => i.cat === selCat)
     return (
@@ -3948,7 +3948,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                       <div style={{ fontSize: 11, color: S.t3 }}>{ing.cur > 0 ? "â¬ " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
                     <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? S.ac : "#2a2a31"), background: inList ? S.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>â  "</span>}
+                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>â "</span>}
                     </div>
                   </div>
                 </div>
@@ -3960,7 +3960,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
     )
   }
 
-  // â"â" LISTA SPESA â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"â"
+  //  -  -  LISTA SPESA  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   return (
     <div>
       <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap" })}>
@@ -4043,7 +4043,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
       {/* Lista da comprare */}
       {spesa.filter(s => !s.done).length === 0 && spesa.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px 0", color: S.t3, fontSize: 13 }}>
-          La lista   ¨ vuota â" aggiungi ingredienti dalle categorie sopra
+          La lista  ¨ vuota  -  aggiungi ingredienti dalle categorie sopra
         </div>
       ) : (
         <>
@@ -4056,7 +4056,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                     <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
                     <span style={{ fontSize: 14, color: S.t1 }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>â  </button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>â </button>
                 </div>
               ))}
             </div>
@@ -4070,11 +4070,11 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                 <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: S.el, border: S.bds, borderRadius: S.r, marginBottom: 6, opacity: 0.6 })}>
                   <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
                     <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + S.green, background: S.gd, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 11, color: S.green, fontWeight: 700 }}>â  "</span>
+                      <span style={{ fontSize: 11, color: S.green, fontWeight: 700 }}>â "</span>
                     </div>
                     <span style={{ fontSize: 14, color: S.t3, textDecoration: "line-through" }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>â  </button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>â </button>
                 </div>
               ))}
             </div>
@@ -4107,7 +4107,7 @@ function Turni({ turni, setTurni, isMobile }) {
   function giorniMese(ym) {
     const [y, m] = ym.split("-").map(Number)
     const giorni = []
-    const nomiLungo = ["Domenica","Luned  ¬","Marted  ¬","Mercoled  ¬","Gioved  ¬","Venerd  ¬","Sabato"]
+    const nomiLungo = ["Domenica","Luned ¬","Marted ¬","Mercoled ¬","Gioved ¬","Venerd ¬","Sabato"]
     const n = new Date(y, m, 0).getDate()
     for (let i = 1; i <= n; i++) {
       const d = new Date(y, m - 1, i)
@@ -4138,7 +4138,7 @@ function Turni({ turni, setTurni, isMobile }) {
   async function sendChat() {
     if (!chat.trim() && !fileAttach) return
 
-    // Validazione â" blocca richieste non inerenti ai turni
+    // Validazione  -  blocca richieste non inerenti ai turni
     if (chat.trim() && !fileAttach) {
       const c = chat.toLowerCase()
       const keywords = ["turno","turni","pranzo","cena","chiuso","festivo","dipendente","cucina","sala","bar","orario","lun","mar","mer","gio","ven","sab","dom","gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre","staff","personale","settimana","mese","giorno","lavora","riposo"]
@@ -4155,7 +4155,7 @@ function Turni({ turni, setTurni, isMobile }) {
     try {
       const [y, m] = selMese.split("-").map(Number)
       const nomi = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"]
-      const basePrompt = `Sei un assistente ESCLUSIVAMENTE per la gestione dei turni di un ristorante. Rispondi SOLO a richieste sui turni del personale â" ignora qualsiasi altra domanda. Mese: ${nomi[m-1]} ${y}.
+      const basePrompt = `Sei un assistente ESCLUSIVAMENTE per la gestione dei turni di un ristorante. Rispondi SOLO a richieste sui turni del personale  -  ignora qualsiasi altra domanda. Mese: ${nomi[m-1]} ${y}.
 Dipendenti attuali: ${dip.length > 0 ? dip.map(d => d.nome + " (" + d.reparto + ")").join(", ") : "nessuno"}.
 Analizza l orario e restituisci SOLO JSON valido senza markdown, nessun testo fuori dal JSON:
 {"dipendenti":[{"nome":"Nome","reparto":"Cucina o Sala o Bar o Altro"}],"turni":{"GG/MM/YYYY":{"pranzo":"nomi separati da virgola o CHIUSO o FESTIVO","cena":"nomi separati da virgola o CHIUSO"}}}
@@ -4217,7 +4217,7 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
       if (data.error) throw new Error(data.error.message)
       const raw = data.choices?.[0]?.message?.content || ""
       const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error("Risposta non valida â" riprova")
+      if (!match) throw new Error("Risposta non valida  -  riprova")
       const parsed = JSON.parse(match[0])
 
       const nuoviDip = parsed.dipendenti || []
@@ -4275,8 +4275,8 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
       y += 7
       for (const g of giorni) {
         const t = mese[g.data] || {}
-        const pranzo = t.pranzo || "â""
-        const cena   = t.cena   || "â""
+        const pranzo = t.pranzo || " - "
+        const cena   = t.cena   || " - "
         if (y > 190) { doc.addPage(); y = 20 }
         if (g.num % 2 === 0) { doc.setFillColor(245,245,248); doc.rect(14, y-4, 268, 7, "F") }
         doc.text(g.data, xs[0], y)
@@ -4324,7 +4324,7 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
       <div style={{ background: S.el, border: S.bd, borderRadius: S.r2, padding: "14px 16px", marginBottom: 20 }}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Genera orario con AI</div>
         <textarea value={chat} onChange={e => setChat(e.target.value)}
-          placeholder="Es: Dipendenti Zizzo cucina, Simone cucina, Luca sala, Raffy sala, Moll    bar. Luned  ¬ sempre chiuso. Marted  ¬ pranzo Zizzo Simone Moll   , cena Zizzo Luca Moll   . Sabato pranzo tutti..."
+          placeholder="Es: Dipendenti Zizzo cucina, Simone cucina, Luca sala, Raffy sala, Moll   bar. Luned ¬ sempre chiuso. Marted ¬ pranzo Zizzo Simone Moll  , cena Zizzo Luca Moll  . Sabato pranzo tutti..."
           style={{ ...inp(), width: "100%", minHeight: 80, resize: "vertical", fontSize: 13, boxSizing: "border-box", marginBottom: 8 }} />
         {/* File upload */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -4340,14 +4340,14 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
           {fileAttach && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ fontSize: 11, color: S.ac }}>{fileAttach.name}</span>
-              <button onClick={() => setFileAttach(null)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13 }}>â  </button>
+              <button onClick={() => setFileAttach(null)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13 }}>â </button>
             </div>
           )}
         </div>
         {err && <div style={{ fontSize: 12, color: S.red, marginBottom: 6 }}>{err}</div>}
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button onClick={sendChat} disabled={loading || (!chat.trim() && !fileAttach)} style={{ ...btn("p"), opacity: loading || (!chat.trim() && !fileAttach) ? 0.5 : 1 }}>
-            {loading ? "Analisi in corso..." : "â  ¦ Genera orario"}
+            {loading ? "Analisi in corso..." : "â ¦ Genera orario"}
           </button>
         </div>
       </div>
@@ -4373,8 +4373,8 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
                 <div key={nome} style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", background: S.surf, borderRadius: S.r, border: S.bds }}>
                   <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{nome}</span>
                   <div style={{ display: "flex", gap: 14 }}>
-                    <span style={{ fontSize: 12, color: S.t3 }}>â  ï¸ <b style={{ color: S.t1 }}>{ore.pranzo}</b></span>
-                    <span style={{ fontSize: 12, color: S.t3 }}>ðŸ   <b style={{ color: S.t1 }}>{ore.cena}</b></span>
+                    <span style={{ fontSize: 12, color: S.t3 }}>â ï¸ <b style={{ color: S.t1 }}>{ore.pranzo}</b></span>
+                    <span style={{ fontSize: 12, color: S.t3 }}>ðŸ  <b style={{ color: S.t1 }}>{ore.cena}</b></span>
                     <span style={{ fontSize: 12, color: S.ac, fontWeight: 700 }}>Tot: {ore.totale}</span>
                   </div>
                 </div>
@@ -4406,9 +4406,9 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
                     <div key={tipo} onClick={() => { setEditCell({ data: g.data, turno: tipo }); setEditVal(t[tipo] || "") }}
                       style={{ background: S.el, border: S.bds, borderRadius: S.r, padding: "8px 10px", cursor: "pointer", minHeight: 44 }}>
                       <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 4 }}>
-                        {tipo === "pranzo" ? "â  ï¸ Pranzo" : "ðŸ   Cena"}
+                        {tipo === "pranzo" ? "â ï¸ Pranzo" : "ðŸ  Cena"}
                       </div>
-                      <div style={{ fontSize: 12, color: t[tipo] ? S.t1 : S.t3 }}>{t[tipo] || "â""}</div>
+                      <div style={{ fontSize: 12, color: t[tipo] ? S.t1 : S.t3 }}>{t[tipo] || " - "}</div>
                     </div>
                   ))}
                 </div>
@@ -4424,7 +4424,7 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
           <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 400, padding: "20px 22px" }}>
             <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 4 }}>
-              {editCell.turno === "pranzo" ? "â  ï¸ Pranzo" : "ðŸ   Cena"} â" {editCell.data}
+              {editCell.turno === "pranzo" ? "â ï¸ Pranzo" : "ðŸ  Cena"}  -  {editCell.data}
             </div>
             <textarea value={editVal} onChange={e => setEditVal(e.target.value)}
               placeholder="Nomi separati da virgola, oppure CHIUSO o FESTIVO"
@@ -4460,9 +4460,9 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
 function Onboarding({ onDone }) {
   const steps = [
     {
-      icon: "â--  ",
+      icon: "â-- ",
       title: "Benvenuto in FoodMargin",
-      desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu â" tutto dal tuo telefono."
+      desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu  -  tutto dal tuo telefono."
     },
     {
       icon: "â-¤",
@@ -4535,7 +4535,7 @@ const NAV = [
   { id: "ing",    label: "Magazzino",   icon: "â¬¡", group: "Gestione" },
   { id: "fc",     label: "Ricette",     icon: "â--¬", group: "Gestione" },
   { id: "dishes", label: "Piatti",      icon: "â--Ž", group: "Gestione" },
-  { id: "dash",   label: "Dashboard",   icon: "â--  ", group: "Gestione" },
+  { id: "dash",   label: "Dashboard",   icon: "â-- ", group: "Gestione" },
   { id: "menu",   label: "Crea Menu",   icon: "â'", group: "Gestione" },
   { id: "spesa",  label: "Spesa",       icon: "â--", group: "Gestione" },
   { id: "turni",  label: "Turni",       icon: "âŠž", group: "Gestione" },
@@ -4589,10 +4589,10 @@ export default function App() {
           if (d.spesa)      setSpesa(d.spesa)
           if (d.banchetti)  setBanchetti(d.banchetti)
           if (d.turni)      setTurni(d.turni)
-          // Utente esistente â" salta onboarding
+          // Utente esistente  -  salta onboarding
           setOnboarded(true)
         } else {
-          // Nuovo utente â" mostra onboarding
+          // Nuovo utente  -  mostra onboarding
           setOnboarded(false)
         }
       } catch (e) { console.log("Load error:", e) }
@@ -4609,7 +4609,7 @@ export default function App() {
   }, [ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded, ready, user])
 
   async function deleteAccount() {
-    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non   ¨ reversibile.")) return
+    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non  ¨ reversibile.")) return
     try {
       await deleteDoc(doc(db, "users", user.uid, "data", "main"))
       await deleteUser(user)
@@ -4627,7 +4627,7 @@ export default function App() {
   async function sendPasswordReset() {
     try {
       await sendPasswordResetEmail(auth, user.email)
-      alert("Email di reset inviata a " + user.email + " â" controlla la casella (anche spam).")
+      alert("Email di reset inviata a " + user.email + "  -  controlla la casella (anche spam).")
     } catch(e) {
       alert("Errore: " + e.message)
     }
@@ -4636,17 +4636,17 @@ export default function App() {
   function SettingsPanel() {
     const createdAt = user?.metadata?.creationTime
       ? new Date(user.metadata.creationTime).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })
-      : "â""
+      : " - "
     const lastLogin = user?.metadata?.lastSignInTime
       ? new Date(user.metadata.lastSignInTime).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
-      : "â""
+      : " - "
     const provider = user?.providerData?.[0]?.providerId === "google.com" ? "Google" : "Email / Password"
 
     const sections = [
       {
         title: "Account",
         items: [
-          { label: "Email", value: user?.email || "â"" },
+          { label: "Email", value: user?.email || " - " },
           { label: "Accesso con", value: provider },
           { label: "Registrato il", value: createdAt },
           { label: "Ultimo accesso", value: lastLogin },
@@ -4691,7 +4691,7 @@ export default function App() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0", flexShrink: 0 }}>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Impostazioni</div>
-          <button onClick={() => setSettingsOpen(false)} style={{ background: S.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: S.t3, fontSize: 18 }}>â  </button>
+          <button onClick={() => setSettingsOpen(false)} style={{ background: S.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: S.t3, fontSize: 18 }}>â </button>
         </div>
 
         {/* Avatar + email */}
@@ -4701,7 +4701,7 @@ export default function App() {
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{user?.email?.split("@")[0] || "Utente"}</div>
-            <div style={{ fontSize: 12, color: S.t3 }}>{user?.email || "â""}</div>
+            <div style={{ fontSize: 12, color: S.t3 }}>{user?.email || " - "}</div>
           </div>
         </div>
 
@@ -4728,7 +4728,7 @@ export default function App() {
             <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, marginTop: 16 }}>Azioni</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
-              {/* Reset password â" solo se non Google */}
+              {/* Reset password  -  solo se non Google */}
               {provider !== "Google" && (
                 <button onClick={sendPasswordReset}
                   style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2 }}>
@@ -4840,11 +4840,11 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between", padding: collapsed ? "14px 0" : "12px 10px 12px 14px", borderBottom: S.bds, minHeight: 52 }}>
           {!collapsed && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 24, height: 24, background: S.acg, border: "1px solid " + S.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: S.ac, flexShrink: 0 }}>â--  </div>
+              <div style={{ width: 24, height: 24, background: S.acg, border: "1px solid " + S.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: S.ac, flexShrink: 0 }}>â-- </div>
               <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 14, color: S.t1, lineHeight: 1.1 }}>FoodMargin</div><div style={{ fontSize: 8, color: S.ac, letterSpacing: "0.12em", textTransform: "uppercase" }}>SaaS</div></div>
             </div>
           )}
-          {collapsed && <div style={{ width: 24, height: 24, background: S.acg, border: "1px solid " + S.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: S.ac }}>â--  </div>}
+          {collapsed && <div style={{ width: 24, height: 24, background: S.acg, border: "1px solid " + S.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: S.ac }}>â-- </div>}
           <button onClick={() => setCollapsed(c => !c)} title={collapsed ? "Espandi" : "Comprimi"} style={{ background: S.el, border: S.bd, borderRadius: 5, width: 22, height: 22, cursor: "pointer", color: S.t3, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}>
             {collapsed ? "âº" : "â¹"}
           </button>
