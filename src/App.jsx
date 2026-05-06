@@ -1593,13 +1593,12 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         i.name.toLowerCase().includes(nameLower.split(" ")[0]) ||
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
-      return {
-        // Arricchisci sotto1/sotto2 dal database se l'AI non li ha forniti
-        const dbMatch = lookupFood(p.nome)
-        const sotto1Final = p.sotto1 || (dbMatch ? dbMatch.sotto1 : "")
-        const sotto2Final = p.sotto2 || (dbMatch ? dbMatch.sotto2 : "")
+      // Arricchisci sotto1/sotto2 dal database se l'AI non li ha forniti
+      const dbMatch = lookupFood(p.nome)
+      const sotto1Final = p.sotto1 || (dbMatch ? dbMatch.sotto1 : "")
+      const sotto2Final = p.sotto2 || (dbMatch ? dbMatch.sotto2 : "")
 
-        return {
+      return {
         nome: p.nome, nomeEdit: p.nome,
         quantita: p.quantita, unita: p.unita,
         prezzoUnitario: (() => {
