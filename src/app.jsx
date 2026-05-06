@@ -4663,9 +4663,8 @@ export default function App() {
         if (provider === "google.com") {
           // Re-login Google
           try {
-            const googleProvider = new GoogleAuthProvider()
-            const { signInWithPopup } = await import("firebase/auth")
-            await signInWithPopup(auth, googleProvider)
+            const gProvider = new GoogleAuthProvider()
+            await signInWithPopup(auth, gProvider)
             await doDelete()
           } catch(e2) {
             alert("Errore: " + e2.message)
