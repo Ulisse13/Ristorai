@@ -1325,7 +1325,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
       <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: editB ? 4 : bStep === "form" && form.nome ? 4 : 16 }}>
         {editB ? "Modifica banchetto" : bStep === "form" && form.nome ? "Controlla e salva" : "Nuovo banchetto"}
       </div>
-      {bStep === "form" && form.nome && !editB && <div style={{ fontSize: 12, color: S.green, marginBottom: 12 }}><- Dati estratti automaticamente  -  correggi se necessario</div>}
+      {bStep === "form" && form.nome && !editB && <div style={{ fontSize: 12, color: S.green, marginBottom: 12 }}>- Dati estratti automaticamente  -  correggi se necessario</div>}
       <div style={{ ...card({ padding: 16 }), marginBottom: 14 }}>
         <Fld label="Nome cliente / evento *"><input style={inp()} type="text" value={form.nome} placeholder="es. Matrimonio Rossi . Compleanno Marco" onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />{formErr.nome && <span style={{ fontSize: 11, color: S.red }}>{formErr.nome}</span>}</Fld>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -2028,7 +2028,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       <div>
                         <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
-                          Categoria <span style={{ color: S.green, fontSize: 9 }}><- AI</span>
+                          Categoria <span style={{ color: S.green, fontSize: 9 }}>- AI</span>
                         </label>
                         <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: S.acd })}
                           value={p.cat}
@@ -2514,7 +2514,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         <div style={{ maxWidth: 600 }}>
           {fSaved && (
             <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
-              Piatto salvato e aggiunto alla sezione Piatti <-
+              Piatto salvato e aggiunto alla sezione Piatti -
             </div>
           )}
 
@@ -2662,7 +2662,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                     )}
                                     <div style={{ fontSize: 11, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
                                   </div>
-                                  {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}><-</span>}
+                                  {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}>-</span>}
                                 </div>
                               ))}
                               </>
@@ -2725,7 +2725,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         <div style={{ maxWidth: 600 }}>
           {dSaved && (
             <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
-              Voce salvata e aggiunta alla sezione Piatti <-
+              Voce salvata e aggiunta alla sezione Piatti -
             </div>
           )}
 
@@ -2774,7 +2774,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                   <option value=""> -  oppure inserisci manualmente  - </option>
                   {viniIng.map(i => {
                     const alreadyDone = dishes.some(d => (d.cat === "vino") && (d.name === i.name || (d.bottlePrice && d.bottlePrice === i.cur)))
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "<- " : ""}{i.name} . {F(i.cur)}/bottiglia</option>
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "- " : ""}{i.name} . {F(i.cur)}/bottiglia</option>
                   })}
                 </select>
               </Fld>
@@ -2787,7 +2787,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                   <option value=""> -  oppure inserisci manualmente  - </option>
                   {bevIng.map(i => {
                     const alreadyDone = dishes.some(d => d.cat === "bevanda" && d.name === i.name)
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "<- " : ""}{i.name} . {F(i.cur)}/{i.unit}</option>
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "- " : ""}{i.name} . {F(i.cur)}/{i.unit}</option>
                   })}
                 </select>
               </Fld>
@@ -3517,7 +3517,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                       }))
                     }} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: sel.length >= max && !isSel ? "not-allowed" : "pointer", opacity: sel.length >= max && !isSel ? 0.4 : 1 }}>
                       <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}><-</span>}
+                        {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>-</span>}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={row({ gap: 6 })}>
@@ -3708,7 +3708,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                             [key]: isSel ? sel.filter(x => x !== v.id) : [...sel, v.id]
                           }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: S.bds, cursor: "pointer" }}>
                             <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}><-</span>}
+                              {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>-</span>}
                             </div>
                             <div style={{ flex: 1 }}>
                               <div style={{ fontSize: 13, color: S.t1 }}>{v.name}</div>
@@ -3898,7 +3898,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
   async function shareSpesa(cat) {
     const items = cat ? spesa.filter(s => s.cat === cat) : spesa
     const header = cat ? "Lista spesa  -  " + cat : "Lista della spesa"
-    const text = items.map(s => (s.done ? "<- " : "--  ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
+    const text = items.map(s => (s.done ? "- " : "--  ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
     const full = header + "  -  " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
     if (navigator.share) {
       try { await navigator.share({ title: header, text: full }); return } catch(e) {}
@@ -3948,7 +3948,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                       <div style={{ fontSize: 11, color: S.t3 }}>{ing.cur > 0 ? "v " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
                     <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? S.ac : "#2a2a31"), background: inList ? S.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}><-</span>}
+                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>-</span>}
                     </div>
                   </div>
                 </div>
@@ -4070,7 +4070,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                 <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: S.el, border: S.bds, borderRadius: S.r, marginBottom: 6, opacity: 0.6 })}>
                   <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
                     <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + S.green, background: S.gd, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 11, color: S.green, fontWeight: 700 }}><-</span>
+                      <span style={{ fontSize: 11, color: S.green, fontWeight: 700 }}>-</span>
                     </div>
                     <span style={{ fontSize: 14, color: S.t3, textDecoration: "line-through" }}>{s.name}</span>
                   </div>
