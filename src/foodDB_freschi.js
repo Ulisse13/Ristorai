@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // foodDB_freschi.js — Database FRESCHI per Ristorai
 // cat: "Freschi"
-// sotto1: "Formaggi Nobili" | "Latticini Vari" | "Salumi" | "Altri Freschi"
+// sotto1: "Formaggi Nobili" | "Latticini" | "Salumi" | "Altri Freschi"
 // sotto2: prodotto specifico
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -46,30 +46,30 @@ export const FRESCHI_DB = [
   // LATTICINI VARI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["mozzarella", "mozzarella fior di latte", "mozzarella di bufala", "mozzarella campana", "mozzarella treccia", "mozzarella ciliegina", "mozzarella bocconcino"], sotto1: "Latticini Vari", sotto2: "Mozzarella" },
-  { keywords: ["burrata", "burrata pugliese"], sotto1: "Latticini Vari", sotto2: "Burrata" },
-  { keywords: ["stracciatella", "stracciatella pugliese"], sotto1: "Latticini Vari", sotto2: "Stracciatella" },
-  { keywords: ["ricotta", "ricotta vaccina", "ricotta ovina", "ricotta di bufala", "ricotta salata"], sotto1: "Latticini Vari", sotto2: "Ricotta" },
-  { keywords: ["crescenza", "stracchino"], sotto1: "Latticini Vari", sotto2: "Stracchino" },
-  { keywords: ["robiola fresca", "robiola di capra"], sotto1: "Latticini Vari", sotto2: "Robiola Fresca" },
-  { keywords: ["primo sale", "primo sale ovino"], sotto1: "Latticini Vari", sotto2: "Primo Sale" },
-  { keywords: ["caprino fresco", "formaggio di capra fresco"], sotto1: "Latticini Vari", sotto2: "Caprino" },
-  { keywords: ["feta", "feta greca", "feta dop"], sotto1: "Latticini Vari", sotto2: "Feta" },
-  { keywords: ["halloumi", "haloumi"], sotto1: "Latticini Vari", sotto2: "Halloumi" },
-  { keywords: ["mascarpone"], sotto1: "Latticini Vari", sotto2: "Mascarpone" },
-  { keywords: ["philadelphia", "formaggio spalmabile", "formaggio cremoso", "cream cheese"], sotto1: "Latticini Vari", sotto2: "Formaggio Spalmabile" },
-  { keywords: ["sottilette", "fette formaggio", "formaggio fuso a fette"], sotto1: "Latticini Vari", sotto2: "Sottilette" },
-  { keywords: ["formaggino", "formaggini"], sotto1: "Latticini Vari", sotto2: "Formaggini" },
-  { keywords: ["scamorza fresca", "scamorza bianca"], sotto1: "Latticini Vari", sotto2: "Scamorza Fresca" },
-  { keywords: ["parmigiano reggiano", "parmigiano grattugiato", "parmigiano grattuggiato", "grana padano", "grana grattugiato", "grana padano grattugiato"], sotto1: "Latticini Vari", sotto2: "Parmigiano Grattugiato" },
-  { keywords: ["parmigiano reggiano pezzo", "grana padano pezzo", "parmigiano pezzo"], sotto1: "Latticini Vari", sotto2: "Parmigiano" },
-  { keywords: ["latte intero", "latte parzialmente scremato", "latte scremato", "latte fresco", "latte uht", "latte vaccino"], sotto1: "Latticini Vari", sotto2: "Latte" },
-  { keywords: ["latte di capra", "latte di pecora", "latte di bufala"], sotto1: "Latticini Vari", sotto2: "Latte Alternativo" },
-  { keywords: ["panna fresca", "panna da cucina", "panna da montare", "panna uht", "panna liquida", "panna acida", "creme fraiche", "crème fraîche"], sotto1: "Latticini Vari", sotto2: "Panna" },
-  { keywords: ["burro", "burro chiarificato", "burro salato", "burro di malga", "burro biologico", "burro prealpi"], sotto1: "Latticini Vari", sotto2: "Burro" },
-  { keywords: ["yogurt intero", "yogurt greco", "yogurt naturale", "yogurt bianco", "yogurt magro"], sotto1: "Latticini Vari", sotto2: "Yogurt" },
-  { keywords: ["kefir", "kefir di latte"], sotto1: "Latticini Vari", sotto2: "Kefir" },
-  { keywords: ["tuorlo pastorizzato", "tuorli pastorizzati", "albume pastorizzato", "albumi pastorizzati", "uova pastorizzate", "ovoprodotto"], sotto1: "Latticini Vari", sotto2: "Ovoprodotti" },
+  { keywords: ["mozzarella", "mozzarella fior di latte", "mozzarella di bufala", "mozzarella campana", "mozzarella treccia", "mozzarella ciliegina", "mozzarella bocconcino"], sotto1: "Latticini", sotto2: "Mozzarella" },
+  { keywords: ["burrata", "burrata pugliese"], sotto1: "Latticini", sotto2: "Burrata" },
+  { keywords: ["stracciatella", "stracciatella pugliese"], sotto1: "Latticini", sotto2: "Stracciatella" },
+  { keywords: ["ricotta", "ricotta vaccina", "ricotta ovina", "ricotta di bufala", "ricotta salata"], sotto1: "Latticini", sotto2: "Ricotta" },
+  { keywords: ["crescenza", "stracchino"], sotto1: "Latticini", sotto2: "Stracchino" },
+  { keywords: ["robiola fresca", "robiola di capra"], sotto1: "Latticini", sotto2: "Robiola Fresca" },
+  { keywords: ["primo sale", "primo sale ovino"], sotto1: "Latticini", sotto2: "Primo Sale" },
+  { keywords: ["caprino fresco", "formaggio di capra fresco"], sotto1: "Latticini", sotto2: "Caprino" },
+  { keywords: ["feta", "feta greca", "feta dop"], sotto1: "Latticini", sotto2: "Feta" },
+  { keywords: ["halloumi", "haloumi"], sotto1: "Latticini", sotto2: "Halloumi" },
+  { keywords: ["mascarpone"], sotto1: "Latticini", sotto2: "Mascarpone" },
+  { keywords: ["philadelphia", "formaggio spalmabile", "formaggio cremoso", "cream cheese"], sotto1: "Latticini", sotto2: "Formaggio Spalmabile" },
+  { keywords: ["sottilette", "fette formaggio", "formaggio fuso a fette"], sotto1: "Latticini", sotto2: "Sottilette" },
+  { keywords: ["formaggino", "formaggini"], sotto1: "Latticini", sotto2: "Formaggini" },
+  { keywords: ["scamorza fresca", "scamorza bianca"], sotto1: "Latticini", sotto2: "Scamorza Fresca" },
+  { keywords: ["parmigiano reggiano", "parmigiano grattugiato", "parmigiano grattuggiato", "grana padano", "grana grattugiato", "grana padano grattugiato"], sotto1: "Latticini", sotto2: "Parmigiano Grattugiato" },
+  { keywords: ["parmigiano reggiano pezzo", "grana padano pezzo", "parmigiano pezzo"], sotto1: "Latticini", sotto2: "Parmigiano" },
+  { keywords: ["latte intero", "latte parzialmente scremato", "latte scremato", "latte fresco", "latte uht", "latte vaccino"], sotto1: "Latticini", sotto2: "Latte" },
+  { keywords: ["latte di capra", "latte di pecora", "latte di bufala"], sotto1: "Latticini", sotto2: "Latte Alternativo" },
+  { keywords: ["panna fresca", "panna da cucina", "panna da montare", "panna uht", "panna liquida", "panna acida", "creme fraiche", "crème fraîche"], sotto1: "Latticini", sotto2: "Panna" },
+  { keywords: ["burro", "burro chiarificato", "burro salato", "burro di malga", "burro biologico", "burro prealpi"], sotto1: "Latticini", sotto2: "Burro" },
+  { keywords: ["yogurt intero", "yogurt greco", "yogurt naturale", "yogurt bianco", "yogurt magro"], sotto1: "Latticini", sotto2: "Yogurt" },
+  { keywords: ["kefir", "kefir di latte"], sotto1: "Latticini", sotto2: "Kefir" },
+  { keywords: ["tuorlo pastorizzato", "tuorli pastorizzati", "albume pastorizzato", "albumi pastorizzati", "uova pastorizzate", "ovoprodotto"], sotto1: "Latticini", sotto2: "Ovoprodotti" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // SALUMI
