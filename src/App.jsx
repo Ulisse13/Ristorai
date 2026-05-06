@@ -1,6 +1,21 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, Component } from "react"
 import { lookupWine } from "./winesDB"
 import { lookupFood } from "./foodDB"
+
+class ErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { err: null } }
+  static getDerivedStateFromError(e) { return { err: e } }
+  render() {
+    if (this.state.err) return (
+      <div style={{padding:20,background:"#1a0000",minHeight:"100vh",color:"#ff6666",fontFamily:"monospace",fontSize:12}}>
+        <b style={{color:"#ff4444",fontSize:15}}>ERRORE</b><br/><br/>
+        {String(this.state.err)}<br/><br/>
+        <span style={{fontSize:10,color:"#ff8888"}}>{String(this.state.err?.stack||"").slice(0,400)}</span>
+      </div>
+    )
+    return this.props.children
+  }
+}
 import { db, auth, googleProvider } from "./firebase"
 import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore"
 import {
@@ -9,14 +24,25 @@ import {
   signOut, sendPasswordResetEmail, deleteUser
 } from "firebase/auth"
 
-const F = n => "€ " + Number(n).toFixed(2).replace(".", ",")
-const P = n => (n * 100).toFixed(1) + "%"
-const D = s => new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })
+const formatEuro = n => "v " + Number(n).toFixed(2).replace(".", ",")
+const formatPct = n => (n * 100).toFixed(1) + "%"
+const formatDate = s => new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })
 const FC_COLOR = (a, t) => a <= t ? "#4ade80" : a <= t * 1.1 ? "#e8a838" : "#f87171"
 const uid = () => Math.random().toString(36).slice(2, 7)
 
+// Global error handler for mobile debug
+if (typeof window !== "undefined") {
+  window.onerror = (msg, src, line, col, err) => {
+    document.body.innerHTML = "<div style='padding:20px;background:#1a0000;color:#ff6666;font-family:monospace;font-size:12px'><b style=\"color:#ff4444;font-size:14px\">ERRORE MOBILE</b><br><br>" + msg + "<br><br>Riga: " + line + "<br><br>" + (err && err.stack ? err.stack.slice(0,300) : "") + "</div>"
+    return false
+  }
+  window.addEventListener("unhandledrejection", e => {
+    document.body.innerHTML = "<div style='padding:20px;background:#1a0000;color:#ff6666;font-family:monospace;font-size:12px'><b style=\"color:#ff4444;font-size:14px\">PROMISE ERROR</b><br><br>" + String(e.reason) + "<br><br>" + (e.reason && e.reason.stack ? e.reason.stack.slice(0,300) : "") + "</div>"
+  })
+}
 
-const S = {
+
+const STYLE = {
   bg: "#0d0d0f", surf: "#141417", el: "#1c1c21", ov: "#242429",
   bd: "1px solid #2a2a31", bds: "1px solid #1f1f25",
   ac: "#e8a838", acg: "rgba(232,168,56,0.12)", acd: "#b8832a",
@@ -28,20 +54,20 @@ const S = {
 
 const row = (extra) => ({ display: "flex", alignItems: "center", gap: 8, ...extra })
 const col = (extra) => ({ display: "flex", flexDirection: "column", gap: 4, ...extra })
-const card = (extra) => ({ background: S.surf, border: S.bds, borderRadius: S.r2, ...extra })
+const card = (extra) => ({ background: STYLE.surf, border: STYLE.bds, borderRadius: STYLE.r2, ...extra })
 const btn = (variant, extra) => {
-  const base = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: S.r, fontFamily: "inherit", fontSize: 12.5, fontWeight: 500, cursor: "pointer", border: "1px solid transparent", lineHeight: 1, whiteSpace: "nowrap" }
-  const v = { p: { background: S.ac, color: "#0d0d0f", borderColor: S.ac }, s: { background: S.el, color: S.t1, borderColor: S.bd.replace("1px solid ", "") }, g: { background: "transparent", color: S.t2 } }
+  const base = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 14px", borderRadius: STYLE.r, fontFamily: "inherit", fontSize: 12.5, fontWeight: 500, cursor: "pointer", border: "1px solid transparent", lineHeight: 1, whiteSpace: "nowrap" }
+  const v = { p: { background: STYLE.ac, color: "#0d0d0f", borderColor: STYLE.ac }, s: { background: STYLE.el, color: STYLE.t1, borderColor: STYLE.bd.replace("1px solid ", "") }, g: { background: "transparent", color: STYLE.t2 } }
   return { ...base, ...(v[variant] || v.s), ...extra }
 }
-const inp = (extra) => ({ width: "100%", padding: "8px 11px", background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, fontFamily: "inherit", fontSize: 13.5, outline: "none", boxSizing: "border-box", ...extra })
+const inp = (extra) => ({ width: "100%", padding: "8px 11px", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontFamily: "inherit", fontSize: 13.5, outline: "none", boxSizing: "border-box", ...extra })
 const badge = (color, extra) => {
-  const colors = { g: { background: S.gd, color: S.green, borderColor: "rgba(74,222,128,0.25)" }, r: { background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.25)" }, a: { background: S.acg, color: S.ac, borderColor: S.acd }, n: { background: S.el, color: S.t2, borderColor: "#2a2a31" } }
+  const colors = { g: { background: STYLE.gd, color: STYLE.green, borderColor: "rgba(74,222,128,0.25)" }, r: { background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.25)" }, a: { background: STYLE.acg, color: STYLE.ac, borderColor: STYLE.acd }, n: { background: STYLE.el, color: STYLE.t2, borderColor: "#2a2a31" } }
   return { display: "inline-flex", alignItems: "center", gap: 3, padding: "2px 8px", borderRadius: 999, fontSize: 10.5, fontWeight: 600, border: "1px solid transparent", whiteSpace: "nowrap", ...(colors[color] || colors.n), ...extra }
 }
 
 function Fld({ label, children }) {
-  return <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}><label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2 }}>{label}</label>{children}</div>
+  return <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}><label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2 }}>{label}</label>{children}</div>
 }
 
 function Dashboard({ ings, dishes, isMobile }) {
@@ -76,13 +102,13 @@ function Dashboard({ ings, dishes, isMobile }) {
   const alerts = []
   if (increased.length > 0) alerts.push({ type: "warn", msg: increased.length + " ingredient" + (increased.length > 1 ? "i aumentati" : "e aumentato") + " di prezzo" })
   if (overTarget.length > 0) alerts.push({ type: "warn", msg: overTarget.length + " piatt" + (overTarget.length > 1 ? "i" : "o") + " sopra il target food cost" })
-  if (ings.length === 0) alerts.push({ type: "info", msg: "Nessun ingrediente — inizia scansionando una fattura" })
-  if (dishes.length === 0 && ings.length > 0) alerts.push({ type: "info", msg: "Magazzino popolato — ora crea le tue ricette" })
+  if (ings.length === 0) alerts.push({ type: "info", msg: "Nessun ingrediente  -  inizia scansionando una fattura" })
+  if (dishes.length === 0 && ings.length > 0) alerts.push({ type: "info", msg: "Magazzino popolato  -  ora crea le tue ricette" })
   if (avgFoodCost > 35) alerts.push({ type: "warn", msg: "Food cost medio alto: " + avgFoodCost + "%" })
   if (avgFoodCost > 0 && avgFoodCost <= 30) alerts.push({ type: "ok", msg: "Food cost medio ottimo: " + avgFoodCost + "%" })
 
   const SectionTitle = ({ label }) => (
-    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 10, marginTop: 20 }}>{label}</div>
+    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, marginBottom: 10, marginTop: 20 }}>{label}</div>
   )
 
   return (
@@ -90,16 +116,16 @@ function Dashboard({ ings, dishes, isMobile }) {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
         <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Dashboard</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>{ings.length} ingredienti · {dishes.length} piatti</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Dashboard</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>{ings.length} ingredienti . {dishes.length} piatti</div>
         </div>
       </div>
 
       {/* Tabs */}
       <div style={{ display: "flex", gap: 0, marginBottom: 20 }}>
-        {[["prezzi","📈 Prezzi"],["insights","✦ Insights"]].map(([id, label]) => (
+        {[["prezzi","  Prezzi"],["insights","* Insights"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)}
-            style={{ padding: "8px 20px", background: tab === id ? S.ac : S.el, color: tab === id ? "#0d0d0f" : S.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: tab === id ? 700 : 400, cursor: "pointer", borderRadius: id === "prezzi" ? "8px 0 0 8px" : "0 8px 8px 0" }}>
+            style={{ padding: "8px 20px", background: tab === id ? STYLE.ac : STYLE.el, color: tab === id ? "#0d0d0f" : STYLE.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: tab === id ? 700 : 400, cursor: "pointer", borderRadius: id === "prezzi" ? "8px 0 0 8px" : "0 8px 8px 0" }}>
             {label}
           </button>
         ))}
@@ -111,13 +137,13 @@ function Dashboard({ ings, dishes, isMobile }) {
           {/* Counter */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
             {[
-              { label: "Aumenti",   count: increased.length, color: S.red,   bg: S.rd,  symbol: "↑" },
-              { label: "Ribassi",   count: decreased.length, color: S.green, bg: S.gd,  symbol: "↓" },
-              { label: "Invariati", count: stable.length,    color: S.ac,    bg: S.acg, symbol: "●" },
+              { label: "Aumenti",   count: increased.length, color: STYLE.red,   bg: STYLE.rd,  symbol: "'" },
+              { label: "Ribassi",   count: decreased.length, color: STYLE.green, bg: STYLE.gd,  symbol: " - " },
+              { label: "Invariati", count: stable.length,    color: STYLE.ac,    bg: STYLE.acg, symbol: "--" },
             ].map((k, i) => (
-              <div key={i} style={{ background: k.bg, border: "1px solid " + (i === 0 ? "rgba(248,113,113,0.25)" : i === 1 ? "rgba(74,222,128,0.25)" : S.acd), borderRadius: S.r2, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
+              <div key={i} style={{ background: k.bg, border: "1px solid " + (i === 0 ? "rgba(248,113,113,0.25)" : i === 1 ? "rgba(74,222,128,0.25)" : STYLE.acd), borderRadius: STYLE.r2, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: k.color, opacity: 0.4 }} />
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, fontWeight: 700, marginBottom: 6 }}>{k.label}</div>
+                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, fontWeight: 700, marginBottom: 6 }}>{k.label}</div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
                   <span style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: k.color, lineHeight: 1 }}>{k.count}</span>
                   <span style={{ fontSize: 16, color: k.color, fontWeight: 700 }}>{k.symbol}</span>
@@ -131,29 +157,29 @@ function Dashboard({ ings, dishes, isMobile }) {
             {sorted.map(ing => {
               const v = ing.var
               const isUp = v > 0; const isDown = v < 0
-              const varColor  = isUp ? S.red : isDown ? S.green : S.ac
-              const varBg     = isUp ? S.rd  : isDown ? S.gd    : S.acg
-              const varBorder = isUp ? "rgba(248,113,113,0.2)" : isDown ? "rgba(74,222,128,0.2)" : S.acd
+              const varColor  = isUp ? STYLE.red : isDown ? STYLE.green : STYLE.ac
+              const varBg     = isUp ? STYLE.rd  : isDown ? STYLE.gd    : STYLE.acg
+              const varBorder = isUp ? "rgba(248,113,113,0.2)" : isDown ? "rgba(74,222,128,0.2)" : STYLE.acd
               const varText   = isUp ? "+" + v.toFixed(1) + "%" : isDown ? v.toFixed(1) + "%" : "0%"
               return (
-                <div key={ing.id} style={{ background: S.surf, border: "1px solid #1f1f25", borderRadius: S.r, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
+                <div key={ing.id} style={{ background: STYLE.surf, border: "1px solid #1f1f25", borderRadius: STYLE.r, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{ minWidth: 56, background: varBg, border: "1px solid " + varBorder, borderRadius: 6, padding: "4px 8px", textAlign: "center", flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, color: varColor, lineHeight: 1, fontWeight: 700 }}>{isUp ? "↑" : isDown ? "↓" : "●"}</div>
+                    <div style={{ fontSize: 14, color: varColor, lineHeight: 1, fontWeight: 700 }}>{isUp ? "'" : isDown ? " - " : "--"}</div>
                     <div style={{ fontSize: 10, color: varColor, fontWeight: 700, marginTop: 1 }}>{varText}</div>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.name}</div>
-                    <div style={{ fontSize: 11, color: S.t3 }}>{ing.cat}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.name}</div>
+                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cat}</div>
                   </div>
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{F(ing.cur)}<span style={{ fontSize: 10, color: S.t3, fontWeight: 400 }}>/{ing.unit}</span></div>
-                    <div style={{ fontSize: 10, color: S.t3 }}>prec. {F(ing.prev !== undefined ? ing.prev : ing.avg)}/{ing.unit}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1 }}>{formatEuro(ing.cur)}<span style={{ fontSize: 10, color: STYLE.t3, fontWeight: 400 }}>/{ing.unit}</span></div>
+                    <div style={{ fontSize: 10, color: STYLE.t3 }}>prec. {formatEuro(ing.prev !== undefined ? ing.prev : ing.avg)}/{ing.unit}</div>
                   </div>
                 </div>
               )
             })}
           </div>
-          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>Nessun ingrediente — inizia scansionando una fattura</div>}
+          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente  -  inizia scansionando una fattura</div>}
         </div>
       )}
 
@@ -166,9 +192,9 @@ function Dashboard({ ings, dishes, isMobile }) {
               <SectionTitle label="Alert" />
               <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
                 {alerts.map((a, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: S.r, background: a.type === "warn" ? S.rd : a.type === "ok" ? S.gd : S.el, border: "1px solid " + (a.type === "warn" ? "rgba(248,113,113,0.3)" : a.type === "ok" ? "rgba(74,222,128,0.3)" : S.acd) }}>
-                    <span style={{ fontSize: 14 }}>{a.type === "warn" ? "⚠️" : a.type === "ok" ? "✅" : "ℹ️"}</span>
-                    <span style={{ fontSize: 13, color: a.type === "warn" ? S.red : a.type === "ok" ? S.green : S.t2 }}>{a.msg}</span>
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: STYLE.r, background: a.type === "warn" ? STYLE.rd : a.type === "ok" ? STYLE.gd : STYLE.el, border: "1px solid " + (a.type === "warn" ? "rgba(248,113,113,0.3)" : a.type === "ok" ? "rgba(74,222,128,0.3)" : STYLE.acd) }}>
+                    <span style={{ fontSize: 14 }}>{a.type === "warn" ? "  " : a.type === "ok" ? " ..." : "  "}</span>
+                    <span style={{ fontSize: 13, color: a.type === "warn" ? STYLE.red : a.type === "ok" ? STYLE.green : STYLE.t2 }}>{a.msg}</span>
                   </div>
                 ))}
               </div>
@@ -181,20 +207,20 @@ function Dashboard({ ings, dishes, isMobile }) {
               <SectionTitle label="Food Cost" />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
                 <div style={{ ...card({ padding: "16px" }) }}>
-                  <div style={{ fontSize: 10, color: S.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Media generale</div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: avgFoodCost > 35 ? S.red : avgFoodCost > 28 ? "#f59e0b" : S.green }}>{avgFoodCost}%</div>
+                  <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Media generale</div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: avgFoodCost > 35 ? STYLE.red : avgFoodCost > 28 ? "#f59e0b" : STYLE.green }}>{avgFoodCost}%</div>
                 </div>
                 <div style={{ ...card({ padding: "16px" }) }}>
-                  <div style={{ fontSize: 10, color: S.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Piatti analizzati</div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: S.t1 }}>{foodDishes.length}</div>
+                  <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Piatti analizzati</div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: STYLE.t1 }}>{foodDishes.length}</div>
                 </div>
               </div>
               {overTarget.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                   {overTarget.slice(0, 5).map(d => (
-                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: S.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: S.r }}>
-                      <span style={{ fontSize: 13, color: S.t1 }}>{d.name}</span>
-                      <span style={{ fontSize: 13, color: S.red, fontWeight: 700 }}>{(d.fc * 100).toFixed(1)}%</span>
+                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: STYLE.r }}>
+                      <span style={{ fontSize: 13, color: STYLE.t1 }}>{d.name}</span>
+                      <span style={{ fontSize: 13, color: STYLE.red, fontWeight: 700 }}>{(d.fc * 100).toFixed(1)}%</span>
                     </div>
                   ))}
                 </div>
@@ -208,12 +234,12 @@ function Dashboard({ ings, dishes, isMobile }) {
               <SectionTitle label="Costo medio per categoria" />
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                 {catCosts.sort((a, b) => b.avg - a.avg).map(c => (
-                  <div key={c.cat} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: S.el, border: S.bds, borderRadius: S.r }}>
+                  <div key={c.cat} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r }}>
                     <div>
-                      <div style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{c.cat}</div>
-                      <div style={{ fontSize: 11, color: S.t3 }}>{c.count} ingredient{c.count !== 1 ? "i" : "e"}</div>
+                      <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{c.cat}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{c.count} ingredient{c.count !== 1 ? "i" : "e"}</div>
                     </div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.ac }}>{F(c.avg)}/kg</div>
+                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.ac }}>{formatEuro(c.avg)}/kg</div>
                   </div>
                 ))}
               </div>
@@ -226,14 +252,14 @@ function Dashboard({ ings, dishes, isMobile }) {
               <SectionTitle label="Maggiori aumenti recenti" />
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
                 {topIncreased.map(ing => (
-                  <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: S.r }}>
+                  <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: STYLE.r }}>
                     <div>
-                      <div style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{ing.name}</div>
-                      <div style={{ fontSize: 11, color: S.t3 }}>{ing.cat}</div>
+                      <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{ing.name}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cat}</div>
                     </div>
                     <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 13, color: S.red, fontWeight: 700 }}>+{ing.var.toFixed(1)}%</div>
-                      <div style={{ fontSize: 11, color: S.t3 }}>{F(ing.cur)}/{ing.unit}</div>
+                      <div style={{ fontSize: 13, color: STYLE.red, fontWeight: 700 }}>+{ing.var.toFixed(1)}%</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(ing.cur)}/{ing.unit}</div>
                     </div>
                   </div>
                 ))}
@@ -241,28 +267,28 @@ function Dashboard({ ings, dishes, isMobile }) {
             </>
           )}
 
-          {/* Top 5 più cari */}
+          {/* Top 5 pi   cari */}
           {topExpensive.length > 0 && (
             <>
-              <SectionTitle label="Ingredienti più costosi" />
+              <SectionTitle label="Ingredienti pi   costosi" />
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {topExpensive.map((ing, i) => (
-                  <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: S.el, border: S.bds, borderRadius: S.r }}>
+                  <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t3, width: 20 }}>#{i+1}</span>
+                      <span style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t3, width: 20 }}>#{i+1}</span>
                       <div>
-                        <div style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{ing.name}</div>
-                        <div style={{ fontSize: 11, color: S.t3 }}>{ing.cat}</div>
+                        <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{ing.name}</div>
+                        <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cat}</div>
                       </div>
                     </div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.ac }}>{F(ing.cur)}/{ing.unit}</div>
+                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.ac }}>{formatEuro(ing.cur)}/{ing.unit}</div>
                   </div>
                 ))}
               </div>
             </>
           )}
 
-          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: S.t3, fontSize: 13 }}>Nessun dato — inizia scansionando una fattura</div>}
+          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: STYLE.t3, fontSize: 13 }}>Nessun dato  -  inizia scansionando una fattura</div>}
         </div>
       )}
     </div>
@@ -271,11 +297,11 @@ function Dashboard({ ings, dishes, isMobile }) {
 
 function Ingredients({ ings, setIngs, invs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
@@ -353,10 +379,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     if (form.unit === "confezione") {
       // calcola prezzo per kg o litro dalla confezione
       cur = Math.round((+form.confPrice / +form.confWeight) * 100) / 100
-      unitBase = "kg" // default — utente può cambiarlo in futuro
+      unitBase = "kg" // default  -  utente pu   cambiarlo in futuro
     } else {
       cur = +form.cur
-      // Normalizza unità: salva sempre in kg o l per coerenza con food cost
+      // Normalizza unit  : salva sempre in kg o l per coerenza con food cost
       if (form.unit === "litri") unitBase = "l"
       else if (form.unit === "g") { unitBase = "kg"; cur = Math.round(cur * 1000 * 100) / 100 }
       else if (form.unit === "ml") { unitBase = "l"; cur = Math.round(cur * 1000 * 100) / 100 }
@@ -382,13 +408,13 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     setDelTarget(null)
   }
 
-  // ── CATEGORY VIEW ──────────────────────────────
+  //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
     <div>
       <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap", alignItems: "flex-start" })}>
         <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Magazzino</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>{ings.length} ingredienti totali</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Magazzino</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>{ings.length} ingredienti totali</div>
         </div>
         <button style={btn("p")} onClick={openAdd}>+ Aggiungi ingrediente</button>
       </div>
@@ -401,10 +427,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
             <div key={cat} onClick={() => setSelCat(cat)}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
                 transition: "transform 0.1s", borderColor: spiked > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: spiked > 0 ? "linear-gradient(90deg," + S.red + ",transparent)" : "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
-              <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
-              <div style={{ fontSize: 12, color: S.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
-              {spiked > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>↑ {spiked} prezzi aumentati</div>}
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: spiked > 0 ? "linear-gradient(90deg," + STYLE.red + ",transparent)" : "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{cat}</div>
+              <div style={{ fontSize: 12, color: STYLE.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
+              {spiked > 0 && <div style={{ fontSize: 10, color: STYLE.red, marginTop: 4 }}>' {spiked} prezzi aumentati</div>}
             </div>
           )
         })}
@@ -414,15 +440,15 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
       {open && (
         <div onClick={e => e.target === e.currentTarget && setOpen(false)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 999 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto" }}>
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto" }}>
             <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
-              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>Nuovo ingrediente</span>
-              <button onClick={() => setOpen(false)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>Nuovo ingrediente</span>
+              <button onClick={() => setOpen(false)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
             </div>
             <div style={{ padding: "16px 22px" }}>
               <Fld label="Nome *">
                 <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Petto di pollo" />
-                {err.name && <span style={{ fontSize: 11, color: S.red }}>{err.name}</span>}
+                {err.name && <span style={{ fontSize: 11, color: STYLE.red }}>{err.name}</span>}
               </Fld>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 <Fld label="Categoria">
@@ -430,7 +456,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     {CATS.map(c => <option key={c}>{c}</option>)}
                   </select>
                 </Fld>
-                <Fld label="Unità di misura">
+                <Fld label="Unit   di misura">
                   <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
                     {["kg", "litri", "confezione", "bottiglia"].map(u => <option key={u}>{u}</option>)}
                   </select>
@@ -451,29 +477,29 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                 </div>
               )}
               {form.unit !== "confezione" ? (
-                <Fld label={"Prezzo (€/" + form.unit + ") *"}>
+                <Fld label={"Prezzo (v/" + form.unit + ") *"}>
                   <input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
-                  {err.cur && <span style={{ fontSize: 11, color: S.red }}>{err.cur}</span>}
+                  {err.cur && <span style={{ fontSize: 11, color: STYLE.red }}>{err.cur}</span>}
                 </Fld>
               ) : (
                 <>
-                  <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: S.t2 }}>
-                    Inserisci il prezzo della confezione e il peso/volume netto — il prezzo per kg/litro verrà calcolato automaticamente.
+                  <div style={{ background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: STYLE.r, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: STYLE.t2 }}>
+                    Inserisci il prezzo della confezione e il peso/volume netto  -  il prezzo per kg/litro verr   calcolato automaticamente.
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                    <Fld label="Prezzo confezione (€) *">
+                    <Fld label="Prezzo confezione (v) *">
                       <input style={inp()} type="number" step="0.01" value={form.confPrice} onChange={e => setForm(f => ({ ...f, confPrice: e.target.value }))} placeholder="0.00" />
-                      {err.confPrice && <span style={{ fontSize: 11, color: S.red }}>{err.confPrice}</span>}
+                      {err.confPrice && <span style={{ fontSize: 11, color: STYLE.red }}>{err.confPrice}</span>}
                     </Fld>
                     <Fld label="Peso/volume netto (kg o l) *">
                       <input style={inp()} type="number" step="0.001" value={form.confWeight} onChange={e => setForm(f => ({ ...f, confWeight: e.target.value }))} placeholder="es. 0.750" />
-                      {err.confWeight && <span style={{ fontSize: 11, color: S.red }}>{err.confWeight}</span>}
+                      {err.confWeight && <span style={{ fontSize: 11, color: STYLE.red }}>{err.confWeight}</span>}
                     </Fld>
                   </div>
                   {form.confPrice && form.confWeight && +form.confWeight > 0 && (
-                    <div style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "10px 12px", marginBottom: 12 }}>
-                      <span style={{ fontSize: 11, color: S.t3 }}>Prezzo calcolato: </span>
-                      <span style={{ fontSize: 14, fontWeight: 700, color: S.ac }}>{F(Math.round((+form.confPrice / +form.confWeight) * 100) / 100)}/kg</span>
+                    <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "10px 12px", marginBottom: 12 }}>
+                      <span style={{ fontSize: 11, color: STYLE.t3 }}>Prezzo calcolato: </span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: STYLE.ac }}>{formatEuro(Math.round((+form.confPrice / +form.confWeight) * 100) / 100)}/kg</span>
                     </div>
                   )}
                 </>
@@ -489,71 +515,71 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     </div>
   )
 
-  // ── VINI VIEW ──────────────────────────────────
+  //  -  -  VINI VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (selCat === "Vini") {
     const vini = ingsByCat("Vini")
     // If no tipo selected, show tipo cards
     if (!selTipo) return (
       <div>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Magazzino</button>
-          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>Vini</span>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Vini</span>
         </div>
-        <div style={{ fontSize: 12, color: S.t3, marginBottom: 16 }}>{vini.length} vini totali</div>
+        <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 16 }}>{vini.length} vini totali</div>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
           {VINO_TIPI.map(tipo => {
             const count = vini.filter(v => v.tipoVino === tipo).length
             return (
               <div key={tipo} onClick={() => setSelTipo(tipo)}
                 style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
-                <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{tipo}</div>
-                <div style={{ fontSize: 12, color: S.t3 }}>{count} vini</div>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
+                <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{tipo}</div>
+                <div style={{ fontSize: 12, color: STYLE.t3 }}>{count} vini</div>
               </div>
             )
           })}
         </div>
       </div>
     )
-    // Tipo selected — show by regione
+    // Tipo selected  -  show by regione
     const byTipo = vini.filter(v => v.tipoVino === selTipo)
     const REGIONI_IT_ING = {
       Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
       Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-      "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+      "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
       Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     }
     const regioniOrdinate = REGIONI_IT_ING[selTipo] || VINO_REGIONI
     return (
       <div>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Magazzino</button>
-          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-          <button onClick={() => setSelTipo(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
-          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selTipo}</span>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <button onClick={() => setSelTipo(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selTipo}</span>
         </div>
         {byTipo.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun vino in questa tipologia</div>
+          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun vino in questa tipologia</div>
         ) : (
           regioniOrdinate.map(reg => {
             const byReg = byTipo.filter(v => v.regioneVino === reg)
             if (byReg.length === 0) return null
             return (
               <div key={reg} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 11, color: S.t3, fontStyle: "italic", marginBottom: 8, paddingBottom: 4, borderBottom: S.bds }}>{reg}</div>
+                <div style={{ fontSize: 11, color: STYLE.t3, fontStyle: "italic", marginBottom: 8, paddingBottom: 4, borderBottom: STYLE.bds }}>{reg}</div>
                 {byReg.map(ing => (
                   <div key={ing.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }), display: "flex", alignItems: "center", gap: 12 }}>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: ing.produttore ? 2 : 0 }}>{ing.name}</div>
-                      {ing.produttore && <div style={{ fontSize: 11, color: S.ac, fontStyle: "italic", marginBottom: 2 }}>{ing.produttore}</div>}
-                      <div style={{ fontSize: 11, color: S.t3 }}>{F(ing.cur)}/{ing.unit}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: ing.produttore ? 2 : 0 }}>{ing.name}</div>
+                      {ing.produttore && <div style={{ fontSize: 11, color: STYLE.ac, fontStyle: "italic", marginBottom: 2 }}>{ing.produttore}</div>}
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(ing.cur)}/{ing.unit}</div>
                     </div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
-                        style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "4px 10px", color: S.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
+                        style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "4px 10px", color: STYLE.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}> </button>
                     </div>
                   </div>
                 ))}
@@ -565,10 +591,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
         {editVino && (
           <div onClick={e => e.target === e.currentTarget && setEditVino(null)}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-            <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 440 }}>
+            <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 440 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px 0" }}>
-                <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>Modifica vino</span>
-                <button onClick={() => setEditVino(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+                <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>Modifica vino</span>
+                <button onClick={() => setEditVino(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
               </div>
               <div style={{ padding: "16px 22px" }}>
                 <Fld label="Nome">
@@ -580,7 +606,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <Fld label="Tipologia">
                     <select style={inp({ appearance: "none", cursor: "pointer" })} value={editVinoForm.tipoVino} onChange={e => setEditVinoForm(f => ({ ...f, tipoVino: e.target.value }))}>
-                      {["Rossi","Bianchi","Rosé","Bollicine"].map(t => <option key={t}>{t}</option>)}
+                      {["Rossi","Bianchi","Ros  ","Bollicine"].map(t => <option key={t}>{t}</option>)}
                     </select>
                   </Fld>
                   <Fld label="Regione">
@@ -589,7 +615,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     </select>
                   </Fld>
                 </div>
-                <Fld label="Prezzo attuale (€/bottiglia)">
+                <Fld label="Prezzo attuale (v/bottiglia)">
                   <input style={inp()} type="number" step="0.01" value={editVinoForm.cur} onChange={e => setEditVinoForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
                 </Fld>
               </div>
@@ -619,12 +645,12 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
         {delTarget && (
           <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-            <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-              <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina ingrediente</div>
-              <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>?</div>
+            <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 8 }}>Elimina ingrediente</div>
+              <div style={{ fontSize: 13.5, color: STYLE.t2, lineHeight: 1.6, marginBottom: 20 }}>Sei sicuro di voler eliminare <strong style={{ color: STYLE.t1 }}>{delTarget.name}</strong>?</div>
               <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
                 <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-                <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={() => { setIngs(prev => prev.filter(i => i.id !== delTarget.id)); setDelTarget(null) }}>Elimina</button>
+                <button style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={() => { setIngs(prev => prev.filter(i => i.id !== delTarget.id)); setDelTarget(null) }}>Elimina</button>
               </div>
             </div>
           </div>
@@ -633,21 +659,21 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     )
   }
 
-  // ── INGREDIENT LIST VIEW ───────────────────────
+  //  -  -  INGREDIENT LIST VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const catIngs = ingsByCat(selCat)
 
-  // Categorie con sotto1 — mostra cards sotto1 se non selezionata
+  // Categorie con sotto1  -  mostra cards sotto1 se non selezionata
   if (CATS_WITH_SOTTO1.includes(selCat) && !selSotto1) {
     const sotto1List = [...new Set(catIngs.map(i => i.sotto1).filter(Boolean))].sort()
     const noSotto1 = catIngs.filter(i => !i.sotto1)
     return (
       <div>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => { setSelCat(null); setSelSotto1(null) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Magazzino</button>
-          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
+          <button onClick={() => { setSelCat(null); setSelSotto1(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selCat}</span>
         </div>
-        <div style={{ fontSize: 12, color: S.t3, marginBottom: 16 }}>{catIngs.length} ingredienti</div>
+        <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 16 }}>{catIngs.length} ingredienti</div>
         {sotto1List.length > 0 ? (
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
             {sotto1List.map(s1 => {
@@ -655,29 +681,29 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
               return (
                 <div key={s1} onClick={() => setSelSotto1(s1)}
                   style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: S.t1, marginBottom: 4 }}>{s1}</div>
-                  <div style={{ fontSize: 12, color: S.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1, marginBottom: 4 }}>{s1}</div>
+                  <div style={{ fontSize: 12, color: STYLE.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
                 </div>
               )
             })}
             {noSotto1.length > 0 && (
               <div onClick={() => setSelSotto1("__none__")}
                 style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + S.t3 + ",transparent)", opacity: 0.3 }} />
-                <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: S.t1, marginBottom: 4 }}>Altri</div>
-                <div style={{ fontSize: 12, color: S.t3 }}>{noSotto1.length} ingredienti</div>
+                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.t3 + ",transparent)", opacity: 0.3 }} />
+                <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1, marginBottom: 4 }}>Altri</div>
+                <div style={{ fontSize: 12, color: STYLE.t3 }}>{noSotto1.length} ingredienti</div>
               </div>
             )}
           </div>
         ) : (
-          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun ingrediente</div>
+          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente</div>
         )}
       </div>
     )
   }
 
-  // Lista prodotti — filtrata per sotto1 se selezionata
+  // Lista prodotti  -  filtrata per sotto1 se selezionata
   const list = selSotto1 === "__none__"
     ? catIngs.filter(i => !i.sotto1)
     : selSotto1
@@ -688,27 +714,27 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     <div>
       {/* Breadcrumb */}
       <div style={row({ marginBottom: 16 })}>
-        <button onClick={() => { setSelCat(null); setSelSotto1(null) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>
-          ← Magazzino
+        <button onClick={() => { setSelCat(null); setSelSotto1(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>
+           Magazzino
         </button>
-        <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+        <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
         {selSotto1 ? (
           <>
-            <button onClick={() => setSelSotto1(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>{selCat}</button>
-            <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-            <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selSotto1 === "__none__" ? "Altri" : selSotto1}</span>
+            <button onClick={() => setSelSotto1(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>{selCat}</button>
+            <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+            <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selSotto1 === "__none__" ? "Altri" : selSotto1}</span>
           </>
         ) : (
-          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selCat}</span>
         )}
       </div>
 
       <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap" })}>
-        <div style={{ fontSize: 12, color: S.t3 }}>{list.length} ingredienti</div>
+        <div style={{ fontSize: 12, color: STYLE.t3 }}>{list.length} ingredienti</div>
       </div>
 
       {list.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
           Nessun ingrediente in questa categoria
         </div>
       ) : isMobile ? (
@@ -720,41 +746,41 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
               <div key={ing.id} style={card({ padding: "14px 16px" })}>
                 <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{ing.name}</div>
+                    <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2 }}>{ing.name}</div>
                     {(ing.sotto1 || ing.sotto2) && (
                       <div style={row({ gap: 6, marginBottom: 4 })}>
-                        {ing.sotto1 && <span style={{ fontSize: 10, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "1px 6px" }}>{ing.sotto1}</span>}
-                        {ing.sotto2 && <span style={{ fontSize: 10, color: S.t2, background: S.el, border: S.bds, borderRadius: 4, padding: "1px 6px" }}>{ing.sotto2}</span>}
+                        {ing.sotto1 && <span style={{ fontSize: 10, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 4, padding: "1px 6px" }}>{ing.sotto1}</span>}
+                        {ing.sotto2 && <span style={{ fontSize: 10, color: STYLE.t2, background: STYLE.el, border: STYLE.bds, borderRadius: 4, padding: "1px 6px" }}>{ing.sotto2}</span>}
                       </div>
                     )}
                   </div>
-                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}> </button>
                 </div>
                 <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
-                  <span style={{ fontSize: 14, color: spiked ? S.red : S.t2, fontWeight: spiked ? 700 : 400 }}>
-                    {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
+                  <span style={{ fontSize: 14, color: spiked ? STYLE.red : STYLE.t2, fontWeight: spiked ? 700 : 400 }}>
+                    {formatEuro(ing.cur)}/{ing.unit} {spiked ? "'" : ""}
                   </span>
-                  <span style={{ fontSize: 12, color: S.t3 }}>prec. {F(ing.prev || ing.avg || ing.cur || 0)}/{ing.unit}</span>
+                  <span style={{ fontSize: 12, color: STYLE.t3 }}>prec. {formatEuro(ing.prev || ing.avg || ing.cur || 0)}/{ing.unit}</span>
                 </div>
-                {ing.fornitore && <div style={{ fontSize: 10, color: S.t3, marginBottom: 2 }}>📦 {ing.fornitore}</div>}
+                {ing.fornitore && <div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 2 }}>  {ing.fornitore}</div>}
                 {(() => {
                   const prezzi = prezziPerFornitore(ing)
                   if (prezzi.length < 2) return null
                   return (
-                    <div style={{ background: S.el, borderRadius: S.r, padding: "6px 8px", marginTop: 4 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 4 }}>Prezzi fornitori</div>
+                    <div style={{ background: STYLE.el, borderRadius: STYLE.r, padding: "6px 8px", marginTop: 4 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, marginBottom: 4 }}>Prezzi fornitori</div>
                       {prezzi.map((p, i) => (
                         <div key={i} style={row({ justifyContent: "space-between", padding: "2px 0" })}>
-                          <span style={{ fontSize: 11, color: i === 0 ? S.green : S.t2 }}>{p.sup}</span>
-                          <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? S.green : S.t2 }}>{F(p.price)}/{ing.unit}</span>
+                          <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.t2 }}>{p.sup}</span>
+                          <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.t2 }}>{formatEuro(p.price)}/{ing.unit}</span>
                         </div>
                       ))}
                     </div>
                   )
                 })()}
                 {ing.confPrice && (
-                  <div style={{ fontSize: 11, color: S.t3, marginTop: 4 }}>
-                    Confezione: {F(ing.confPrice)} · {ing.confWeight}kg
+                  <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 4 }}>
+                    Confezione: {formatEuro(ing.confPrice)} . {ing.confWeight}kg
                   </div>
                 )}
               </div>
@@ -762,11 +788,11 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
           })}
         </div>
       ) : (
-        <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
+        <div style={{ border: STYLE.bds, borderRadius: STYLE.r2, overflow: "hidden" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
             <thead><tr>
               {["Ingrediente", "Prezzo attuale", "Media storica", ""].map(h => (
-                <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
+                <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: STYLE.t3, background: STYLE.surf, borderBottom: STYLE.bds }}>{h}</th>
               ))}
             </tr></thead>
             <tbody>
@@ -775,38 +801,38 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
             const spiked = avg > 0 && (ing.cur - avg) / avg > 0.10
                 return (
                   <tr key={ing.id}>
-                    <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>
+                    <td style={{ padding: "11px 16px", fontWeight: 500, color: STYLE.t1, borderBottom: STYLE.bds }}>
                       <div>{ing.name}</div>
                       {(ing.sotto1 || ing.sotto2) && (
                         <div style={{ display: "flex", gap: 4, marginTop: 3 }}>
-                          {ing.sotto1 && <span style={{ fontSize: 9, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
-                          {ing.sotto2 && <span style={{ fontSize: 9, color: S.t2, background: S.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
+                          {ing.sotto1 && <span style={{ fontSize: 9, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
+                          {ing.sotto2 && <span style={{ fontSize: 9, color: STYLE.t2, background: STYLE.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
                         </div>
                       )}
-                      {ing.confPrice && <span style={{ fontSize: 10, color: S.t3 }}>conf. {F(ing.confPrice)}</span>}
-                      {ing.fornitore && <div style={{ fontSize: 10, color: S.t3, marginTop: 2 }}>{ing.fornitore}</div>}
+                      {ing.confPrice && <span style={{ fontSize: 10, color: STYLE.t3 }}>conf. {formatEuro(ing.confPrice)}</span>}
+                      {ing.fornitore && <div style={{ fontSize: 10, color: STYLE.t3, marginTop: 2 }}>{ing.fornitore}</div>}
                     </td>
-                    <td style={{ padding: "10px 16px", color: spiked ? S.red : S.t1, fontWeight: spiked ? 600 : 400, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
-                      {F(ing.cur)}/{ing.unit} {spiked ? "↑" : ""}
+                    <td style={{ padding: "10px 16px", color: spiked ? STYLE.red : STYLE.t1, fontWeight: spiked ? 600 : 400, borderBottom: STYLE.bds, fontVariantNumeric: "tabular-nums" }}>
+                      {formatEuro(ing.cur)}/{ing.unit} {spiked ? "'" : ""}
                     </td>
-                    <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>
+                    <td style={{ padding: "11px 16px", color: STYLE.t2, borderBottom: STYLE.bds, fontVariantNumeric: "tabular-nums" }}>
                       {(() => {
                         const prezzi = prezziPerFornitore(ing)
-                        if (prezzi.length < 2) return <span>{F(ing.avg)}/{ing.unit}</span>
+                        if (prezzi.length < 2) return <span>{formatEuro(ing.avg)}/{ing.unit}</span>
                         return (
                           <div>
                             {prezzi.map((p, i) => (
                               <div key={i} style={row({ gap: 6 })}>
-                                <span style={{ fontSize: 11, color: i === 0 ? S.green : S.t3 }}>{p.sup}</span>
-                                <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? S.green : S.t2 }}>{F(p.price)}</span>
+                                <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.t3 }}>{p.sup}</span>
+                                <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.t2 }}>{formatEuro(p.price)}</span>
                               </div>
                             ))}
                           </div>
                         )
                       })()}
                     </td>
-                    <td style={{ padding: "11px 16px", borderBottom: S.bds, textAlign: "right" }}>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">✕</button>
+                    <td style={{ padding: "11px 16px", borderBottom: STYLE.bds, textAlign: "right" }}>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina"> </button>
                     </td>
                   </tr>
                 )
@@ -820,14 +846,14 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
       {delTarget && (
         <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina ingrediente</div>
-            <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 8 }}>Elimina ingrediente</div>
+            <div style={{ fontSize: 13.5, color: STYLE.t2, lineHeight: 1.6, marginBottom: 20 }}>
+              Sei sicuro di voler eliminare <strong style={{ color: STYLE.t1 }}>{delTarget.name}</strong>? L'azione non    reversibile.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-              <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina</button>
+              <button style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina</button>
             </div>
           </div>
         </div>
@@ -839,11 +865,11 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
 function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
@@ -883,35 +909,35 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
   }
 
 
-  // ── CATEGORY VIEW ──────────────────────────────
+  //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
     <div>
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 2 }}>Piatti</div>
-        <div style={{ fontSize: 12, color: S.t3 }}>{dishes.length} piatti nel menu — aggiunti dalla sezione Ricette</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 2 }}>Piatti</div>
+        <div style={{ fontSize: 12, color: STYLE.t3 }}>{dishes.length} piatti nel menu  -  aggiunti dalla sezione Ricette</div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
         {CATS.map(cat => {
           const list = dishesByCat(cat)
           const overTarget = list.filter(d => d.fc > 0 && d.fc > d.target).length
           const isVini = cat === "Vini"
-          const tipiCount = isVini ? ["Rossi","Bianchi","Rosé","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
+          const tipiCount = isVini ? ["Rossi","Bianchi","Ros  ","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
           return (
             <div key={cat} onClick={() => setSelCat(cat)}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
                 borderColor: overTarget > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
-              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: overTarget > 0 ? "linear-gradient(90deg," + S.red + ",transparent)" : "linear-gradient(90deg," + S.ac + ",transparent)", opacity: 0.4 }} />
+              <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: overTarget > 0 ? "linear-gradient(90deg," + STYLE.red + ",transparent)" : "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
               
-              <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 4 }}>{cat}</div>
-              <div style={{ fontSize: 12, color: S.t3, marginBottom: isVini && tipiCount.length > 0 ? 6 : 0 }}>{list.length} {isVini ? "vini" : "piatt" + (list.length !== 1 ? "i" : "o")}</div>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{cat}</div>
+              <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: isVini && tipiCount.length > 0 ? 6 : 0 }}>{list.length} {isVini ? "vini" : "piatt" + (list.length !== 1 ? "i" : "o")}</div>
               {isVini && tipiCount.length > 0 && (
                 <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
                   {tipiCount.map(({ t, n }) => (
-                    <div key={t} style={{ fontSize: 10, color: S.t3 }}>{t}: {n}</div>
+                    <div key={t} style={{ fontSize: 10, color: STYLE.t3 }}>{t}: {n}</div>
                   ))}
                 </div>
               )}
-              {overTarget > 0 && <div style={{ fontSize: 10, color: S.red, marginTop: 4 }}>! {overTarget} sopra target</div>}
+              {overTarget > 0 && <div style={{ fontSize: 10, color: STYLE.red, marginTop: 4 }}>! {overTarget} sopra target</div>}
             </div>
           )
         })}
@@ -919,19 +945,19 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
     </div>
   )
 
-  // ── VINI VIEW ──────────────────────────────────
+  //  -  -  VINI VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (selCat === "Vini") {
     const vini = dishesByCat("Vini")
     return (
       <div>
         <div style={row({ marginBottom: 20 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Piatti</button>
-          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>Vini</span>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Piatti</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Vini</span>
         </div>
         {vini.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-            Nessun vino presente — aggiungili dalla sezione Drink Cost
+          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
+            Nessun vino presente  -  aggiungili dalla sezione Drink Cost
           </div>
         ) : (
           VINO_TIPI.map(tipo => {
@@ -939,12 +965,12 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
             if (byTipo.length === 0) return null
             return (
               <div key={tipo} style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: S.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: S.bds }}>{tipo}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: STYLE.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: STYLE.bds }}>{tipo}</div>
                 {(() => {
                   const REGIONI_IT_D = {
                     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
                     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-                    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+                    "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
                     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
                   }
                   return (REGIONI_IT_D[tipo] || VINO_REGIONI)
@@ -953,40 +979,40 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   if (byReg.length === 0) return null
                   return (
                     <div key={reg} style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, color: S.t3, marginBottom: 6, paddingLeft: 2, fontStyle: "italic" }}>{reg}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3, marginBottom: 6, paddingLeft: 2, fontStyle: "italic" }}>{reg}</div>
                       {byReg.map(v => (
                         <div key={v.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }) }}>
                           <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: v.produttore ? 2 : 6 }}>{v.name}</div>
-                              {v.produttore && <div style={{ fontSize: 11, color: S.ac, fontStyle: "italic", marginBottom: 6 }}>{v.produttore}</div>}
+                              <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: v.produttore ? 2 : 6 }}>{v.name}</div>
+                              {v.produttore && <div style={{ fontSize: 11, color: STYLE.ac, fontStyle: "italic", marginBottom: 6 }}>{v.produttore}</div>}
                               {/* KPI vino */}
                               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
                                 {[
-                                  { l: "Costo bottiglia", v: v.bottlePrice > 0 ? F(v.bottlePrice) : (v.cost > 0 ? F(r2(v.cost * (v.calici || 6))) : "—"), c: S.t2 },
-                                  { l: "Vendita bottiglia", v: v.priceBottle > 0 ? F(v.priceBottle) : "—", c: S.ac },
-                                  { l: "Margine", v: v.priceBottle > 0 && v.bottlePrice > 0 ? F(r2(v.priceBottle - v.bottlePrice)) : "—", c: S.green },
-                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? F(v.priceCalice) : "—", c: S.t1 },
+                                  { l: "Costo bottiglia", v: v.bottlePrice > 0 ? formatEuro(v.bottlePrice) : (v.cost > 0 ? formatEuro(r2(v.cost * (v.calici || 6))) : " - "), c: STYLE.t2 },
+                                  { l: "Vendita bottiglia", v: v.priceBottle > 0 ? formatEuro(v.priceBottle) : " - ", c: STYLE.ac },
+                                  { l: "Margine", v: v.priceBottle > 0 && v.bottlePrice > 0 ? formatEuro(r2(v.priceBottle - v.bottlePrice)) : " - ", c: STYLE.green },
+                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? formatEuro(v.priceCalice) : " - ", c: STYLE.t1 },
                                 ].map((k, i) => (
-                                  <div key={i} style={{ background: S.el, borderRadius: 6, padding: "6px 8px" }}>
-                                    <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3, fontWeight: 600, marginBottom: 2 }}>{k.l}</div>
+                                  <div key={i} style={{ background: STYLE.el, borderRadius: 6, padding: "6px 8px" }}>
+                                    <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: STYLE.t3, fontWeight: 600, marginBottom: 2 }}>{k.l}</div>
                                     <div style={{ fontSize: 12, fontWeight: 600, color: k.c, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
                                   </div>
                                 ))}
                               </div>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginLeft: 8, flexShrink: 0 }}>
-                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}> </button>
                               <button onClick={() => { if(setEditDish && setPage) { setEditDish(v); setPage("fc") } }}
-                                style={{ background: "none", border: "1px solid #2a2a31", color: S.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: S.r }}>Modifica</button>
+                                style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r }}>Modifica</button>
                             </div>
                           </div>
                           {/* Food cost bar */}
                           {v.priceBottle > 0 && v.cost > 0 && (() => {
                             const fc = v.cost / v.priceBottle
                             return (
-                              <div style={{ height: 3, background: S.el, borderRadius: 999, overflow: "hidden" }}>
-                                <div style={{ height: "100%", width: Math.min(fc * 100, 100) + "%", background: fc > 0.4 ? S.red : fc > 0.3 ? S.ac : S.green, borderRadius: 999 }} />
+                              <div style={{ height: 3, background: STYLE.el, borderRadius: 999, overflow: "hidden" }}>
+                                <div style={{ height: "100%", width: Math.min(fc * 100, 100) + "%", background: fc > 0.4 ? STYLE.red : fc > 0.3 ? STYLE.ac : STYLE.green, borderRadius: 999 }} />
                               </div>
                             )
                           })()}
@@ -1002,14 +1028,14 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 {delTarget && (
         <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
-            <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 8 }}>Elimina piatto</div>
+            <div style={{ fontSize: 13.5, color: STYLE.t2, lineHeight: 1.6, marginBottom: 20 }}>
+              Sei sicuro di voler eliminare <strong style={{ color: STYLE.t1 }}>{delTarget.name}</strong>? L'azione non    reversibile.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-              <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
+              <button style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
             </div>
           </div>
         </div>
@@ -1018,20 +1044,20 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
     )
   }
 
-  // ── DISH LIST VIEW ─────────────────────────────
+  //  -  -  DISH LIST VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const list = dishesByCat(selCat)
   return (
     <div>
       <div style={row({ marginBottom: 16 })}>
-        <button onClick={() => { setSelCat(null); setDetail(null) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Piatti</button>
-        <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-        <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
+        <button onClick={() => { setSelCat(null); setDetail(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Piatti</button>
+        <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+        <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selCat}</span>
       </div>
-      <div style={{ fontSize: 12, color: S.t3, marginBottom: 14 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
+      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 14 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
 
       {list.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-          Nessun piatto in questa categoria — aggiungili dalla sezione Food Cost
+        <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
+          Nessun piatto in questa categoria  -  aggiungili dalla sezione Food Cost
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -1039,34 +1065,34 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
             <div key={d.id} style={card({ padding: "14px 16px" })}>
               <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{d.name}</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2 }}>{d.name}</div>
                   <div style={row({ gap: 10 })}>
-                    <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{d.price > 0 ? F(d.price) : "—"}</span>
-                    {d.ricarico > 0 && <span style={{ fontSize: 12, color: S.ac, fontWeight: 600 }}>×{(d.ricarico/100).toFixed(1)}</span>}
-                    {d.fc > 0 && <span style={{ fontSize: 12, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{P(d.fc)} FC</span>}
-                    {d.cost > 0 && <span style={{ fontSize: 11, color: S.t3 }}>costo {F(d.cost)}</span>}
+                    <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{d.price > 0 ? formatEuro(d.price) : " - "}</span>
+                    {d.ricarico > 0 && <span style={{ fontSize: 12, color: STYLE.ac, fontWeight: 600 }}> --{(d.ricarico/100).toFixed(1)}</span>}
+                    {d.fc > 0 && <span style={{ fontSize: 12, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{formatPct(d.fc)} FC</span>}
+                    {d.cost > 0 && <span style={{ fontSize: 11, color: STYLE.t3 }}>costo {formatEuro(d.cost)}</span>}
                   </div>
                 </div>
                 <div style={row({ gap: 8 })}>
                   <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
-                    style={{ background: "none", border: "none", color: S.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: S.r, border: "1px solid #2a2a31" }}>Modifica</button>
-                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                    style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
+                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}> </button>
                 </div>
               </div>
               {/* Food cost bar */}
               {d.fc > 0 && (
-                <div style={{ height: 4, background: S.el, borderRadius: 999, overflow: "hidden", marginBottom: 10, position: "relative" }}>
+                <div style={{ height: 4, background: STYLE.el, borderRadius: 999, overflow: "hidden", marginBottom: 10, position: "relative" }}>
                   <div style={{ height: "100%", width: Math.min(d.fc * 100, 100) + "%", background: FC_COLOR(d.fc, d.target), borderRadius: 999 }} />
-                  <div style={{ position: "absolute", top: 0, bottom: 0, left: (d.target * 100) + "%", width: 1, background: S.t3 }} />
+                  <div style={{ position: "absolute", top: 0, bottom: 0, left: (d.target * 100) + "%", width: 1, background: STYLE.t3 }} />
                 </div>
               )}
-              {/* Stagionalità */}
-              <div style={{ borderTop: S.bds, paddingTop: 8 }}>
-                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 6 }}>Stagionalità</div>
+              {/* Stagionalit   */}
+              <div style={{ borderTop: STYLE.bds, paddingTop: 8 }}>
+                <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, marginBottom: 6 }}>Stagionalit  </div>
                 <div style={row({ flexWrap: "wrap", gap: 6 })}>
                   {STAGIONI.map(s => (
                     <button key={s} onClick={() => toggleStagione(d, s)}
-                      style={{ padding: "3px 10px", background: (d.stagioni||[]).includes(s) ? S.acg : "none", border: "1px solid " + ((d.stagioni||[]).includes(s) ? S.acd : "#2a2a31"), borderRadius: 999, color: (d.stagioni||[]).includes(s) ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>
+                      style={{ padding: "3px 10px", background: (d.stagioni||[]).includes(s) ? STYLE.acg : "none", border: "1px solid " + ((d.stagioni||[]).includes(s) ? STYLE.acd : "#2a2a31"), borderRadius: 999, color: (d.stagioni||[]).includes(s) ? STYLE.ac : STYLE.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>
                       {s}
                     </button>
                   ))}
@@ -1079,14 +1105,14 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 {delTarget && (
         <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 8 }}>Elimina piatto</div>
-            <div style={{ fontSize: 13.5, color: S.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: S.t1 }}>{delTarget.name}</strong>? L'azione non è reversibile.
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 8 }}>Elimina piatto</div>
+            <div style={{ fontSize: 13.5, color: STYLE.t2, lineHeight: 1.6, marginBottom: 20 }}>
+              Sei sicuro di voler eliminare <strong style={{ color: STYLE.t1 }}>{delTarget.name}</strong>? L'azione non    reversibile.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
               <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-              <button style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
+              <button style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
             </div>
           </div>
         </div>
@@ -1096,7 +1122,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 }
 
 
-// ── BANCHETTI TAB ─────────────────────────────────────────────────────────────
+//  -  -  BANCHETTI TAB  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
 
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
@@ -1165,7 +1191,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
             role: "user",
             content: [
               { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
-              { type: "text", text: `Sei un assistente per ristoranti italiani. Analizza questo documento di prenotazione banchetto o evento. Estrai tutte le informazioni e rispondi SOLO con JSON valido senza markdown: {"nome":"nome cliente o tipo evento","dataEvento":"YYYY-MM-DD","orario":"HH:MM","persone":0,"intolleranze":"lista allergie separate da virgola, vuoto se nessuna","caparra":0,"menu":"piatti o tipo menu concordato, vuoto se non presente","note":"altre note"}. Se un campo non è presente usa stringa vuota o 0. Data sempre in formato YYYY-MM-DD.` }
+              { type: "text", text: `Sei un assistente per ristoranti italiani. Analizza questo documento di prenotazione banchetto o evento. Estrai tutte le informazioni e rispondi SOLO con JSON valido senza markdown: {"nome":"nome cliente o tipo evento","dataEvento":"YYYY-MM-DD","orario":"HH:MM","persone":0,"intolleranze":"lista allergie separate da virgola, vuoto se nessuna","caparra":0,"menu":"piatti o tipo menu concordato, vuoto se non presente","note":"altre note"}. Se un campo non    presente usa stringa vuota o 0. Data sempre in formato YYYY-MM-DD.` }
             ]
           }]
         })
@@ -1176,13 +1202,13 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
       if (data.error) throw new Error(data.error.message || "Errore Groq")
       const raw = data.choices?.[0]?.message?.content || ""
       const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error("Risposta AI non valida — riprova con foto più nitida")
+      if (!match) throw new Error("Risposta AI non valida  -  riprova con foto pi   nitida")
       const parsed = JSON.parse(match[0])
       setForm({ nome: parsed.nome || "", dataEvento: parsed.dataEvento || "", orario: parsed.orario || "", persone: parsed.persone ? String(parsed.persone) : "", intolleranze: parsed.intolleranze || "", caparra: parsed.caparra ? String(parsed.caparra) : "", menu: parsed.menu || "", note: parsed.note || "" })
       setBProg(100); setBProgLabel("Completato!")
       setBStep("form")
     } catch(e) {
-      setBError(e.name === "AbortError" ? "Timeout — riprova con una foto più nitida." : "Errore OCR: " + e.message)
+      setBError(e.name === "AbortError" ? "Timeout  -  riprova con una foto pi   nitida." : "Errore OCR: " + e.message)
       setBStep("upload")
     }
   }
@@ -1211,22 +1237,22 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
     const isUrgente = giorni >= 0 && giorni <= 2
     const labelGiorni = giorni === 0 ? "oggi" : giorni === 1 ? "domani" : giorni === 2 ? "dopodomani" : giorni < 0 ? "" : "tra " + giorni + " gg"
     return (
-      <div onClick={() => setDetailB(b)} style={{ background: isUrgente ? "rgba(248,113,113,0.06)" : S.surf, border: "1px solid " + (isUrgente ? "rgba(248,113,113,0.35)" : "#1f1f25"), borderRadius: S.r2, padding: "14px 16px", cursor: "pointer", marginBottom: 8, position: "relative", overflow: "hidden" }}>
-        {isUrgente && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: S.red, opacity: 0.5 }} />}
+      <div onClick={() => setDetailB(b)} style={{ background: isUrgente ? "rgba(248,113,113,0.06)" : STYLE.surf, border: "1px solid " + (isUrgente ? "rgba(248,113,113,0.35)" : "#1f1f25"), borderRadius: STYLE.r2, padding: "14px 16px", cursor: "pointer", marginBottom: 8, position: "relative", overflow: "hidden" }}>
+        {isUrgente && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: STYLE.red, opacity: 0.5 }} />}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 6 }}>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.nome}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.nome}</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-              <span style={{ fontSize: 12, color: isUrgente ? S.red : S.ac, fontWeight: 600 }}>{DL(b.dataEvento)}{b.orario ? " · " + b.orario : ""}</span>
-              {labelGiorni && <span style={{ fontSize: 10, fontWeight: 700, color: isUrgente ? S.red : S.t3, background: isUrgente ? "rgba(248,113,113,0.12)" : S.el, padding: "1px 7px", borderRadius: 999, border: "1px solid " + (isUrgente ? "rgba(248,113,113,0.3)" : "#2a2a31") }}>{labelGiorni}</span>}
+              <span style={{ fontSize: 12, color: isUrgente ? STYLE.red : STYLE.ac, fontWeight: 600 }}>{DL(b.dataEvento)}{b.orario ? " . " + b.orario : ""}</span>
+              {labelGiorni && <span style={{ fontSize: 10, fontWeight: 700, color: isUrgente ? STYLE.red : STYLE.t3, background: isUrgente ? "rgba(248,113,113,0.12)" : STYLE.el, padding: "1px 7px", borderRadius: 999, border: "1px solid " + (isUrgente ? "rgba(248,113,113,0.3)" : "#2a2a31") }}>{labelGiorni}</span>}
             </div>
           </div>
-          {b.persone && <span style={{ fontSize: 13, fontWeight: 700, color: S.t2, background: S.el, border: S.bds, borderRadius: 6, padding: "3px 10px", flexShrink: 0, marginLeft: 8 }}>{b.persone} pers.</span>}
+          {b.persone && <span style={{ fontSize: 13, fontWeight: 700, color: STYLE.t2, background: STYLE.el, border: STYLE.bds, borderRadius: 6, padding: "3px 10px", flexShrink: 0, marginLeft: 8 }}>{b.persone} pers.</span>}
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {b.intolleranze && <span style={{ fontSize: 11, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "2px 7px" }}>⚠ {b.intolleranze}</span>}
-          {b.caparra > 0 && <span style={{ fontSize: 11, color: S.green, background: S.gd, border: "1px solid rgba(74,222,128,0.2)", borderRadius: 4, padding: "2px 7px" }}>caparra {F(b.caparra)}</span>}
-          {b.menu && <span style={{ fontSize: 11, color: S.t3, background: S.el, borderRadius: 4, padding: "2px 7px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.menu.slice(0, 40)}{b.menu.length > 40 ? "…" : ""}</span>}
+          {b.intolleranze && <span style={{ fontSize: 11, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 4, padding: "2px 7px" }}>  {b.intolleranze}</span>}
+          {b.caparra > 0 && <span style={{ fontSize: 11, color: STYLE.green, background: STYLE.gd, border: "1px solid rgba(74,222,128,0.2)", borderRadius: 4, padding: "2px 7px" }}>caparra {formatEuro(b.caparra)}</span>}
+          {b.menu && <span style={{ fontSize: 11, color: STYLE.t3, background: STYLE.el, borderRadius: 4, padding: "2px 7px", maxWidth: 200, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{b.menu.slice(0, 40)}{b.menu.length > 40 ? " " : ""}</span>}
         </div>
       </div>
     )
@@ -1238,46 +1264,46 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
         const d = new Date(b.dataEvento); d.setHours(0,0,0,0)
         const g = Math.round((d - oggi) / 86400000)
         return (
-          <div key={b.id} style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: S.r, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ fontSize: 16 }}>🔔</span>
-            <div style={{ fontSize: 13, color: S.red, fontWeight: 600 }}>{g === 0 ? "Oggi" : g === 1 ? "Domani" : "Dopodomani"} — {b.nome}{b.persone ? ", " + b.persone + " persone" : ""}. Hai ordinato tutto?</div>
+          <div key={b.id} style={{ background: "rgba(248,113,113,0.08)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: STYLE.r, padding: "10px 14px", marginBottom: 10, display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: 16 }}>"</span>
+            <div style={{ fontSize: 13, color: STYLE.red, fontWeight: 600 }}>{g === 0 ? "Oggi" : g === 1 ? "Domani" : "Dopodomani"}  -  {b.nome}{b.persone ? ", " + b.persone + " persone" : ""}. Hai ordinato tutto?</div>
           </div>
         )
       })}
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-        <div style={{ fontSize: 12, color: S.t3 }}>{futuri.length} prossimi · {passati.length} passati</div>
+        <div style={{ fontSize: 12, color: STYLE.t3 }}>{futuri.length} prossimi . {passati.length} passati</div>
         <div style={{ display: "flex", gap: 8 }}>
           <button style={btn("s", { fontSize: 12 })} onClick={() => { setEditB(null); setForm({ nome: "", dataEvento: "", orario: "", persone: "", intolleranze: "", note: "", caparra: "", menu: "" }); setFormErr({}); setBStep("form") }}>+ Manuale</button>
-          <button style={btn("p", { fontSize: 12 })} onClick={() => { setBError(null); setBStep("upload") }}>📷 Scansiona</button>
+          <button style={btn("p", { fontSize: 12 })} onClick={() => { setBError(null); setBStep("upload") }}>. Scansiona</button>
         </div>
       </div>
       {futuri.length === 0 && passati.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun banchetto — scansiona un documento o aggiungi manualmente</div>
+        <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun banchetto  -  scansiona un documento o aggiungi manualmente</div>
       ) : (
         <>
-          {futuri.length > 0 && <div style={{ marginBottom: 24 }}><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10, paddingBottom: 4, borderBottom: S.bds }}>Prossimi ({futuri.length})</div>{futuri.map(b => <BCard key={b.id} b={b} />)}</div>}
-          {passati.length > 0 && <div><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10, paddingBottom: 4, borderBottom: S.bds, opacity: 0.6 }}>Passati ({passati.length})</div>{passati.map(b => <BCard key={b.id} b={b} />)}</div>}
+          {futuri.length > 0 && <div style={{ marginBottom: 24 }}><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10, paddingBottom: 4, borderBottom: STYLE.bds }}>Prossimi ({futuri.length})</div>{futuri.map(b => <BCard key={b.id} b={b} />)}</div>}
+          {passati.length > 0 && <div><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10, paddingBottom: 4, borderBottom: STYLE.bds, opacity: 0.6 }}>Passati ({passati.length})</div>{passati.map(b => <BCard key={b.id} b={b} />)}</div>}
         </>
       )}
       {detailB && (
         <div onClick={e => e.target === e.currentTarget && setDetailB(null)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999, overflowY: "auto" }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 480, margin: "auto" }}>
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 480, margin: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: "20px 22px 0" }}>
-              <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>{detailB.nome}</div>
-              <button onClick={() => setDetailB(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14, flexShrink: 0, marginLeft: 8 }}>x</button>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>{detailB.nome}</div>
+              <button onClick={() => setDetailB(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3, fontSize: 14, flexShrink: 0, marginLeft: 8 }}>x</button>
             </div>
             <div style={{ padding: "16px 22px" }}>
-              {[["Data evento", detailB.dataEvento ? DL(detailB.dataEvento) : "—"], ["Orario", detailB.orario || "—"], ["Persone", detailB.persone || "—"], ["Intolleranze", detailB.intolleranze || "Nessuna"], ["Caparra", detailB.caparra > 0 ? F(detailB.caparra) : "—"]].map(([l, v]) => (
-                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: S.bds }}>
-                  <span style={{ fontSize: 12, color: S.t3 }}>{l}</span>
-                  <span style={{ fontSize: 13, color: l === "Intolleranze" && detailB.intolleranze ? S.ac : S.t1, fontWeight: l === "Intolleranze" && detailB.intolleranze ? 600 : 400, maxWidth: "60%", textAlign: "right" }}>{v}</span>
+              {[["Data evento", detailB.dataEvento ? DL(detailB.dataEvento) : " - "], ["Orario", detailB.orario || " - "], ["Persone", detailB.persone || " - "], ["Intolleranze", detailB.intolleranze || "Nessuna"], ["Caparra", detailB.caparra > 0 ? formatEuro(detailB.caparra) : " - "]].map(([l, v]) => (
+                <div key={l} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: STYLE.bds }}>
+                  <span style={{ fontSize: 12, color: STYLE.t3 }}>{l}</span>
+                  <span style={{ fontSize: 13, color: l === "Intolleranze" && detailB.intolleranze ? STYLE.ac : STYLE.t1, fontWeight: l === "Intolleranze" && detailB.intolleranze ? 600 : 400, maxWidth: "60%", textAlign: "right" }}>{v}</span>
                 </div>
               ))}
-              {detailB.menu && <div style={{ marginTop: 12, background: S.el, border: S.bd, borderRadius: S.r, padding: "10px 12px" }}><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 6 }}>Menu concordato</div><div style={{ fontSize: 13, color: S.t2, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{detailB.menu}</div></div>}
-              {detailB.note && <div style={{ marginTop: 10, fontSize: 12, color: S.t3, fontStyle: "italic" }}>Note: {detailB.note}</div>}
+              {detailB.menu && <div style={{ marginTop: 12, background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "10px 12px" }}><div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 6 }}>Menu concordato</div><div style={{ fontSize: 13, color: STYLE.t2, lineHeight: 1.6, whiteSpace: "pre-wrap" }}>{detailB.menu}</div></div>}
+              {detailB.note && <div style={{ marginTop: 10, fontSize: 12, color: STYLE.t3, fontStyle: "italic" }}>Note: {detailB.note}</div>}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", padding: "0 22px 18px" }}>
-              <button style={{ ...btn("g"), color: S.red, fontSize: 12 }} onClick={() => { if(window.confirm("Eliminare questo banchetto?")) { setBanchetti(prev => prev.filter(b => b.id !== detailB.id)); setDetailB(null) } }}>Elimina</button>
+              <button style={{ ...btn("g"), color: STYLE.red, fontSize: 12 }} onClick={() => { if(window.confirm("Eliminare questo banchetto?")) { setBanchetti(prev => prev.filter(b => b.id !== detailB.id)); setDetailB(null) } }}>Elimina</button>
               <div style={{ display: "flex", gap: 8 }}>
                 <button style={btn("g")} onClick={() => setDetailB(null)}>Chiudi</button>
                 <button style={btn("p")} onClick={() => openEdit(detailB)}>Modifica</button>
@@ -1291,53 +1317,53 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
 
   if (bStep === "upload") return (
     <div style={{ maxWidth: 500 }}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 16 }}>Scansiona documento banchetto</div>
-      {bError && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, fontSize: 13, color: S.red }}>{bError}</div>}
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 16 }}>Scansiona documento banchetto</div>
+      {bError && <div style={{ marginBottom: 14, padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, fontSize: 13, color: STYLE.red }}>{bError}</div>}
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
-        <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 28, textAlign: "center", cursor: "pointer", background: S.el }}>
+        <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 28, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
           <input type="file" accept="image/*" capture="environment" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} style={{ display: "none" }} />
-          <div style={{ fontSize: 32, marginBottom: 8 }}>📷</div>
-          <div style={{ fontSize: 15, fontWeight: 600, color: S.t1, marginBottom: 4 }}>Scatta una foto</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>Conferma cliente, foglio prenotazione, menu concordato</div>
+          <div style={{ fontSize: 32, marginBottom: 8 }}>.</div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1, marginBottom: 4 }}>Scatta una foto</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>Conferma cliente, foglio prenotazione, menu concordato</div>
         </label>
-        <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: S.el }}>
+        <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
           <input type="file" accept="image/*,.pdf" onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }} style={{ display: "none" }} />
-          <div style={{ fontSize: 22, marginBottom: 6 }}>📎</div>
-          <div style={{ fontSize: 13, fontWeight: 600, color: S.t2 }}>Scegli dalla galleria o PDF</div>
+          <div style={{ fontSize: 22, marginBottom: 6 }}></div>
+          <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2 }}>Scegli dalla galleria o PDF</div>
         </label>
       </div>
-      <button style={btn("g")} onClick={() => setBStep("list")}>← Annulla</button>
+      <button style={btn("g")} onClick={() => setBStep("list")}> Annulla</button>
     </div>
   )
 
   if (bStep === "loading") return (
     <div style={{ ...card({ padding: 32, maxWidth: 500 }), textAlign: "center" }}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 20 }}>Lettura documento...</div>
-      <div style={{ height: 6, background: S.el, borderRadius: 999, overflow: "hidden", marginBottom: 12 }}>
-        <div style={{ height: "100%", width: bProg + "%", background: S.ac, borderRadius: 999, transition: "width 0.4s ease" }} />
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 20 }}>Lettura documento...</div>
+      <div style={{ height: 6, background: STYLE.el, borderRadius: 999, overflow: "hidden", marginBottom: 12 }}>
+        <div style={{ height: "100%", width: bProg + "%", background: STYLE.ac, borderRadius: 999, transition: "width 0.4s ease" }} />
       </div>
-      <div style={{ fontSize: 13, color: S.t3 }}>{bProgLabel}</div>
+      <div style={{ fontSize: 13, color: STYLE.t3 }}>{bProgLabel}</div>
     </div>
   )
 
   return (
     <div style={{ maxWidth: 520 }}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: editB ? 4 : bStep === "form" && form.nome ? 4 : 16 }}>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: editB ? 4 : bStep === "form" && form.nome ? 4 : 16 }}>
         {editB ? "Modifica banchetto" : bStep === "form" && form.nome ? "Controlla e salva" : "Nuovo banchetto"}
       </div>
-      {bStep === "form" && form.nome && !editB && <div style={{ fontSize: 12, color: S.green, marginBottom: 12 }}>✓ Dati estratti automaticamente — correggi se necessario</div>}
+      {bStep === "form" && form.nome && !editB && <div style={{ fontSize: 12, color: STYLE.green, marginBottom: 12 }}>- Dati estratti automaticamente  -  correggi se necessario</div>}
       <div style={{ ...card({ padding: 16 }), marginBottom: 14 }}>
-        <Fld label="Nome cliente / evento *"><input style={inp()} type="text" value={form.nome} placeholder="es. Matrimonio Rossi · Compleanno Marco" onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />{formErr.nome && <span style={{ fontSize: 11, color: S.red }}>{formErr.nome}</span>}</Fld>
+        <Fld label="Nome cliente / evento *"><input style={inp()} type="text" value={form.nome} placeholder="es. Matrimonio Rossi . Compleanno Marco" onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} />{formErr.nome && <span style={{ fontSize: 11, color: STYLE.red }}>{formErr.nome}</span>}</Fld>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Fld label="Data evento *"><input style={inp()} type="date" value={form.dataEvento} onChange={e => setForm(f => ({ ...f, dataEvento: e.target.value }))} />{formErr.dataEvento && <span style={{ fontSize: 11, color: S.red }}>{formErr.dataEvento}</span>}</Fld>
+          <Fld label="Data evento *"><input style={inp()} type="date" value={form.dataEvento} onChange={e => setForm(f => ({ ...f, dataEvento: e.target.value }))} />{formErr.dataEvento && <span style={{ fontSize: 11, color: STYLE.red }}>{formErr.dataEvento}</span>}</Fld>
           <Fld label="Orario"><input style={inp()} type="time" value={form.orario} onChange={e => setForm(f => ({ ...f, orario: e.target.value }))} /></Fld>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
           <Fld label="Numero persone"><input style={inp()} type="number" min="1" value={form.persone} placeholder="es. 80" onChange={e => setForm(f => ({ ...f, persone: e.target.value }))} /></Fld>
-          <Fld label="Caparra €"><input style={inp()} type="number" step="0.01" value={form.caparra} placeholder="0.00" onChange={e => setForm(f => ({ ...f, caparra: e.target.value }))} /></Fld>
+          <Fld label="Caparra v"><input style={inp()} type="number" step="0.01" value={form.caparra} placeholder="0.00" onChange={e => setForm(f => ({ ...f, caparra: e.target.value }))} /></Fld>
         </div>
         <Fld label="Intolleranze / allergie"><input style={inp()} type="text" value={form.intolleranze} placeholder="es. glutine, lattosio, frutta secca" onChange={e => setForm(f => ({ ...f, intolleranze: e.target.value }))} /></Fld>
-        <Fld label="Menu concordato"><textarea style={{ ...inp(), minHeight: 80, resize: "vertical", lineHeight: 1.5 }} value={form.menu} placeholder="es. Antipasto misto · Risotto · Filetto · Tiramisù" onChange={e => setForm(f => ({ ...f, menu: e.target.value }))} /></Fld>
+        <Fld label="Menu concordato"><textarea style={{ ...inp(), minHeight: 80, resize: "vertical", lineHeight: 1.5 }} value={form.menu} placeholder="es. Antipasto misto . Risotto . Filetto . Tiramis  " onChange={e => setForm(f => ({ ...f, menu: e.target.value }))} /></Fld>
         <Fld label="Note"><input style={inp()} type="text" value={form.note} placeholder="es. servizio al piatto, torta esterna" onChange={e => setForm(f => ({ ...f, note: e.target.value }))} /></Fld>
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
@@ -1348,7 +1374,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
   )
 }
 
-// ── INVOICES ──────────────────────────────────────────────────────────────────
+//  -  -  INVOICES  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, isMobile }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
@@ -1382,7 +1408,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     setFattErr({}); setFound([])
   }
 
-  // ── Comprimi immagine ─────────────────────────────
+  //  -  -  Comprimi immagine  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   async function compressImage(file) {
     return new Promise((res) => {
       try {
@@ -1407,7 +1433,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     })
   }
 
-  // ── Leggi prompt da Firebase ───────────────────────
+  //  -  -  Leggi prompt da Firebase  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   async function loadPrompt() {
     try {
       const snap = await getDoc(doc(db, "config", "prompts"))
@@ -1416,7 +1442,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     return null
   }
 
-  // ── Analisi IA ────────────────────────────────────
+  //  -  -  Analisi IA  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   async function handleFile(f) {
     if (!f) return
     setStep("loading"); setProg(5); setProgLabel("Caricamento in corso..."); setOcrError(null)
@@ -1436,7 +1462,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const PROMPT = promptBase || `Sei un esperto contabile specializzato nel settore della ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown: {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"Carni o Pesce o Frutta e Verdura o Latticini o Freschi o Surgelati o Vini o Bevande o Scatolame o Detersivi","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o pz o l","prezzoUnitario":0.00,"sconto":""}]}`
 
       if (isPdf) {
-        // ── PDF: estrai testo e manda a Groq come testo ──────────
+        //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
         setProg(20); setProgLabel("Estrazione testo dal PDF...")
         if (!window.pdfjsLib) {
           await new Promise((res, rej) => {
@@ -1473,11 +1499,11 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (data.error) throw new Error(data.error.message || "Errore Groq")
         const raw = data.choices?.[0]?.message?.content || ""
         const match = raw.match(/\{[\s\S]*\}/)
-        if (!match) throw new Error("Risposta AI non valida — riprova")
+        if (!match) throw new Error("Risposta AI non valida  -  riprova")
         processResult(JSON.parse(match[0]))
 
       } else {
-        // ── IMMAGINE: comprimi e manda a Groq con visione ────────
+        //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
         setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
         setProg(35); setProgLabel("Lettura immagine...")
@@ -1511,7 +1537,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (data.error) throw new Error(data.error.message || "Errore Groq")
         const raw = data.choices?.[0]?.message?.content || ""
         const match = raw.match(/\{[\s\S]*\}/)
-        if (!match) throw new Error("Risposta AI non valida — riprova con foto più nitida")
+        if (!match) throw new Error("Risposta AI non valida  -  riprova con foto pi   nitida")
         processResult(JSON.parse(match[0]))
       }
 
@@ -1524,7 +1550,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     }
   }
 
-  // ── Processa risultato AI ──────────────────────────
+  //  -  -  Processa risultato AI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function processResult(parsed) {
     setProg(85); setProgLabel("Smistamento prodotti...")
 
@@ -1553,7 +1579,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       if (dbResult) return dbResult.tipo
       const n = nome.toLowerCase()
       if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante/.test(n)) return "Bollicine"
-      if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Rosé"
+      if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Ros  "
       if (/bianco|pinot grigio|vermentino|soave|chardonnay|sauvignon|gewurz|riesling|vernaccia|trebbiano|greco|fiano|falanghina|arneis|gavi|ribolla|grillo|catarratto|nuragus|verdicchio/.test(n)) return "Bianchi"
       return "Rossi"
     }
@@ -1624,7 +1650,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     setStep("review")
   }
 
-  // ── Normalizza categoria dall'AI ───────────────────
+  //  -  -  Normalizza categoria dall'AI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function normCat(cat) {
     if (!cat) return null
     const c = cat.toLowerCase().trim()
@@ -1641,7 +1667,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     return null
   }
 
-  // ── Salva tutto ───────────────────────────────────
+  //  -  -  Salva tutto  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function save() {
     const e = {}
     if (!fattura.sup.trim()) e.sup = "Obbligatorio"
@@ -1660,7 +1686,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         if (!match) return ing
         const newCur = match.prezzoUnitario
         const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-        // Se è un vino, aggiorna anche tipoVino e regioneVino se disponibili
+        // Se    un vino, aggiorna anche tipoVino e regioneVino se disponibili
         const vinoFields = ing.cat === "Vini" ? {
           ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
           ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
@@ -1705,7 +1731,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     if (supName) {
       setFornitori(prev => {
         const exists = prev.find(f => f.name.toLowerCase() === supName.toLowerCase())
-        if (exists) return prev // già presente
+        if (exists) return prev // gi   presente
         return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
       })
     }
@@ -1714,7 +1740,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     reset()
   }
 
-  // ── RENDER ────────────────────────────────────────
+  //  -  -  RENDER  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const updCount = found.filter(p => p.include && p.tipo === "update").length
   const newCount = found.filter(p => p.include && p.tipo === "new").length
 
@@ -1723,13 +1749,13 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       {/* Header */}
       <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", alignItems: "flex-start" })}>
         <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Fatture</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>{invs.length} fatture · {fornitori.length} fornitori</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Fatture</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>{invs.length} fatture . {fornitori.length} fornitori</div>
         </div>
         <div style={row({ gap: 8 })}>
           {step === "list" && invTab === "fatture" && <button style={btn("p")} onClick={() => setStep("upload")}>+ Carica fattura</button>}
           {step === "list" && invTab === "fornitori" && <button style={btn("p")} onClick={() => { setForniEdit(null); setForniForm({ name: "", tel: "", email: "", cat: "" }); setForniOpen(true) }}>+ Fornitore</button>}
-          {step !== "list" && <button style={btn("g")} onClick={reset}>← Annulla</button>}
+          {step !== "list" && <button style={btn("g")} onClick={reset}> Annulla</button>}
         </div>
       </div>
 
@@ -1740,21 +1766,21 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
             const urgenti = id === "banchetti" ? banchetti.filter(b => { if (!b.dataEvento) return false; const d = new Date(b.dataEvento); d.setHours(0,0,0,0); const oggi = new Date(); oggi.setHours(0,0,0,0); return Math.round((d - oggi) / 86400000) <= 2 && Math.round((d - oggi) / 86400000) >= 0 }).length : 0
             return (
               <button key={id} onClick={() => setInvTab(id)}
-                style={{ padding: "7px 20px", background: invTab === id ? S.ac : S.el, color: invTab === id ? "#0d0d0f" : S.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: invTab === id ? 700 : 400, cursor: "pointer", borderRadius: idx === 0 ? "8px 0 0 8px" : idx === 2 ? "0 8px 8px 0" : "0", position: "relative" }}>
+                style={{ padding: "7px 20px", background: invTab === id ? STYLE.ac : STYLE.el, color: invTab === id ? "#0d0d0f" : STYLE.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: invTab === id ? 700 : 400, cursor: "pointer", borderRadius: idx === 0 ? "8px 0 0 8px" : idx === 2 ? "0 8px 8px 0" : "0", position: "relative" }}>
                 {label}
-                {urgenti > 0 && <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, background: S.red, borderRadius: "50%", fontSize: 9, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{urgenti}</span>}
+                {urgenti > 0 && <span style={{ position: "absolute", top: -4, right: -4, width: 16, height: 16, background: STYLE.red, borderRadius: "50%", fontSize: 9, fontWeight: 700, color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" }}>{urgenti}</span>}
               </button>
             )
           })}
         </div>
       )}
 
-      {/* ── TAB BANCHETTI ── */}
+      {/*  -  -  TAB BANCHETTI  -  -  */}
       {step === "list" && invTab === "banchetti" && (
         <BanchettiTab banchetti={banchetti} setBanchetti={setBanchetti} isMobile={isMobile} />
       )}
 
-      {/* ── TAB FORNITORI ── */}
+      {/*  -  -  TAB FORNITORI  -  -  */}
       {step === "list" && invTab === "fornitori" && (
         <div>
           {/* Fornitore detail */}
@@ -1768,55 +1794,55 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
             return (
               <div>
                 <div style={row({ marginBottom: 16 })}>
-                  <button onClick={() => setSelFornitore(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Fornitori</button>
-                  <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-                  <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{f.name}</span>
+                  <button onClick={() => setSelFornitore(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Fornitori</button>
+                  <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+                  <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{f.name}</span>
                 </div>
 
                 {/* Dati contatto */}
                 <div style={card({ padding: 16, marginBottom: 14 })}>
                   <div style={row({ justifyContent: "space-between", marginBottom: 12 })}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Dati contatto</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3 }}>Dati contatto</div>
                     <div style={row({ gap: 8 })}>
                       <button onClick={() => { setForniEdit(f); setForniForm({ name: f.name, tel: f.tel||"", email: f.email||"", cat: f.cat||"" }); setForniOpen(true) }}
-                        style={{ background: "none", border: "none", color: S.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Modifica</button>
+                        style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit" }}>Modifica</button>
 
                     </div>
                   </div>
-                  {[["Nome", f.name], ["Telefono", f.tel||"—"], ["Email", f.email||"—"], ["Categoria", f.cat||"—"]].map(([l,v]) => (
-                    <div key={l} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: S.bds })}>
-                      <span style={{ fontSize: 12, color: S.t3 }}>{l}</span>
-                      <span style={{ fontSize: 13, color: S.t1, fontWeight: 500 }}>{v}</span>
+                  {[["Nome", f.name], ["Telefono", f.tel||" - "], ["Email", f.email||" - "], ["Categoria", f.cat||" - "]].map(([l,v]) => (
+                    <div key={l} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: STYLE.bds })}>
+                      <span style={{ fontSize: 12, color: STYLE.t3 }}>{l}</span>
+                      <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 500 }}>{v}</span>
                     </div>
                   ))}
                 </div>
 
                 {/* Totali */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 14 }}>
-                  {[{ l: "Speso questo mese", v: F(totMese) }, { l: "Speso quest'anno", v: F(totAnno) }].map((k,i) => (
+                  {[{ l: "Speso questo mese", v: formatEuro(totMese) }, { l: "Speso quest'anno", v: formatEuro(totAnno) }].map((k,i) => (
                     <div key={i} style={card({ padding: "12px 14px" })}>
-                      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-                      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>{k.v}</div>
+                      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+                      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>{k.v}</div>
                     </div>
                   ))}
                 </div>
 
                 {/* Storico fatture */}
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
                   Fatture ({fInvs.length})
                 </div>
                 {fInvs.length === 0 ? (
-                  <div style={{ textAlign: "center", padding: "24px 0", color: S.t3, fontSize: 13 }}>Nessuna fattura</div>
+                  <div style={{ textAlign: "center", padding: "24px 0", color: STYLE.t3, fontSize: 13 }}>Nessuna fattura</div>
                 ) : (
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {fInvs.map(inv => (
                       <div key={inv.id} style={card({ padding: "12px 14px" })} onClick={() => setDetailInv(inv)}>
                         <div style={row({ justifyContent: "space-between" })}>
                           <div>
-                            <div style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{inv.num || "—"}</div>
-                            <div style={{ fontSize: 11, color: S.t3 }}>{D(inv.date)}</div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1 }}>{inv.num || " - "}</div>
+                            <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatDate(inv.date)}</div>
                           </div>
-                          <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1 }}>{F(inv.total)}</div>
+                          <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1 }}>{formatEuro(inv.total)}</div>
                         </div>
                       </div>
                     ))}
@@ -1824,7 +1850,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                 )}
 
                 {/* Bottone elimina fornitore */}
-                <div style={{ marginTop: 24, paddingTop: 16, borderTop: S.bds }}>
+                <div style={{ marginTop: 24, paddingTop: 16, borderTop: STYLE.bds }}>
                   <button
                     onClick={() => {
                       if (window.confirm("Eliminare il fornitore " + f.name + "? Le fatture associate rimarranno nell'archivio.")) {
@@ -1832,7 +1858,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                         setSelFornitore(null)
                       }
                     }}
-                    style={{ ...btn("s"), background: S.rd, color: S.red, borderColor: "rgba(248,113,113,0.3)", width: "100%", justifyContent: "center", padding: "10px" }}>
+                    style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)", width: "100%", justifyContent: "center", padding: "10px" }}>
                     Elimina fornitore
                   </button>
                 </div>
@@ -1843,8 +1869,8 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           {/* Lista fornitori */}
           {!selFornitore && (
             fornitori.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-                Nessun fornitore — vengono creati automaticamente quando carichi una fattura
+              <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
+                Nessun fornitore  -  vengono creati automaticamente quando carichi una fattura
               </div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -1855,12 +1881,12 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                     <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => setSelFornitore(f.id)}>
                       <div style={row({ justifyContent: "space-between" })}>
                         <div>
-                          <div style={{ fontSize: 15, fontWeight: 700, color: S.t1, marginBottom: 2 }}>{f.name}</div>
-                          <div style={{ fontSize: 11, color: S.t3 }}>{f.cat || "—"} · {fInvs.length} fatture</div>
+                          <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2 }}>{f.name}</div>
+                          <div style={{ fontSize: 11, color: STYLE.t3 }}>{f.cat || " - "} . {fInvs.length} fatture</div>
                         </div>
                         <div style={{ textAlign: "right" }}>
-                          <div style={{ fontSize: 13, color: S.t2 }}>Anno</div>
-                          <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.ac }}>{F(totAnno)}</div>
+                          <div style={{ fontSize: 13, color: STYLE.t2 }}>Anno</div>
+                          <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.ac }}>{formatEuro(totAnno)}</div>
                         </div>
                       </div>
                     </div>
@@ -1874,10 +1900,10 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           {forniOpen && (
             <div onClick={e => e.target === e.currentTarget && setForniOpen(false)}
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 999 }}>
-              <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 400 }}>
+              <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 400 }}>
                 <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
-                  <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>{forniEdit ? "Modifica fornitore" : "Nuovo fornitore"}</span>
-                  <button onClick={() => setForniOpen(false)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+                  <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>{forniEdit ? "Modifica fornitore" : "Nuovo fornitore"}</span>
+                  <button onClick={() => setForniOpen(false)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
                 </div>
                 <div style={{ padding: "16px 22px" }}>
                   <Fld label="Nome *"><input style={inp()} value={forniForm.name} onChange={e => setForniForm(f => ({ ...f, name: e.target.value }))} placeholder="es. MARR SpA" /></Fld>
@@ -1903,90 +1929,90 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* ── STEP: UPLOAD ── */}
+      {/*  -  -  STEP: UPLOAD  -  -  */}
       {step === "upload" && (
         <div style={card({ padding: 24, maxWidth: 500 })}>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 16 }}>Scatta o carica la foto della fattura</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 16 }}>Scatta o carica la foto della fattura</div>
           {ocrError && (
-            <div style={{ marginBottom: 14, padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, fontSize: 13, color: S.red }}>{ocrError}</div>
+            <div style={{ marginBottom: 14, padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, fontSize: 13, color: STYLE.red }}>{ocrError}</div>
           )}
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 28, textAlign: "center", cursor: "pointer", background: S.el }}>
+            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 28, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
               <input type="file" accept="image/*" capture="environment"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
                 style={{ display: "none" }}
               />
               <div style={{ fontSize: 32, marginBottom: 8 }}></div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: S.t1, marginBottom: 4 }}>Scatta una foto</div>
-              <div style={{ fontSize: 12, color: S.t3 }}>Apre direttamente la fotocamera</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1, marginBottom: 4 }}>Scatta una foto</div>
+              <div style={{ fontSize: 12, color: STYLE.t3 }}>Apre direttamente la fotocamera</div>
             </label>
-            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: S.el }}>
+            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
               <input type="file" accept="image/*,.pdf"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
                 style={{ display: "none" }}
               />
               <div style={{ fontSize: 22, marginBottom: 6 }}></div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: S.t2, marginBottom: 2 }}>Scegli dalla galleria o PDF</div>
-              <div style={{ fontSize: 11, color: S.t3 }}>JPG, PNG o PDF</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 2 }}>Scegli dalla galleria o PDF</div>
+              <div style={{ fontSize: 11, color: STYLE.t3 }}>JPG, PNG o PDF</div>
             </label>
-            <div style={{ fontSize: 11, color: S.t3, textAlign: "center" }}>Le immagini vengono compresse automaticamente</div>
+            <div style={{ fontSize: 11, color: STYLE.t3, textAlign: "center" }}>Le immagini vengono compresse automaticamente</div>
           </div>
         </div>
       )}
 
-      {/* ── STEP: LOADING ── */}
+      {/*  -  -  STEP: LOADING  -  -  */}
       {step === "loading" && (
         <div style={card({ padding: 32, maxWidth: 500 })}>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, marginBottom: 20, textAlign: "center" }}>Analisi in corso...</div>
-          <div style={{ height: 6, background: S.el, borderRadius: 999, overflow: "hidden", marginBottom: 12 }}>
-            <div style={{ height: "100%", width: prog + "%", background: S.ac, borderRadius: 999, transition: "width 0.4s ease" }} />
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 20, textAlign: "center" }}>Analisi in corso...</div>
+          <div style={{ height: 6, background: STYLE.el, borderRadius: 999, overflow: "hidden", marginBottom: 12 }}>
+            <div style={{ height: "100%", width: prog + "%", background: STYLE.ac, borderRadius: 999, transition: "width 0.4s ease" }} />
           </div>
-          <div style={{ fontSize: 13, color: S.t3, textAlign: "center" }}>{progLabel}</div>
-          <div style={{ fontSize: 11, color: S.t3, textAlign: "center", marginTop: 8 }}>{prog}%</div>
+          <div style={{ fontSize: 13, color: STYLE.t3, textAlign: "center" }}>{progLabel}</div>
+          <div style={{ fontSize: 11, color: STYLE.t3, textAlign: "center", marginTop: 8 }}>{prog}%</div>
         </div>
       )}
 
-      {/* ── STEP: REVIEW ── */}
+      {/*  -  -  STEP: REVIEW  -  -  */}
       {step === "review" && (
         <div style={{ maxWidth: 600 }}>
           {/* Riepilogo */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
             {[
-              { l: "Fattura", v: fattura.sup || "—", sub: fattura.num },
-              { l: "Prezzi aggiornati", v: String(updCount), sub: "ingredienti esistenti", c: updCount > 0 ? S.green : S.t3 },
-              { l: "Nuovi ingredienti", v: String(newCount), sub: "da aggiungere", c: newCount > 0 ? S.ac : S.t3 },
+              { l: "Fattura", v: fattura.sup || " - ", sub: fattura.num },
+              { l: "Prezzi aggiornati", v: String(updCount), sub: "ingredienti esistenti", c: updCount > 0 ? STYLE.green : STYLE.t3 },
+              { l: "Nuovi ingredienti", v: String(newCount), sub: "da aggiungere", c: newCount > 0 ? STYLE.ac : STYLE.t3 },
             ].map((k, i) => (
               <div key={i} style={card({ padding: "12px 14px" })}>
-                <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-                <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: k.c || S.t1 }}>{k.v}</div>
-                <div style={{ fontSize: 10, color: S.t3 }}>{k.sub}</div>
+                <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+                <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: k.c || STYLE.t1 }}>{k.v}</div>
+                <div style={{ fontSize: 10, color: STYLE.t3 }}>{k.sub}</div>
               </div>
             ))}
           </div>
 
           {/* Dati fattura */}
           <div style={card({ padding: 16, marginBottom: 14 })}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Dati fattura</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Dati fattura</div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
               <div style={{ gridColumn: "1/-1" }}>
                 <Fld label="Fornitore *">
                   <input style={inp()} value={fattura.sup} onChange={e => setFattura(f => ({ ...f, sup: e.target.value }))} placeholder="es. Carni Rossi srl" />
-                  {fattErr.sup && <span style={{ fontSize: 11, color: S.red }}>{fattErr.sup}</span>}
+                  {fattErr.sup && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.sup}</span>}
                 </Fld>
               </div>
-              <Fld label="N° Fattura *">
+              <Fld label="N   Fattura *">
                 <input style={inp()} value={fattura.num} onChange={e => setFattura(f => ({ ...f, num: e.target.value }))} placeholder="2024/001" />
-                {fattErr.num && <span style={{ fontSize: 11, color: S.red }}>{fattErr.num}</span>}
+                {fattErr.num && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.num}</span>}
               </Fld>
               <Fld label="Data *">
                 <input style={inp()} type="date" value={fattura.date} onChange={e => setFattura(f => ({ ...f, date: e.target.value }))} />
-                {fattErr.date && <span style={{ fontSize: 11, color: S.red }}>{fattErr.date}</span>}
+                {fattErr.date && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.date}</span>}
               </Fld>
-              <Fld label="Totale €">
+              <Fld label="Totale v">
                 <input style={inp()} type="text" inputMode="decimal" value={fattura.total} onChange={e => setFattura(f => ({ ...f, total: e.target.value.replace(",", ".") }))} placeholder="0.00" />
-                {fattErr.total && <span style={{ fontSize: 11, color: S.red }}>{fattErr.total}</span>}
+                {fattErr.total && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.total}</span>}
               </Fld>
-              <Fld label="IVA €">
+              <Fld label="IVA v">
                 <input style={inp()} type="text" inputMode="decimal" value={fattura.vat} onChange={e => setFattura(f => ({ ...f, vat: e.target.value.replace(",", ".") }))} placeholder="0.00" />
               </Fld>
             </div>
@@ -1995,18 +2021,18 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
           {/* Prodotti trovati */}
           {found.length > 0 && (
             <div style={card({ padding: 16, marginBottom: 16 })}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>
                 Prodotti trovati in fattura
               </div>
               {found.map((p, i) => (
-                <div key={i} style={{ padding: "12px 0", borderBottom: i < found.length - 1 ? S.bds : "none" }}>
+                <div key={i} style={{ padding: "12px 0", borderBottom: i < found.length - 1 ? STYLE.bds : "none" }}>
                   <div style={row({ justifyContent: "space-between", marginBottom: 8, alignItems: "flex-start" })}>
                     <div style={{ flex: 1 }}>
                       <div style={row({ gap: 6, marginBottom: 6 })}>
                         <span style={badge(p.tipo === "update" ? "g" : "a")}>
-                          {p.tipo === "update" ? "↑ Aggiorna" : "+ Nuovo"}
+                          {p.tipo === "update" ? "' Aggiorna" : "+ Nuovo"}
                         </span>
-                        <span style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</span>
+                        <span style={{ fontSize: 11, color: STYLE.t3 }}>{p.quantita} {p.unita}</span>
                       </div>
                       {/* Nome modificabile */}
                       <input
@@ -2016,21 +2042,21 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                         placeholder="Nome ingrediente"
                       />
                       {p.tipo === "update" && (
-                        <div style={{ fontSize: 11, color: S.green }}>→ aggiorna: {p.ingName}</div>
+                        <div style={{ fontSize: 11, color: STYLE.green }}>' aggiorna: {p.ingName}</div>
                       )}
                     </div>
                     <input type="checkbox" checked={p.include}
                       onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, include: e.target.checked } : x))}
-                      style={{ width: 18, height: 18, cursor: "pointer", accentColor: S.ac, flexShrink: 0, marginLeft: 10, marginTop: 4 }}
+                      style={{ width: 18, height: 18, cursor: "pointer", accentColor: STYLE.ac, flexShrink: 0, marginLeft: 10, marginTop: 4 }}
                     />
                   </div>
                   {p.include && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                       <div>
-                        <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>
-                          Categoria <span style={{ color: S.green, fontSize: 9 }}>✓ AI</span>
+                        <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>
+                          Categoria <span style={{ color: STYLE.green, fontSize: 9 }}>- AI</span>
                         </label>
-                        <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: S.acd })}
+                        <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: STYLE.acd })}
                           value={p.cat}
                           onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
                           {CATS.map(c => <option key={c}>{c}</option>)}
@@ -2038,12 +2064,12 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                       </div>
                       {(p.sotto1 || p.sotto2) && (
                         <div style={{ gridColumn: "1/-1", display: "flex", gap: 6, marginTop: 4 }}>
-                          {p.sotto1 && <span style={{ fontSize: 10, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "2px 7px" }}>{p.sotto1}</span>}
-                          {p.sotto2 && <span style={{ fontSize: 10, color: S.t2, background: S.el, border: S.bds, borderRadius: 4, padding: "2px 7px" }}>{p.sotto2}</span>}
+                          {p.sotto1 && <span style={{ fontSize: 10, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 4, padding: "2px 7px" }}>{p.sotto1}</span>}
+                          {p.sotto2 && <span style={{ fontSize: 10, color: STYLE.t2, background: STYLE.el, border: STYLE.bds, borderRadius: 4, padding: "2px 7px" }}>{p.sotto2}</span>}
                         </div>
                       )}
                       <div>
-                        <label style={{ fontSize: 10, color: S.t2, marginBottom: 3, display: "block" }}>Prezzo unitario €</label>
+                        <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Prezzo unitario v</label>
                         <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12, padding: "5px 8px" })}
                           value={p.prezzoStr !== undefined ? p.prezzoStr : (p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario).replace(".", ","))}
@@ -2069,7 +2095,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                           }}
                           placeholder="0,00"
                         />
-                        {p.sconto && <div style={{ fontSize: 9, color: S.t3, marginTop: 2 }}>sconto: {p.sconto}</div>}
+                        {p.sconto && <div style={{ fontSize: 9, color: STYLE.t3, marginTop: 2 }}>sconto: {p.sconto}</div>}
                       </div>
                     </div>
                   )}
@@ -2088,47 +2114,47 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* ── DETTAGLIO FATTURA ── */}
+      {/*  -  -  DETTAGLIO FATTURA  -  -  */}
       {detailInv && (
         <div onClick={e => e.target === e.currentTarget && setDetailInv(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "28px 20px", zIndex: 999, overflowY: "auto" }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 520, margin: "auto" }}>
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 520, margin: "auto" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0" }}>
-              <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1 }}>{detailInv.sup}</div>
-              <button onClick={() => setDetailInv(null)} style={{ background: S.el, border: S.bd, borderRadius: S.r, width: 28, height: 28, cursor: "pointer", color: S.t3 }}>x</button>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>{detailInv.sup}</div>
+              <button onClick={() => setDetailInv(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
             </div>
             <div style={{ padding: "16px 22px" }}>
               {/* KPI */}
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
                 {[
-                  { l: "Data", v: D(detailInv.date) },
-                  { l: "N° Fattura", v: detailInv.num || "—" },
-                  { l: "Totale", v: F(detailInv.total) },
-                  { l: "IVA", v: F(detailInv.vat || 0) },
-                  { l: "Imponibile", v: F(detailInv.net || 0) },
+                  { l: "Data", v: formatDate(detailInv.date) },
+                  { l: "N   Fattura", v: detailInv.num || " - " },
+                  { l: "Totale", v: formatEuro(detailInv.total) },
+                  { l: "IVA", v: formatEuro(detailInv.vat || 0) },
+                  { l: "Imponibile", v: formatEuro(detailInv.net || 0) },
                   { l: "Stato", v: "Elaborata" },
                 ].map((k, i) => (
-                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: S.r, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{k.v}</div>
+                  <div key={i} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9.5, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{k.v}</div>
                   </div>
                 ))}
               </div>
 
               {/* Prodotti */}
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
                 Prodotti ({detailInv.prodotti?.length || 0})
               </div>
               {detailInv.prodotti && detailInv.prodotti.length > 0 ? (
-                <div style={{ border: S.bd, borderRadius: S.r, overflow: "hidden" }}>
+                <div style={{ border: STYLE.bd, borderRadius: STYLE.r, overflow: "hidden" }}>
                   {/* Header */}
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, padding: "7px 12px", background: S.el, borderBottom: S.bds }}>
-                    {["Nome prodotto (modificabile)", "€/unità"].map(h => (
-                      <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, padding: "7px 12px", background: STYLE.el, borderBottom: STYLE.bds }}>
+                    {["Nome prodotto (modificabile)", "v/unit  "].map(h => (
+                      <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: STYLE.t3 }}>{h}</span>
                     ))}
                   </div>
                   {detailInv.prodotti.map((p, i) => (
-                    <div key={i} style={{ padding: "10px 12px", borderBottom: i < detailInv.prodotti.length - 1 ? S.bds : "none" }}>
+                    <div key={i} style={{ padding: "10px 12px", borderBottom: i < detailInv.prodotti.length - 1 ? STYLE.bds : "none" }}>
                       {/* Nome modificabile */}
                       <input
                         style={inp({ fontSize: 12.5, padding: "5px 8px", marginBottom: 6 })}
@@ -2145,7 +2171,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                         }}
                       />
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 90px", gap: 8, alignItems: "center" }}>
-                        <div style={{ fontSize: 11, color: S.t3 }}>{p.quantita} {p.unita}</div>
+                        <div style={{ fontSize: 11, color: STYLE.t3 }}>{p.quantita} {p.unita}</div>
                         <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12.5, padding: "5px 8px" })}
                           defaultValue={p.prezzoUnitario}
@@ -2180,13 +2206,13 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                   ))}
                 </div>
               ) : (
-                <div style={{ textAlign: "center", padding: "20px 0", color: S.t3, fontSize: 13 }}>
-                  Nessun prodotto — carica di nuovo la fattura per elaborarla
+                <div style={{ textAlign: "center", padding: "20px 0", color: STYLE.t3, fontSize: 13 }}>
+                  Nessun prodotto  -  carica di nuovo la fattura per elaborarla
                 </div>
               )}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 22px 18px" }}>
-              <button style={{ ...btn("g", { fontSize: 12 }), color: S.red }}
+              <button style={{ ...btn("g", { fontSize: 12 }), color: STYLE.red }}
                 onClick={() => {
                   if (window.confirm("Eliminare questa fattura?")) {
                     setInvs(prev => prev.filter(i => i.id !== detailInv.id))
@@ -2201,7 +2227,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
         </div>
       )}
 
-      {/* ── LISTA FATTURE ── */}
+      {/*  -  -  LISTA FATTURE  -  -  */}
       {step === "list" && invTab === "fatture" && (
         <>
           {isMobile ? (
@@ -2209,31 +2235,31 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
               {invs.slice(0, 5).map(inv => (
                 <div key={inv.id} style={card({ padding: "16px", cursor: "pointer" })} onClick={() => setDetailInv(inv)}>
                   <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-                    <div style={{ fontSize: 16, fontWeight: 700, color: S.t1 }}>{inv.sup}</div>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1 }}>{inv.sup}</div>
                     <span style={badge("g")}>Elaborata</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <span style={{ fontSize: 13, color: S.t3 }}>{D(inv.date)} · {inv.num}</span>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: S.t1 }}>{F(inv.total)}</span>
+                    <span style={{ fontSize: 13, color: STYLE.t3 }}>{formatDate(inv.date)} . {inv.num}</span>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: STYLE.t1 }}>{formatEuro(inv.total)}</span>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden" }}>
+            <div style={{ border: STYLE.bds, borderRadius: STYLE.r2, overflow: "hidden" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-                <thead><tr>{["Data", "Fornitore", "N° Fattura", "Imponibile", "Totale"].map(h => (
-                  <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: S.t3, background: S.surf, borderBottom: S.bds }}>{h}</th>
+                <thead><tr>{["Data", "Fornitore", "N   Fattura", "Imponibile", "Totale"].map(h => (
+                  <th key={h} style={{ padding: "10px 16px", textAlign: "left", fontSize: 10, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: STYLE.t3, background: STYLE.surf, borderBottom: STYLE.bds }}>{h}</th>
                 ))}</tr></thead>
                 <tbody>{invs.slice(0, 5).map(inv => (
                   <tr key={inv.id} onClick={() => setDetailInv(inv)} style={{ cursor: "pointer" }}
-                    onMouseEnter={e => { for (const td of e.currentTarget.cells) td.style.background = S.el }}
+                    onMouseEnter={e => { for (const td of e.currentTarget.cells) td.style.background = STYLE.el }}
                     onMouseLeave={e => { for (const td of e.currentTarget.cells) td.style.background = "" }}>
-                    <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>{D(inv.date)}</td>
-                    <td style={{ padding: "11px 16px", fontWeight: 500, color: S.t1, borderBottom: S.bds }}>{inv.sup}</td>
-                    <td style={{ padding: "11px 16px", color: S.t3, borderBottom: S.bds }}>{inv.num}</td>
-                    <td style={{ padding: "11px 16px", color: S.t2, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(inv.net)}</td>
-                    <td style={{ padding: "11px 16px", fontWeight: 600, color: S.t1, borderBottom: S.bds, fontVariantNumeric: "tabular-nums" }}>{F(inv.total)}</td>
+                    <td style={{ padding: "11px 16px", fontWeight: 500, color: STYLE.t1, borderBottom: STYLE.bds }}>{formatDate(inv.date)}</td>
+                    <td style={{ padding: "11px 16px", fontWeight: 500, color: STYLE.t1, borderBottom: STYLE.bds }}>{inv.sup}</td>
+                    <td style={{ padding: "11px 16px", color: STYLE.t3, borderBottom: STYLE.bds }}>{inv.num}</td>
+                    <td style={{ padding: "11px 16px", color: STYLE.t2, borderBottom: STYLE.bds, fontVariantNumeric: "tabular-nums" }}>{formatEuro(inv.net)}</td>
+                    <td style={{ padding: "11px 16px", fontWeight: 600, color: STYLE.t1, borderBottom: STYLE.bds, fontVariantNumeric: "tabular-nums" }}>{formatEuro(inv.total)}</td>
                   </tr>
                 ))}</tbody>
               </table>
@@ -2256,24 +2282,24 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) {
 
   return (
     <div>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 4 }}>Ricette</div>
-      <div style={{ fontSize: 12, color: S.t3, marginBottom: 24 }}>Gestisci food cost e drink cost</div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 4 }}>Ricette</div>
+      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 24 }}>Gestisci food cost e drink cost</div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: 16 }}>
         <div onClick={() => setSel("food")}
           style={{ ...card({ padding: "28px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }) }}>
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + S.ac + ",transparent)" }} />
-          <div style={{ fontSize: 28, marginBottom: 12 }}>🍽️</div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 6 }}>Food Cost</div>
-          <div style={{ fontSize: 12, color: S.t3, marginBottom: 12 }}>Ricette cucina, costo piatti, margini</div>
-          <div style={{ fontSize: 13, color: S.ac, fontWeight: 600 }}>{foodCount} piatt{foodCount !== 1 ? "i" : "o"}</div>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
+          <div style={{ fontSize: 28, marginBottom: 12 }}></div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 6 }}>Food Cost</div>
+          <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 12 }}>Ricette cucina, costo piatti, margini</div>
+          <div style={{ fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>{foodCount} piatt{foodCount !== 1 ? "i" : "o"}</div>
         </div>
         <div onClick={() => setSel("drink")}
           style={{ ...card({ padding: "28px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }) }}>
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + S.ac + ",transparent)" }} />
-          <div style={{ fontSize: 28, marginBottom: 12 }}>🍷</div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 6 }}>Drink Cost</div>
-          <div style={{ fontSize: 12, color: S.t3, marginBottom: 12 }}>Vini, cocktail, bevande</div>
-          <div style={{ fontSize: 13, color: S.ac, fontWeight: 600 }}>{drinkCount} voc{drinkCount !== 1 ? "i" : "e"}</div>
+          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
+          <div style={{ fontSize: 28, marginBottom: 12 }}></div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 6 }}>Drink Cost</div>
+          <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 12 }}>Vini, cocktail, bevande</div>
+          <div style={{ fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>{drinkCount} voc{drinkCount !== 1 ? "i" : "e"}</div>
         </div>
       </div>
     </div>
@@ -2283,13 +2309,13 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) {
 function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, defaultTab, onBack }) {
   const [tab, setTab] = useState(defaultTab || "food") // "food" | "drink"
 
-  // ── Shared ────────────────────────────────────
+  //  -  -  Shared  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
+  const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
@@ -2312,10 +2338,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     // Normalizza: se ingrediente salvato in g trattalo come kg, se in ml come l
     // (i prezzi nei ristoranti sono sempre per kg o litro, mai per g o ml)
     let ingScale = 1
-    if (iu === "g")  { iu = "kg"; ingScale = 1000 } // prezzo per g → converti a kg
-    if (iu === "ml") { iu = "l";  ingScale = 1000 } // prezzo per ml → converti a l
+    if (iu === "g")  { iu = "kg"; ingScale = 1000 } // prezzo per g ' converti a kg
+    if (iu === "ml") { iu = "l";  ingScale = 1000 } // prezzo per ml ' converti a l
 
-    // Converti quantità da rowUnit a iu
+    // Converti quantit   da rowUnit a iu
     let qtyConverted = qty
     if (ru === "g"  && iu === "kg") qtyConverted = qty / 1000
     else if (ru === "kg" && iu === "g")  qtyConverted = qty * 1000
@@ -2327,7 +2353,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     return qtyConverted / ingScale
   }
 
-  // ── FOOD COST state ───────────────────────────
+  //  -  -  FOOD COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [fForm, setFForm]     = useState(() => {
     try { const s = localStorage.getItem("fm_fc_form"); return s ? JSON.parse(s) : { name: "", cat: "Secondi", ricarico: "300" } } catch(e) { return { name: "", cat: "Secondi", ricarico: "300" } }
   })
@@ -2367,7 +2393,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     return sum + toIngUnit(qty, rr.unit, ing.unit) * ing.cur * wasteMult
   }, 0)
   const fRicarico  = parseFloat(fForm.ricarico) || 300
-  const fSugPrice  = fLiveCost * (fRicarico / 100)  // moltiplicatore: 300% = ×3
+  const fSugPrice  = fLiveCost * (fRicarico / 100)  // moltiplicatore: 300% =  --3
   const fMargin    = fSugPrice - fLiveCost
   const fFoodCostPct = fSugPrice > 0 ? fLiveCost / fSugPrice : 0
 
@@ -2416,7 +2442,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     setTimeout(() => setFSaved(false), 3000)
   }
 
-  // ── DRINK COST state ──────────────────────────
+  //  -  -  DRINK COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [dForm, setDForm] = useState({
     name: "", tipo: "Rossi", regione: "Toscana",
     bottlePrice: "", iva: "10", ricarico: "200",
@@ -2458,7 +2484,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
   // Costo totale = prezzo netto + IVA
   const dPriceNet   = dForm.bottlePrice ? +dForm.bottlePrice : 0
   const dPriceGross = r2(dPriceNet * (1 + (+dForm.iva || 0) / 100))
-  const dSellBottle = r2(dPriceNet * ((+dForm.ricarico || 200) / 100)) // moltiplicatore: 200% = ×2
+  const dSellBottle = r2(dPriceNet * ((+dForm.ricarico || 200) / 100)) // moltiplicatore: 200% =  --2
   const dSellCalice = dForm.calici > 0 ? r2(dSellBottle / +dForm.calici) : 0
 
   function dSave() {
@@ -2493,7 +2519,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     setTimeout(() => setDSaved(false), 3000)
   }
 
-  // ── RENDER ─────────────────────────────────────
+  //  -  -  RENDER  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   return (
     <div>
       {/* Header + back */}
@@ -2501,29 +2527,29 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         <div style={row({ alignItems: "center", gap: 10, marginBottom: 12 })}>
           {onBack && (
             <>
-              <button onClick={onBack} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Ricette</button>
-              <span style={{ color: S.t3, fontSize: 13 }}>/</span>
+              <button onClick={onBack} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Ricette</button>
+              <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
             </>
           )}
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>{tab === "food" ? "Food Cost" : "Drink Cost"}</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>{tab === "food" ? "Food Cost" : "Drink Cost"}</div>
         </div>
       </div>
 
-      {/* ── TAB: FOOD COST ── */}
+      {/*  -  -  TAB: FOOD COST  -  -  */}
       {tab === "food" && (
         <div style={{ maxWidth: 600 }}>
           {fSaved && (
-            <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
-              Piatto salvato e aggiunto alla sezione Piatti ✓
+            <div style={{ marginBottom: 16, padding: "10px 14px", background: STYLE.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>
+              Piatto salvato e aggiunto alla sezione Piatti -
             </div>
           )}
 
           {/* Info piatto */}
           <div style={card({ padding: 16, marginBottom: 14 })}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Dati piatto</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Dati piatto</div>
             <Fld label="Nome piatto *">
               <input style={inp()} value={fForm.name} onChange={e => setFForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Filetto al pepe verde" />
-              {fErr.name && <span style={{ fontSize: 11, color: S.red }}>{fErr.name}</span>}
+              {fErr.name && <span style={{ fontSize: 11, color: STYLE.red }}>{fErr.name}</span>}
             </Fld>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
               <Fld label="Categoria">
@@ -2533,13 +2559,13 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
               </Fld>
               <Fld label="Ricarico %">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={fForm.ricarico} onChange={e => setFForm(f => ({ ...f, ricarico: e.target.value }))}>
-                  {[["100","×1.0"],["150","×1.5"],["200","×2.0"],["250","×2.5"],["300","×3.0"],["350","×3.5"],["400","×4.0"],["450","×4.5"],["500","×5.0"],["600","×6.0"],["700","×7.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
+                  {[["100"," --1.0"],["150"," --1.5"],["200"," --2.0"],["250"," --2.5"],["300"," --3.0"],["350"," --3.5"],["400"," --4.0"],["450"," --4.5"],["500"," --5.0"],["600"," --6.0"],["700"," --7.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
                 </select>
               </Fld>
               <div style={{ display: "flex", alignItems: "flex-end" }}>
-                <div style={{ background: S.acg, border: "1px solid " + S.acd, borderRadius: S.r, padding: "9px 12px", width: "100%" }}>
-                  <div style={{ fontSize: 9.5, textTransform: "uppercase", color: S.t3, fontWeight: 600, marginBottom: 3 }}>Prezzo consigliato</div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>{fLiveCost > 0 ? F(fSugPrice) : "—"}</div>
+                <div style={{ background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: STYLE.r, padding: "9px 12px", width: "100%" }}>
+                  <div style={{ fontSize: 9.5, textTransform: "uppercase", color: STYLE.t3, fontWeight: 600, marginBottom: 3 }}>Prezzo consigliato</div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>{fLiveCost > 0 ? formatEuro(fSugPrice) : " - "}</div>
                 </div>
               </div>
             </div>
@@ -2548,18 +2574,18 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
           {/* Ricetta */}
           <div style={card({ padding: 16, marginBottom: 14 })}>
             <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
-              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3 }}>Ingredienti ricetta</div>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3 }}>Ingredienti ricetta</div>
               <button style={btn("g", { fontSize: 12, padding: "4px 10px" })} onClick={fAddRow}>+ Aggiungi</button>
             </div>
-            {fErr.recipe && <div style={{ fontSize: 11, color: S.red, marginBottom: 8 }}>{fErr.recipe}</div>}
+            {fErr.recipe && <div style={{ fontSize: 11, color: STYLE.red, marginBottom: 8 }}>{fErr.recipe}</div>}
 
             {/* Header colonne */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "5px 6px", background: S.el, borderRadius: "6px 6px 0 0", border: S.bd, borderBottom: "none" }}>
-              {["Ingrediente", "Qtà / Um", "Scarto %", ""].map(h => (
-                <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: S.t3 }}>{h}</span>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "5px 6px", background: STYLE.el, borderRadius: "6px 6px 0 0", border: STYLE.bd, borderBottom: "none" }}>
+              {["Ingrediente", "Qt   / Um", "Scarto %", ""].map(h => (
+                <span key={h} style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: STYLE.t3 }}>{h}</span>
               ))}
             </div>
-            <div style={{ border: S.bd, borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
+            <div style={{ border: STYLE.bd, borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
               {fRecipe.map((row, idx) => {
                 const ing = ings.find(i => i.id === row.ingId)
                 const qty = parseFloat(row.qty) || 0
@@ -2568,39 +2594,39 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                 const wasteMultDisplay = wastePctDisplay >= 1 ? 1 : 1 / (1 - wastePctDisplay)
                 const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : 0
                 return (
-                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? S.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : S.el + "44" }}>
+                  <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? STYLE.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : STYLE.el + "44" }}>
                     {/* Bottone che apre modal full-screen per selezionare ingrediente */}
                     {(() => {
                       const ing = ings.find(i => i.id === row.ingId)
                       return (
                         <button
                           onClick={() => fUpdateRow(row.id, { _open: true, _cat: row._cat || "" })}
-                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: ing ? S.acg : S.el, borderColor: ing ? S.acd : "#2a2a31" })}}>
+                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: ing ? STYLE.acg : STYLE.el, borderColor: ing ? STYLE.acd : "#2a2a31" })}}>
                           <div style={{ overflow: "hidden", flex: 1 }}>
-                            <div style={{ color: ing ? S.ac : S.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {ing ? ing.name.slice(0, 6) + (ing.name.length > 6 ? "…" : "") : "Sel…"}
+                            <div style={{ color: ing ? STYLE.ac : STYLE.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ing ? ing.name.slice(0, 6) + (ing.name.length > 6 ? " " : "") : "Sel "}
                             </div>
-                            {lineCost > 0 && <div style={{ fontSize: 10, color: S.green, marginTop: 1 }}>{F(lineCost)}</div>}
+                            {lineCost > 0 && <div style={{ fontSize: 10, color: STYLE.green, marginTop: 1 }}>{formatEuro(lineCost)}</div>}
                           </div>
-                          <span style={{ fontSize: 9, color: S.t3, flexShrink: 0, marginLeft: 4 }}>▾</span>
+                          <span style={{ fontSize: 9, color: STYLE.t3, flexShrink: 0, marginLeft: 4 }}>- </span>
                         </button>
                       )
                     })()}
                     {row._open && (
                       <div onClick={e => { if(e.target === e.currentTarget) fUpdateRow(row.id, { _open: false }) }}
                         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 500, display: "flex", alignItems: "flex-end" }}>
-                        <div style={{ width: "100%", background: S.surf, borderRadius: "16px 16px 0 0", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 12px", borderBottom: S.bds, flexShrink: 0 }}>
+                        <div style={{ width: "100%", background: STYLE.surf, borderRadius: "16px 16px 0 0", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 12px", borderBottom: STYLE.bds, flexShrink: 0 }}>
                             {row._cat ? (
                               <button onClick={() => fUpdateRow(row.id, { _cat: "" })}
-                                style={{ background: "none", border: "none", color: S.ac, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: 0 }}>
-                                ← {row._cat}
+                                style={{ background: "none", border: "none", color: STYLE.ac, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                                 {row._cat}
                               </button>
                             ) : (
-                              <span style={{ fontSize: 15, fontWeight: 600, color: S.t1 }}>Scegli ingrediente</span>
+                              <span style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1 }}>Scegli ingrediente</span>
                             )}
                             <button onClick={() => fUpdateRow(row.id, { _open: false })}
-                              style={{ background: S.el, border: S.bd, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: S.t3, fontSize: 14 }}>✕</button>
+                              style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: STYLE.t3, fontSize: 14 }}> </button>
                           </div>
                           <div style={{ overflowY: "auto", flex: 1 }}>
                             {!row._cat ? (
@@ -2608,33 +2634,33 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                 .filter(c => ings.some(i => i.cat === c))
                                 .map(c => (
                                   <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, _sotto1: null })}
-                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: S.bds, cursor: "pointer" }}>
-                                    <span style={{ fontSize: 15, color: S.t1 }}>{c}</span>
-                                    <span style={{ color: S.t3 }}>›</span>
+                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                                    <span style={{ fontSize: 15, color: STYLE.t1 }}>{c}</span>
+                                    <span style={{ color: STYLE.t3 }}> </span>
                                   </div>
                                 ))
                             ) : row._cat && !row._sotto1 && ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Bevande"].includes(row._cat) ? (
                               <>
                                 <div onClick={() => fUpdateRow(row.id, { _cat: null })}
-                                  style={{ padding: "10px 18px", borderBottom: S.bds, cursor: "pointer", fontSize: 12, color: S.ac }}>← Categorie</div>
+                                  style={{ padding: "10px 18px", borderBottom: STYLE.bds, cursor: "pointer", fontSize: 12, color: STYLE.ac }}> Categorie</div>
                                 {[...new Set(ings.filter(i => i.cat === row._cat).map(i => i.sotto1).filter(Boolean))].sort().map(s1 => {
                                   const cnt = ings.filter(i => i.cat === row._cat && i.sotto1 === s1).length
                                   return (
                                     <div key={s1} onClick={() => fUpdateRow(row.id, { _sotto1: s1 })}
-                                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: S.bds, cursor: "pointer" }}>
-                                      <span style={{ fontSize: 14, color: S.t1 }}>{s1}</span>
+                                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                                      <span style={{ fontSize: 14, color: STYLE.t1 }}>{s1}</span>
                                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                                        <span style={{ fontSize: 11, color: S.t3 }}>{cnt}</span>
-                                        <span style={{ color: S.t3 }}>›</span>
+                                        <span style={{ fontSize: 11, color: STYLE.t3 }}>{cnt}</span>
+                                        <span style={{ color: STYLE.t3 }}> </span>
                                       </div>
                                     </div>
                                   )
                                 })}
                                 {ings.filter(i => i.cat === row._cat && !i.sotto1).length > 0 && (
                                   <div onClick={() => fUpdateRow(row.id, { _sotto1: "__none__" })}
-                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: S.bds, cursor: "pointer" }}>
-                                    <span style={{ fontSize: 14, color: S.t1 }}>Altri</span>
-                                    <span style={{ color: S.t3 }}>›</span>
+                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                                    <span style={{ fontSize: 14, color: STYLE.t1 }}>Altri</span>
+                                    <span style={{ color: STYLE.t3 }}> </span>
                                   </div>
                                 )}
                               </>
@@ -2642,7 +2668,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                               <>
                                 {row._sotto1 && (
                                   <div onClick={() => fUpdateRow(row.id, { _sotto1: null })}
-                                    style={{ padding: "10px 18px", borderBottom: S.bds, cursor: "pointer", fontSize: 12, color: S.ac }}>← {row._cat}</div>
+                                    style={{ padding: "10px 18px", borderBottom: STYLE.bds, cursor: "pointer", fontSize: 12, color: STYLE.ac }}> {row._cat}</div>
                                 )}
                                 {(row._sotto1
                                   ? row._sotto1 === "__none__"
@@ -2651,18 +2677,18 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                   : ings.filter(i => i.cat === row._cat)
                                 ).map(i => (
                                 <div key={i.id} onClick={() => fUpdateRow(row.id, { ingId: i.id, _open: false })}
-                                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: S.bds, cursor: "pointer", background: row.ingId === i.id ? S.acg : "" }}>
+                                  style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer", background: row.ingId === i.id ? STYLE.acg : "" }}>
                                   <div style={{ flex: 1 }}>
-                                    <div style={{ fontSize: 14, color: row.ingId === i.id ? S.ac : S.t1, fontWeight: row.ingId === i.id ? 600 : 400, marginBottom: 2 }}>{i.name}</div>
+                                    <div style={{ fontSize: 14, color: row.ingId === i.id ? STYLE.ac : STYLE.t1, fontWeight: row.ingId === i.id ? 600 : 400, marginBottom: 2 }}>{i.name}</div>
                                     {(i.sotto1 || i.sotto2) && (
                                       <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
-                                        {i.sotto1 && <span style={{ fontSize: 9, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 3, padding: "1px 5px" }}>{i.sotto1}</span>}
-                                        {i.sotto2 && <span style={{ fontSize: 9, color: S.t2, background: S.el, borderRadius: 3, padding: "1px 5px" }}>{i.sotto2}</span>}
+                                        {i.sotto1 && <span style={{ fontSize: 9, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 3, padding: "1px 5px" }}>{i.sotto1}</span>}
+                                        {i.sotto2 && <span style={{ fontSize: 9, color: STYLE.t2, background: STYLE.el, borderRadius: 3, padding: "1px 5px" }}>{i.sotto2}</span>}
                                       </div>
                                     )}
-                                    <div style={{ fontSize: 11, color: S.t3 }}>{F(i.cur)}/{i.unit}</div>
+                                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(i.cur)}/{i.unit}</div>
                                   </div>
-                                  {row.ingId === i.id && <span style={{ color: S.ac, fontSize: 16 }}>✓</span>}
+                                  {row.ingId === i.id && <span style={{ color: STYLE.ac, fontSize: 16 }}>-</span>}
                                 </div>
                               ))}
                               </>
@@ -2679,9 +2705,9 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                     </div>
                     <div style={{ position: "relative" }}>
                       <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
-                      <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: S.t3, pointerEvents: "none" }}>%</span>
+                      <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: STYLE.t3, pointerEvents: "none" }}>%</span>
                     </div>
-                    <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13, padding: 0 }}>×</button>
+                    <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 13, padding: 0 }}> --</button>
                   </div>
                 )
               })}
@@ -2691,16 +2717,16 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
           {/* Calcolo automatico */}
           {fLiveCost > 0 && (
             <div style={card({ padding: 14, marginBottom: 16 })}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>Calcolo automatico</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 8 }}>
                 {[
-                  { l: "Costo ricetta",    v: F(r2(fLiveCost)),   c: S.t1 },
-                  { l: "Prezzo consigliato", v: F(r2(fSugPrice)), c: S.ac },
-                  { l: "Food cost %",      v: P(fFoodCostPct),    c: S.green },
-                  { l: "Margine lordo",    v: F(r2(fMargin)),     c: S.green },
+                  { l: "Costo ricetta",    v: formatEuro(r2(fLiveCost)),   c: STYLE.t1 },
+                  { l: "Prezzo consigliato", v: formatEuro(r2(fSugPrice)), c: STYLE.ac },
+                  { l: "Food cost %",      v: formatPct(fFoodCostPct),    c: STYLE.green },
+                  { l: "Margine lordo",    v: formatEuro(r2(fMargin)),     c: STYLE.green },
                 ].map((k, i) => (
-                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "10px 10px" }}>
-                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
+                  <div key={i} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, padding: "10px 10px" }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, fontWeight: 600, marginBottom: 3 }}>{k.l}</div>
                     <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: k.c }}>{k.v}</div>
                   </div>
                 ))}
@@ -2720,17 +2746,17 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         </div>
       )}
 
-      {/* ── TAB: DRINK COST ── */}
+      {/*  -  -  TAB: DRINK COST  -  -  */}
       {tab === "drink" && (
         <div style={{ maxWidth: 600 }}>
           {dSaved && (
-            <div style={{ marginBottom: 16, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: S.green }}>
-              Voce salvata e aggiunta alla sezione Piatti ✓
+            <div style={{ marginBottom: 16, padding: "10px 14px", background: STYLE.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>
+              Voce salvata e aggiunta alla sezione Piatti -
             </div>
           )}
 
           <div style={card({ padding: 16, marginBottom: 14 })}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Dati voce</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Dati voce</div>
 
             <Fld label="Nome *">
               <input style={inp()} value={dForm.name}
@@ -2748,7 +2774,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                   }
                 }}
                 placeholder="es. Barolo Giacomo Conterno 2018" />
-              {dErr.name && <span style={{ fontSize: 11, color: S.red }}>{dErr.name}</span>}
+              {dErr.name && <span style={{ fontSize: 11, color: STYLE.red }}>{dErr.name}</span>}
             </Fld>
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
@@ -2771,10 +2797,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
             {!["Cocktail", "Bevanda"].includes(dForm.tipo) && viniIng.length > 0 && (
               <Fld label="Seleziona da magazzino vini">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngVino(e.target.value)}>
-                  <option value="">— oppure inserisci manualmente —</option>
+                  <option value=""> -  oppure inserisci manualmente  - </option>
                   {viniIng.map(i => {
                     const alreadyDone = dishes.some(d => (d.cat === "vino") && (d.name === i.name || (d.bottlePrice && d.bottlePrice === i.cur)))
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "✓ " : ""}{i.name} · {F(i.cur)}/bottiglia</option>
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "- " : ""}{i.name} . {formatEuro(i.cur)}/bottiglia</option>
                   })}
                 </select>
               </Fld>
@@ -2784,19 +2810,19 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
             {dForm.tipo === "Bevanda" && bevIng.length > 0 && (
               <Fld label="Seleziona da magazzino bevande">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngBev(e.target.value)}>
-                  <option value="">— oppure inserisci manualmente —</option>
+                  <option value=""> -  oppure inserisci manualmente  - </option>
                   {bevIng.map(i => {
                     const alreadyDone = dishes.some(d => d.cat === "bevanda" && d.name === i.name)
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "✓ " : ""}{i.name} · {F(i.cur)}/{i.unit}</option>
+                    return <option key={i.id} value={i.id}>{alreadyDone ? "- " : ""}{i.name} . {formatEuro(i.cur)}/{i.unit}</option>
                   })}
                 </select>
               </Fld>
             )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              <Fld label="Prezzo bottiglia IVA esclusa (€) *">
+              <Fld label="Prezzo bottiglia IVA esclusa (v) *">
                 <input style={inp()} type="number" step="0.01" value={dForm.bottlePrice} onChange={e => setDForm(f => ({ ...f, bottlePrice: e.target.value, selIngId: "" }))} placeholder="0.00" />
-                {dErr.bottlePrice && <span style={{ fontSize: 11, color: S.red }}>{dErr.bottlePrice}</span>}
+                {dErr.bottlePrice && <span style={{ fontSize: 11, color: STYLE.red }}>{dErr.bottlePrice}</span>}
               </Fld>
               <Fld label="IVA %">
                 <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.iva} onChange={e => setDForm(f => ({ ...f, iva: e.target.value }))}>
@@ -2822,16 +2848,16 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
           {/* Calcolo automatico drink */}
           {dForm.bottlePrice && +dForm.bottlePrice > 0 && (
             <div style={card({ padding: 14, marginBottom: 16 })}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Calcolo automatico</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>Calcolo automatico</div>
               <div style={{ display: "grid", gridTemplateColumns: !["Cocktail","Bevanda"].includes(dForm.tipo) ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8 }}>
                 {[
-                  { l: "Costo netto (IVA esclusa)", v: F(r2(dPriceNet)), c: S.t1 },
-                  { l: "Costo lordo (IVA inclusa)", v: F(dPriceGross), c: S.t2 },
-                  { l: "Prezzo vendita bottiglia", v: F(dSellBottle), c: S.ac },
-                  ...(!["Cocktail","Bevanda"].includes(dForm.tipo) ? [{ l: "Prezzo al calice", v: F(dSellCalice), c: S.green }] : []),
+                  { l: "Costo netto (IVA esclusa)", v: formatEuro(r2(dPriceNet)), c: STYLE.t1 },
+                  { l: "Costo lordo (IVA inclusa)", v: formatEuro(dPriceGross), c: STYLE.t2 },
+                  { l: "Prezzo vendita bottiglia", v: formatEuro(dSellBottle), c: STYLE.ac },
+                  ...(!["Cocktail","Bevanda"].includes(dForm.tipo) ? [{ l: "Prezzo al calice", v: formatEuro(dSellCalice), c: STYLE.green }] : []),
                 ].map((k, i) => (
-                  <div key={i} style={{ background: S.el, border: S.bd, borderRadius: 6, padding: "12px 12px" }}>
-                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
+                  <div key={i} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, padding: "12px 12px" }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
                     <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: k.c }}>{k.v}</div>
                   </div>
                 ))}
@@ -2866,12 +2892,12 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     Primavera: [2,3,4], Estate: [5,6,7], Autunno: [8,9,10], Inverno: [11,0,1]
   }
   const FOOD_CATS = ["Speciali","Antipasti","Primi","Secondi","Dolci","Cocktail"]
-  const VINO_TIPI = ["Rossi","Bianchi","Rosé","Bollicine"]
+  const VINO_TIPI = ["Rossi","Bianchi","Ros  ","Bollicine"]
   const VINO_REGIONI = ["Piemonte","Toscana","Veneto","Sicilia","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"]
   const VINO_REGIONI_ORDER_MENU = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
+    "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
     Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER_MENU[tipo] || VINO_REGIONI }
@@ -2968,7 +2994,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       })
     })
     setMenus(prev => [{
-      id: "m" + uid2(), type: "vini", label: "Carta dei Vini — " + nowStr(),
+      id: "m" + uid2(), type: "vini", label: "Carta dei Vini  -  " + nowStr(),
       date: nowISO(), template, fontSize, selected
     }, ...prev])
     setView("home"); setSelVini({})
@@ -2980,7 +3006,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   }
 
   function openPrintPreview(item) {
-    // Apre il menu in una nuova tab — da lì si può stampare o salvare come PDF
+    // Apre il menu in una nuova tab  -  da l   si pu   stampare o salvare come PDF
     // e poi condividere il PDF via WhatsApp
     const html = buildPrintHTML(item)
     const win = window.open("", "_blank")
@@ -3007,7 +3033,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         // Share solo testo con link
         await navigator.share({
           title: item.label,
-          text: item.label + " — " + new Date(item.date).toLocaleDateString("it-IT", { day:"2-digit", month:"long", year:"numeric" })
+          text: item.label + "  -  " + new Date(item.date).toLocaleDateString("it-IT", { day:"2-digit", month:"long", year:"numeric" })
         })
         return
       } catch(e) { /* utente ha annullato o non supportato */ }
@@ -3087,7 +3113,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
               doc.setFont("helvetica", "normal")
               doc.setFontSize(fs)
               doc.setTextColor(30, 30, 30)
-              doc.text("€ " + (d.price || 0).toFixed(2), pageW - margin, y, { align: "right" })
+              doc.text("v " + (d.price || 0).toFixed(2), pageW - margin, y, { align: "right" })
             }
             y += nameLines.length * (fs * 0.45) + 2
             // Descrizione
@@ -3108,7 +3134,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         }
       } else {
         // Carta vini
-        const tipi = ["Rossi","Bianchi","Rosé","Bollicine"]
+        const tipi = ["Rossi","Bianchi","Ros  ","Bollicine"]
         for (const tipo of tipi) {
           const viniTipo = (item.vini || []).filter(v => v.tipoVino === tipo)
           if (viniTipo.length === 0) continue
@@ -3126,7 +3152,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
             doc.text(v.name || "", margin, y)
             if (v.price > 0) {
               doc.setFont("helvetica", "normal")
-              doc.text("€ " + (v.price || 0).toFixed(2), pageW - margin, y, { align: "right" })
+              doc.text("v " + (v.price || 0).toFixed(2), pageW - margin, y, { align: "right" })
             }
             y += (fs * 0.45) + 4
             if (v.regioneVino) {
@@ -3154,7 +3180,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     }
   }
 
-  // ── Build print HTML ──────────────────────────
+  //  -  -  Build print HTML  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   function buildPrintHTML(item) {
     const fs = item.fontSize === "Piccolo" ? "13px" : item.fontSize === "Grande" ? "17px" : "15px"
     const t = item.template || "semplice"
@@ -3171,14 +3197,14 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         wrap: "background:#fff;max-width:580px;margin:0 auto;padding:48px 40px;",
         title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;padding-bottom:14px;border-bottom:1px solid #1a1a1a;margin-bottom:36px;",
         cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#666;padding-bottom:6px;border-bottom:1px solid #ddd;margin-bottom:20px;",
-        sep: "<div style='text-align:center;color:#ddd;font-size:10px;letter-spacing:6px;margin:6px 0'>— — —</div>",
+        sep: "<div style='text-align:center;color:#ddd;font-size:10px;letter-spacing:6px;margin:6px 0'> -   -   - </div>",
       },
       bordo: {
         wrap: "background:#fefefe;max-width:580px;margin:0 auto;padding:44px 40px;border:1px solid #bbb;",
         title: "text-align:center;font-family:Georgia,serif;font-size:1.8em;letter-spacing:0.18em;text-transform:uppercase;color:#1a1a1a;margin-bottom:8px;",
         cat: "text-align:center;font-family:Georgia,serif;font-size:0.72em;letter-spacing:0.22em;text-transform:uppercase;color:#555;margin-bottom:20px;",
-        sep: "<div style='text-align:center;color:#ccc;font-size:11px;letter-spacing:6px;margin:6px 0'>· · ·</div>",
-        titleExtra: "<div style='display:flex;align-items:center;gap:12px;margin-bottom:32px'><hr style='flex:1;border:none;border-top:1px solid #ccc'><span style='font-size:10px;color:#ccc;letter-spacing:4px'>✦</span><hr style='flex:1;border:none;border-top:1px solid #ccc'></div>",
+        sep: "<div style='text-align:center;color:#ccc;font-size:11px;letter-spacing:6px;margin:6px 0'>. . .</div>",
+        titleExtra: "<div style='display:flex;align-items:center;gap:12px;margin-bottom:32px'><hr style='flex:1;border:none;border-top:1px solid #ccc'><span style='font-size:10px;color:#ccc;letter-spacing:4px'>*</span><hr style='flex:1;border:none;border-top:1px solid #ccc'></div>",
       },
       doppio: {
         wrap: "background:#fffdf9;max-width:580px;margin:0 auto;padding:36px 32px;border:1px solid #c0a878;box-shadow:inset 0 0 0 5px #fffdf9,inset 0 0 0 6px #e8d8b8;",
@@ -3204,13 +3230,13 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           body += `<div style="text-align:center;margin-bottom:20px">
             <div style="font-family:Georgia,serif;font-size:${fs};color:#1a1a1a;margin-bottom:3px;line-height:1.55">${p.name}${siglaLabel}</div>
             ${p.nameEn ? `<div style="font-size:0.78em;color:#aaa;font-style:italic;margin-bottom:4px">${p.nameEn}</div>` : ""}
-            <div style="font-size:0.88em;font-weight:600;color:#1a1a1a">${p.price > 0 ? "€ " + p.price.toFixed(2).replace(".",",") : ""}</div>
+            <div style="font-size:0.88em;font-weight:600;color:#1a1a1a">${p.price > 0 ? "v " + p.price.toFixed(2).replace(".",",") : ""}</div>
           </div>`
         })
         const hasSigle = piatti.some(p => p.sigla)
         if (hasSigle) {
           const lc = st.legendColor || "#bbb"
-          body += `<div style="font-size:0.68em;color:${lc};font-style:italic;text-align:center;margin-top:20px;padding-top:10px;border-top:1px dotted #ddd">(A) Abbattuto · (C) Congelato · (D) Decongelato</div>`
+          body += `<div style="font-size:0.68em;color:${lc};font-style:italic;text-align:center;margin-top:20px;padding-top:10px;border-top:1px dotted #ddd">(A) Abbattuto . (C) Congelato . (D) Decongelato</div>`
         }
         body += `</div>`
       })
@@ -3219,7 +3245,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       const REGIONI_ORDER = {
         Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Campania","Sardegna","Lombardia","Liguria","Puglia","Calabria","Altre regioni"],
         Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Friuli Venezia Giulia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni"],
-        "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni"],
+        "Ros  ":   ["Piemonte","Valle d'Aosta","Toscana","Sicilia","Veneto","Trentino Alto Adige","Lombardia","Altre regioni"],
         Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
       }
       Object.entries(item.selected || {}).forEach(([tipo, regioni]) => {
@@ -3234,7 +3260,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           allRows.forEach(([reg, vini]) => {
             body += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${reg}</div>`
             vini.forEach(v => {
-              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;text-align:center;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") : "—"}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;text-align:center;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "v " + v.priceBottle.toFixed(2).replace(".",",") : " - "}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. v " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
             })
           })
           body += `</div>`
@@ -3244,14 +3270,14 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           rowsNoFr.forEach(([reg, vini]) => {
             body += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${reg}</div>`
             vini.forEach(v => {
-              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") : "—"}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+              body += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "v " + v.priceBottle.toFixed(2).replace(".",",") : " - "}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. v " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
             })
           })
           body += `</div>`
         }
       })
       // Francia separata
-      const franciaTipi = ["Rossi","Bianchi","Rosé"]
+      const franciaTipi = ["Rossi","Bianchi","Ros  "]
       let hasFrancia = false
       let franciaBody = ""
       franciaTipi.forEach(tipo => {
@@ -3260,7 +3286,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           if (!hasFrancia) { franciaBody += `<div style="page-break-before:always;padding-top:48px"><div style="${st.cat}">Vini Francesi</div>`; hasFrancia = true }
           franciaBody += `<div style="font-size:0.8em;color:#888;font-style:italic;text-align:center;margin:10px 0 6px">${tipo}</div>`
           vini.forEach(v => {
-            franciaBody += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "€ " + v.priceBottle.toFixed(2).replace(".",",") : "—"}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. € " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
+            franciaBody += `<div style="display:grid;grid-template-columns:1fr auto auto;gap:16px;padding:5px 0;border-bottom:1px dotted #e0e0e0;align-items:baseline"><span style="font-family:Georgia,serif;font-size:${fs}">${v.name}</span><span style="font-weight:600;white-space:nowrap">${v.priceBottle ? "v " + v.priceBottle.toFixed(2).replace(".",",") : " - "}</span><span style="font-size:0.85em;color:#888;white-space:nowrap">${v.priceCalice ? "cal. v " + v.priceCalice.toFixed(2).replace(".",",") : ""}</span></div>`
           })
         }
       })
@@ -3275,7 +3301,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
   @media print { .no-print { display:none; } }
 </style></head><body>
 <div class="no-print" style="background:#f5f5f5;border:1px solid #ddd;border-radius:8px;padding:10px 16px;margin-bottom:20px;font-size:13px;color:#555;text-align:center;font-family:system-ui">
-  Per salvare come PDF: tocca i <strong>tre puntini</strong> del browser → <strong>Stampa</strong> → <strong>Salva come PDF</strong>
+  Per salvare come PDF: tocca i <strong>tre puntini</strong> del browser ' <strong>Stampa</strong> ' <strong>Salva come PDF</strong>
 </div>
 <div style="${st.wrap}">
   <div style="${st.title}">${item.type === "menu" ? "Menu" : "Carta dei Vini"}</div>
@@ -3285,15 +3311,15 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 </div>
 <div class="no-print" style="text-align:center;margin-top:32px;padding-bottom:24px">
   <button onclick="window.print()" style="padding:12px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;font-family:inherit">Salva come PDF / Stampa</button>
-  <p style="font-size:12px;color:#888;margin-top:10px;font-family:system-ui">Su iPhone: tocca Condividi → Salva su File o Stampa<br>Su Android: menu browser → Stampa → Salva come PDF</p>
+  <p style="font-size:12px;color:#888;margin-top:10px;font-family:system-ui">Su iPhone: tocca Condividi ' Salva su File o Stampa<br>Su Android: menu browser ' Stampa ' Salva come PDF</p>
 </div>
 </body></html>`
   }
 
-  // ── HOME ───────────────────────────────────────
+  //  -  -  HOME  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "home") return (
     <div>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 20 }}>Crea Menu</div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 20 }}>Crea Menu</div>
 
       {/* Action buttons */}
       <div style={row({ gap: 10, marginBottom: 24, flexWrap: "wrap" })}>
@@ -3305,7 +3331,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       <div style={row({ gap: 8, marginBottom: 16, flexWrap: "wrap" })}>
         {ANNI.map(a => (
           <button key={a} onClick={() => setSelAnno(a)}
-            style={{ padding: "4px 14px", background: selAnno === a ? S.acg : "none", border: "1px solid " + (selAnno === a ? S.acd : "#2a2a31"), borderRadius: 999, color: selAnno === a ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+            style={{ padding: "4px 14px", background: selAnno === a ? STYLE.acg : "none", border: "1px solid " + (selAnno === a ? STYLE.acd : "#2a2a31"), borderRadius: 999, color: selAnno === a ? STYLE.ac : STYLE.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
             {a}
           </button>
         ))}
@@ -3313,19 +3339,19 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
       {/* Lista menu anno */}
       {menusAnno.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
+        <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
           Nessun menu creato nel {selAnno}
         </div>
       ) : (
         <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
           {menusAnno.map(m => (
-            <div key={m.id} style={{ background: S.surf, border: S.bds, borderRadius: S.r2, padding: "14px 16px" }}>
+            <div key={m.id} style={{ background: STYLE.surf, border: STYLE.bds, borderRadius: STYLE.r2, padding: "14px 16px" }}>
               <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{m.label}</div>
-                  <div style={{ fontSize: 11, color: S.t3 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>{m.label}</div>
+                  <div style={{ fontSize: 11, color: STYLE.t3 }}>
                     {new Date(m.date).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })}
-                    {" · "}{m.template && TEMPLATES.find(t => t.id === m.template)?.label}
+                    {" . "}{m.template && TEMPLATES.find(t => t.id === m.template)?.label}
                   </div>
                 </div>
                 <span style={{ ...badge("n"), textTransform: "uppercase", fontSize: 9 }}>{m.type === "menu" ? "Menu" : "Vini"}</span>
@@ -3333,9 +3359,9 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
               <div style={row({ gap: 10, marginTop: 4 })}>
                 <button style={btn("s", { fontSize: 11, padding: "5px 14px" })} onClick={() => { setOpenItem(m); setView("open") }}>Apri</button>
                 <div style={row({ gap: 14, marginLeft: 4 })}>
-                  {/* Condividi — apre menu nativo del telefono */}
+                  {/* Condividi  -  apre menu nativo del telefono */}
                   <button title="Condividi" onClick={() => shareMenu(m)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: S.t2, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
+                    style={{ background: "none", border: "none", cursor: "pointer", color: STYLE.t2, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
                       <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
@@ -3343,7 +3369,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                   </button>
                   {/* Scarica PDF */}
                   <button title="Scarica PDF" onClick={() => downloadPDF(m)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: S.ac, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
+                    style={{ background: "none", border: "none", cursor: "pointer", color: STYLE.ac, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                       <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
@@ -3351,7 +3377,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                   </button>
                   {/* Elimina */}
                   <button title="Elimina" onClick={() => deleteMenu(m.id)}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: S.red, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
+                    style={{ background: "none", border: "none", cursor: "pointer", color: STYLE.red, fontSize: 20, padding: 4, display: "flex", alignItems: "center" }}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
                       <path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
@@ -3366,24 +3392,24 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     </div>
   )
 
-  // ── OPEN / PREVIEW ─────────────────────────────
+  //  -  -  OPEN / PREVIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "open" && openItem) return (
     <div>
       <div style={row({ marginBottom: 16 })}>
-        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Menu</button>
+        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Menu</button>
       </div>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 4 }}>{openItem.label}</div>
-      <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>{new Date(openItem.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 4 }}>{openItem.label}</div>
+      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 20 }}>{new Date(openItem.date).toLocaleDateString("it-IT", {day:"2-digit",month:"long",year:"numeric"})}</div>
 
       {openItem.type === "menu" && Object.entries(openItem.selected || {}).map(([cat, piatti]) => {
         if (!piatti || piatti.length === 0) return null
         return (
           <div key={cat} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, borderBottom: S.bds, paddingBottom: 4 }}>{cat}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, marginBottom: 8, borderBottom: STYLE.bds, paddingBottom: 4 }}>{cat}</div>
             {piatti.map((p, i) => (
-              <div key={i} style={row({ justifyContent: "space-between", padding: "7px 0", borderBottom: S.bds })}>
-                <span style={{ fontSize: 14, color: S.t1 }}>{p.name}</span>
-                <span style={{ fontSize: 14, fontWeight: 600, color: S.t1 }}>{p.price > 0 ? F(p.price) : "—"}</span>
+              <div key={i} style={row({ justifyContent: "space-between", padding: "7px 0", borderBottom: STYLE.bds })}>
+                <span style={{ fontSize: 14, color: STYLE.t1 }}>{p.name}</span>
+                <span style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{p.price > 0 ? formatEuro(p.price) : " - "}</span>
               </div>
             ))}
           </div>
@@ -3395,14 +3421,14 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         if (rows.length === 0) return null
         return (
           <div key={tipo} style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, borderBottom: S.bds, paddingBottom: 4 }}>{tipo}</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, marginBottom: 8, borderBottom: STYLE.bds, paddingBottom: 4 }}>{tipo}</div>
             {rows.map(([reg, vini]) => (
               <div key={reg} style={{ marginBottom: 12 }}>
-                <div style={{ fontSize: 11, color: S.t3, fontStyle: "italic", marginBottom: 4 }}>{reg}</div>
+                <div style={{ fontSize: 11, color: STYLE.t3, fontStyle: "italic", marginBottom: 4 }}>{reg}</div>
                 {vini.map((v, i) => (
-                  <div key={i} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: S.bds })}>
-                    <span style={{ fontSize: 13, color: S.t1 }}>{v.name}</span>
-                    <span style={{ fontSize: 12, color: S.t2 }}>{v.priceBottle ? F(v.priceBottle) + " / " + F(v.priceCalice) : "—"}</span>
+                  <div key={i} style={row({ justifyContent: "space-between", padding: "6px 0", borderBottom: STYLE.bds })}>
+                    <span style={{ fontSize: 13, color: STYLE.t1 }}>{v.name}</span>
+                    <span style={{ fontSize: 12, color: STYLE.t2 }}>{v.priceBottle ? formatEuro(v.priceBottle) + " / " + formatEuro(v.priceCalice) : " - "}</span>
                   </div>
                 ))}
               </div>
@@ -3412,31 +3438,31 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
       })}
 
       <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
-        <button style={btn("p")} onClick={() => downloadPDF(openItem)}>⬇ Scarica PDF</button>
+        <button style={btn("p")} onClick={() => downloadPDF(openItem)}>v Scarica PDF</button>
         <button style={btn("s")} onClick={() => shareMenu(openItem)}>Condividi</button>
       </div>
     </div>
   )
 
-  // ── CREATE MENU STEP 1: config ─────────────────
+  //  -  -  CREATE MENU STEP 1: config  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "create_menu" && step === 1) return (
     <div style={{ maxWidth: 500 }}>
       <div style={row({ marginBottom: 16 })}>
-        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Annulla</button>
+        <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Annulla</button>
       </div>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>Configura il menu</div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 20 }}>Configura il menu</div>
 
       <div style={card({ padding: 16, marginBottom: 14 })}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Piatti per categoria</div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Piatti per categoria</div>
         {FOOD_CATS.map(cat => (
-          <div key={cat} style={row({ justifyContent: "space-between", padding: "8px 0", borderBottom: S.bds })}>
-            <span style={{ fontSize: 13, color: S.t1 }}>{cat}</span>
+          <div key={cat} style={row({ justifyContent: "space-between", padding: "8px 0", borderBottom: STYLE.bds })}>
+            <span style={{ fontSize: 13, color: STYLE.t1 }}>{cat}</span>
             <div style={row({ gap: 8 })}>
               <button onClick={() => setCounts(c => ({ ...c, [cat]: Math.max(0, (c[cat]||0)-1) }))}
-                style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>−</button>
-              <span style={{ width: 24, textAlign: "center", fontSize: 14, fontWeight: 600, color: S.t1 }}>{counts[cat]||0}</span>
+                style={{ width: 28, height: 28, background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}> '</button>
+              <span style={{ width: 24, textAlign: "center", fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{counts[cat]||0}</span>
               <button onClick={() => setCounts(c => ({ ...c, [cat]: (c[cat]||0)+1 }))}
-                style={{ width: 28, height: 28, background: S.el, border: S.bd, borderRadius: S.r, color: S.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>+</button>
+                style={{ width: 28, height: 28, background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, cursor: "pointer", fontFamily: "inherit", fontSize: 16 }}>+</button>
             </div>
           </div>
         ))}
@@ -3444,30 +3470,30 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
       {/* Template */}
       <div style={card({ padding: 16, marginBottom: 16 })}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Template grafico</div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Template grafico</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
           {TEMPLATES.map(t => (
             <div key={t.id} onClick={() => setTemplate(t.id)}
-              style={{ padding: "10px 10px", background: template === t.id ? S.acg : S.el, border: "1px solid " + (template === t.id ? S.acd : "#2a2a31"), borderRadius: S.r, cursor: "pointer", textAlign: "center" }}>
-              <div style={{ fontSize: 12, fontWeight: 600, color: template === t.id ? S.ac : S.t1, marginBottom: 3 }}>{t.label}</div>
-              <div style={{ fontSize: 10, color: S.t3 }}>{t.desc}</div>
+              style={{ padding: "10px 10px", background: template === t.id ? STYLE.acg : STYLE.el, border: "1px solid " + (template === t.id ? STYLE.acd : "#2a2a31"), borderRadius: STYLE.r, cursor: "pointer", textAlign: "center" }}>
+              <div style={{ fontSize: 12, fontWeight: 600, color: template === t.id ? STYLE.ac : STYLE.t1, marginBottom: 3 }}>{t.label}</div>
+              <div style={{ fontSize: 10, color: STYLE.t3 }}>{t.desc}</div>
             </div>
           ))}
         </div>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Dimensione testo</div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Dimensione testo</div>
         <div style={row({ gap: 8, marginBottom: 14 })}>
           {FONT_SIZES.map(f => (
             <button key={f} onClick={() => setFontSize(f)}
-              style={{ padding: "4px 14px", background: fontSize === f ? S.acg : "none", border: "1px solid " + (fontSize === f ? S.acd : "#2a2a31"), borderRadius: 999, color: fontSize === f ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+              style={{ padding: "4px 14px", background: fontSize === f ? STYLE.acg : "none", border: "1px solid " + (fontSize === f ? STYLE.acd : "#2a2a31"), borderRadius: 999, color: fontSize === f ? STYLE.ac : STYLE.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
               {f}
             </button>
           ))}
         </div>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Arrotonda prezzi</div>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Arrotonda prezzi</div>
         <div style={row({ gap: 8 })}>
-          {[["no","Nessuno"],["0.50","€ 0,50"],["1","€ 1,00"]].map(([v,l]) => (
+          {[["no","Nessuno"],["0.50","v 0,50"],["1","v 1,00"]].map(([v,l]) => (
             <button key={v} onClick={() => setArrotonda(v)}
-              style={{ padding: "4px 14px", background: arrotonda === v ? S.acg : "none", border: "1px solid " + (arrotonda === v ? S.acd : "#2a2a31"), borderRadius: 999, color: arrotonda === v ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+              style={{ padding: "4px 14px", background: arrotonda === v ? STYLE.acg : "none", border: "1px solid " + (arrotonda === v ? STYLE.acd : "#2a2a31"), borderRadius: 999, color: arrotonda === v ? STYLE.ac : STYLE.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
               {l}
             </button>
           ))}
@@ -3476,21 +3502,21 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
 
       <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }}
         onClick={() => { setSelDishes({}); setStep(2) }}>
-        Continua — Selezione piatti
+        Continua  -  Selezione piatti
       </button>
     </div>
   )
 
-  // ── CREATE MENU STEP 2: selezione piatti ───────
+  //  -  -  CREATE MENU STEP 2: selezione piatti  -  -  -  -  -  -  - 
   if (view === "create_menu" && step === 2) {
     const activeCats = FOOD_CATS.filter(cat => (counts[cat]||0) > 0)
     return (
       <div style={{ maxWidth: 560 }}>
         <div style={row({ marginBottom: 16, justifyContent: "space-between" })}>
-          <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Configura</button>
-          <span style={{ fontSize: 12, color: S.t3 }}>Stagione: {curStagione}</span>
+          <button onClick={() => setStep(1)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Configura</button>
+          <span style={{ fontSize: 12, color: STYLE.t3 }}>Stagione: {curStagione}</span>
         </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>Seleziona i piatti</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 20 }}>Seleziona i piatti</div>
 
         {activeCats.map(cat => {
           const list = getDishesForCat(cat)
@@ -3499,16 +3525,16 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           return (
             <div key={cat} style={card({ padding: 16, marginBottom: 14 })}>
               <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: S.t1 }}>{cat}</div>
-                <span style={{ fontSize: 11, color: sel.length >= max ? S.green : S.t3 }}>{sel.length}/{max} selezionati</span>
+                <div style={{ fontSize: 13, fontWeight: 700, color: STYLE.t1 }}>{cat}</div>
+                <span style={{ fontSize: 11, color: sel.length >= max ? STYLE.green : STYLE.t3 }}>{sel.length}/{max} selezionati</span>
               </div>
               {list.length === 0 ? (
-                <div style={{ fontSize: 12, color: S.t3, padding: "8px 0" }}>Nessun piatto disponibile</div>
+                <div style={{ fontSize: 12, color: STYLE.t3, padding: "8px 0" }}>Nessun piatto disponibile</div>
               ) : list.map(d => {
                 const isSel = sel.includes(d.id)
                 const inSeason = (d.stagioni||[]).includes(curStagione)
                 return (
-                  <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: S.bds }}>
+                  <div key={d.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: STYLE.bds }}>
                     <div onClick={() => {
                       if (!isSel && sel.length >= max) return
                       setSelDishes(prev => ({
@@ -3516,17 +3542,17 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                         [cat]: isSel ? sel.filter(x => x !== d.id) : [...sel, d.id]
                       }))
                     }} style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, cursor: sel.length >= max && !isSel ? "not-allowed" : "pointer", opacity: sel.length >= max && !isSel ? 0.4 : 1 }}>
-                      <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                        {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>✓</span>}
+                      <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? STYLE.ac : "#2a2a31"), background: isSel ? STYLE.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                        {isSel && <span style={{ fontSize: 10, color: STYLE.ac, fontWeight: 700 }}>-</span>}
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={row({ gap: 6 })}>
-                          <span style={{ fontSize: 13, color: S.t1 }}>{d.name}</span>
-                          {inSeason && <span style={{ fontSize: 9, color: S.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>stagione</span>}
+                          <span style={{ fontSize: 13, color: STYLE.t1 }}>{d.name}</span>
+                          {inSeason && <span style={{ fontSize: 9, color: STYLE.green, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>stagione</span>}
                         </div>
-                        {d.margin > 0 && <span style={{ fontSize: 10, color: S.t3 }}>margine {F(d.margin)}</span>}
+                        {d.margin > 0 && <span style={{ fontSize: 10, color: STYLE.t3 }}>margine {formatEuro(d.margin)}</span>}
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 600, color: S.t1 }}>{d.price > 0 ? F(d.price) : "—"}</span>
+                      <span style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1 }}>{d.price > 0 ? formatEuro(d.price) : " - "}</span>
                     </div>
                     {/* Sigla conservazione */}
                     {isSel && (
@@ -3534,8 +3560,8 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                         onClick={e => e.stopPropagation()}
                         value={sigle[d.id] || ""}
                         onChange={e => setSigle(prev => ({ ...prev, [d.id]: e.target.value }))}
-                        style={{ padding: "3px 4px", background: S.el, border: S.bd, borderRadius: S.r, color: sigle[d.id] ? S.ac : S.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer", width: 44, flexShrink: 0 }}>
-                        <option value="">—</option>
+                        style={{ padding: "3px 4px", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: sigle[d.id] ? STYLE.ac : STYLE.t3, fontFamily: "inherit", fontSize: 11, cursor: "pointer", width: 44, flexShrink: 0 }}>
+                        <option value=""> - </option>
                         <option value="A">(A)</option>
                         <option value="C">(C)</option>
                         <option value="D">(D)</option>
@@ -3588,33 +3614,33 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
           } catch(e) { console.log("translation error", e) }
           setTranslating(false)
         }}>
-          Continua — Traduzioni
+          Continua  -  Traduzioni
         </button>
       </div>
     )
   }
 
-  // ── TRANSLATE STEP ────────────────────────────
+  //  -  -  TRANSLATE STEP  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "translate" && pendingSelected) {
     const allDishes = Object.values(pendingSelected).flat()
     return (
       <div style={{ maxWidth: 560 }}>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => { setView("create_menu"); setStep(2) }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Modifica selezione</button>
+          <button onClick={() => { setView("create_menu"); setStep(2) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Modifica selezione</button>
         </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 4 }}>Traduzioni inglese</div>
-        <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>Correggi se necessario — appariranno sotto ogni piatto nel menu</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 4 }}>Traduzioni inglese</div>
+        <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 20 }}>Correggi se necessario  -  appariranno sotto ogni piatto nel menu</div>
 
         {translating ? (
-          <div style={{ textAlign: "center", padding: "32px 0", color: S.t3, fontSize: 13 }}>
+          <div style={{ textAlign: "center", padding: "32px 0", color: STYLE.t3, fontSize: 13 }}>
             Traduzione in corso...
           </div>
         ) : (
           <>
-            <div style={{ border: S.bds, borderRadius: S.r2, overflow: "hidden", marginBottom: 20 }}>
+            <div style={{ border: STYLE.bds, borderRadius: STYLE.r2, overflow: "hidden", marginBottom: 20 }}>
               {allDishes.map((d, i) => (
-                <div key={d.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "10px 14px", borderBottom: i < allDishes.length - 1 ? S.bds : "none", alignItems: "center" }}>
-                  <div style={{ fontSize: 13, color: S.t1, fontWeight: 500 }}>{d.name}</div>
+                <div key={d.id} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, padding: "10px 14px", borderBottom: i < allDishes.length - 1 ? STYLE.bds : "none", alignItems: "center" }}>
+                  <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 500 }}>{d.name}</div>
                   <input
                     style={inp({ fontSize: 12.5, padding: "5px 8px" })}
                     value={translations[d.id] || ""}
@@ -3648,33 +3674,33 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
     )
   }
 
-  // ── CREATE CARTA VINI ──────────────────────────
+  //  -  -  CREATE CARTA VINI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (view === "create_vini") {
     const allVini = dishes.filter(d => (d.cat||"").toLowerCase() === "vino")
     return (
       <div style={{ maxWidth: 560 }}>
         <div style={row({ marginBottom: 16, justifyContent: "space-between" })}>
-          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Annulla</button>
+          <button onClick={() => setView("home")} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Annulla</button>
         </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 8 }}>Seleziona i vini</div>
-        <div style={{ fontSize: 12, color: S.t3, marginBottom: 20 }}>Organizzati per tipologia e regione</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 8 }}>Seleziona i vini</div>
+        <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 20 }}>Organizzati per tipologia e regione</div>
 
         {/* Template */}
         <div style={card({ padding: 14, marginBottom: 16 })}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>Template</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>Template</div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 12 }}>
             {TEMPLATES.map(t => (
               <div key={t.id} onClick={() => setTemplate(t.id)}
-                style={{ padding: "8px 8px", background: template === t.id ? S.acg : S.el, border: "1px solid " + (template === t.id ? S.acd : "#2a2a31"), borderRadius: S.r, cursor: "pointer", textAlign: "center" }}>
-                <div style={{ fontSize: 11, fontWeight: 600, color: template === t.id ? S.ac : S.t1 }}>{t.label}</div>
+                style={{ padding: "8px 8px", background: template === t.id ? STYLE.acg : STYLE.el, border: "1px solid " + (template === t.id ? STYLE.acd : "#2a2a31"), borderRadius: STYLE.r, cursor: "pointer", textAlign: "center" }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: template === t.id ? STYLE.ac : STYLE.t1 }}>{t.label}</div>
               </div>
             ))}
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Arrotonda prezzi</div>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Arrotonda prezzi</div>
           <div style={row({ gap: 8 })}>
-            {[["no","Nessuno"],["0.50","€ 0,50"],["1","€ 1,00"]].map(([v,l]) => (
+            {[["no","Nessuno"],["0.50","v 0,50"],["1","v 1,00"]].map(([v,l]) => (
               <button key={v} onClick={() => setArrotonda(v)}
-                style={{ padding: "4px 12px", background: arrotonda === v ? S.acg : "none", border: "1px solid " + (arrotonda === v ? S.acd : "#2a2a31"), borderRadius: 999, color: arrotonda === v ? S.ac : S.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
+                style={{ padding: "4px 12px", background: arrotonda === v ? STYLE.acg : "none", border: "1px solid " + (arrotonda === v ? STYLE.acd : "#2a2a31"), borderRadius: 999, color: arrotonda === v ? STYLE.ac : STYLE.t3, fontFamily: "inherit", fontSize: 12, cursor: "pointer" }}>
                 {l}
               </button>
             ))}
@@ -3682,8 +3708,8 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
         </div>
 
         {allVini.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>
-            Nessun vino presente — aggiungili dalla sezione Drink Cost
+          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
+            Nessun vino presente  -  aggiungili dalla sezione Drink Cost
           </div>
         ) : (
           VINO_TIPI.map(tipo => {
@@ -3691,7 +3717,7 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
             if (byTipo.length === 0) return null
             return (
               <div key={tipo} style={card({ padding: 16, marginBottom: 12 })}>
-                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>{tipo}</div>
+                <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>{tipo}</div>
                 {(getRegioniOrder ? getRegioniOrder(tipo) : VINO_REGIONI).map(reg => {
                   const byReg = byTipo.filter(v => v.regioneVino === reg)
                   if (byReg.length === 0) return null
@@ -3699,23 +3725,23 @@ function CreateMenu({ menus, setMenus, dishes, isMobile }) {
                   const sel = selVini[key] || []
                   return (
                     <div key={reg} style={{ marginBottom: 10 }}>
-                      <div style={{ fontSize: 11, color: S.t3, fontStyle: "italic", marginBottom: 6 }}>{reg}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3, fontStyle: "italic", marginBottom: 6 }}>{reg}</div>
                       {byReg.map(v => {
                         const isSel = sel.includes(v.id)
                         return (
                           <div key={v.id} onClick={() => setSelVini(prev => ({
                             ...prev,
                             [key]: isSel ? sel.filter(x => x !== v.id) : [...sel, v.id]
-                          }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: S.bds, cursor: "pointer" }}>
-                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? S.ac : "#2a2a31"), background: isSel ? S.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                              {isSel && <span style={{ fontSize: 10, color: S.ac, fontWeight: 700 }}>✓</span>}
+                          }))} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 0", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                            <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (isSel ? STYLE.ac : "#2a2a31"), background: isSel ? STYLE.acg : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              {isSel && <span style={{ fontSize: 10, color: STYLE.ac, fontWeight: 700 }}>-</span>}
                             </div>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 13, color: S.t1 }}>{v.name}</div>
+                              <div style={{ fontSize: 13, color: STYLE.t1 }}>{v.name}</div>
                             </div>
                             <div style={{ textAlign: "right" }}>
-                              {v.priceBottle && <div style={{ fontSize: 12, color: S.t1, fontWeight: 600 }}>{F(v.priceBottle)}</div>}
-                              {v.priceCalice && <div style={{ fontSize: 10, color: S.t3 }}>cal. {F(v.priceCalice)}</div>}
+                              {v.priceBottle && <div style={{ fontSize: 12, color: STYLE.t1, fontWeight: 600 }}>{formatEuro(v.priceBottle)}</div>}
+                              {v.priceCalice && <div style={{ fontSize: 10, color: STYLE.t3 }}>cal. {formatEuro(v.priceCalice)}</div>}
                             </div>
                           </div>
                         )
@@ -3757,7 +3783,17 @@ function FMPercentIcon({ size = 44 }) {
 }
 
 function LoginPage() {
-  const t = T["it"]
+  const t = {
+    login: "Accedi", register: "Registrati", resetPwd: "Reimposta password",
+    email: "Email", password: "Password", confirmPwd: "Conferma password",
+    forgotPwd: "Password dimenticata?", loginGoogle: "Continua con Google",
+    noAccount: "Non hai un account?", haveAccount: "Hai già un account?",
+    appDesc: "Gestione costi per ristoratori",
+    errEmail: "Email non valida", errPwd: "La password deve avere almeno 6 caratteri",
+    errPwdMatch: "Le password non coincidono",
+    errLogin: "Email o password errati", errRegister: "Errore durante la registrazione",
+    resetSent: "Email di reset inviata! Controlla la casella."
+  }
   const [mode, setMode] = useState("login")
   const [form, setForm] = useState({ email: "", password: "", confirm: "" })
   const [err, setErr] = useState("")
@@ -3805,59 +3841,59 @@ function LoginPage() {
     <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "system-ui, sans-serif" }}>
 
       <div style={{ marginBottom: 32, textAlign: "center" }}>
-        <div style={{ width: 72, height: 72, background: S.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+        <div style={{ width: 72, height: 72, background: STYLE.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <FMPercentIcon size={44} />
         </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: S.t1, letterSpacing: "-0.02em" }}>FoodMargin</div>
-        <div style={{ fontSize: 13, color: S.t3, marginTop: 4 }}>{t.appDesc}</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: STYLE.t1, letterSpacing: "-0.02em" }}>FoodMargin</div>
+        <div style={{ fontSize: 13, color: STYLE.t3, marginTop: 4 }}>{t.appDesc}</div>
       </div>
-      <div style={{ width: "100%", maxWidth: 380, background: S.surf, border: S.bd, borderRadius: 16, padding: "28px 24px" }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: S.t1, marginBottom: 20 }}>
+      <div style={{ width: "100%", maxWidth: 380, background: STYLE.surf, border: STYLE.bd, borderRadius: 16, padding: "28px 24px" }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 20 }}>
           {mode === "login" ? t.login : mode === "register" ? t.register : t.resetPwd}
         </div>
-        {info && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.gd, border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: S.green }}>{info}</div>}
-        {err && <div style={{ marginBottom: 14, padding: "10px 14px", background: S.rd, border: "1px solid rgba(248,113,113,0.25)", borderRadius: 8, fontSize: 13, color: S.red }}>{err}</div>}
+        {info && <div style={{ marginBottom: 14, padding: "10px 14px", background: STYLE.gd, border: "1px solid rgba(74,222,128,0.25)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>{info}</div>}
+        {err && <div style={{ marginBottom: 14, padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.25)", borderRadius: 8, fontSize: 13, color: STYLE.red }}>{err}</div>}
         <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.email}</label>
+          <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2, display: "block", marginBottom: 4 }}>{t.email}</label>
           <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-            style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+            style={{ width: "100%", padding: "10px 12px", background: STYLE.el, border: STYLE.bd, borderRadius: 8, color: STYLE.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
             placeholder="nome@email.com" />
         </div>
         {mode !== "reset" && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.password}</label>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2, display: "block", marginBottom: 4 }}>{t.password}</label>
             <input type="password" value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-              style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-              placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+              style={{ width: "100%", padding: "10px 12px", background: STYLE.el, border: STYLE.bd, borderRadius: 8, color: STYLE.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+              placeholder="        " onKeyDown={e => e.key === "Enter" && handleSubmit()} />
           </div>
         )}
         {mode === "register" && (
           <div style={{ marginBottom: 12 }}>
-            <label style={{ fontSize: 11.5, fontWeight: 500, color: S.t2, display: "block", marginBottom: 4 }}>{t.confirmPwd}</label>
+            <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2, display: "block", marginBottom: 4 }}>{t.confirmPwd}</label>
             <input type="password" value={form.confirm} onChange={e => setForm(f => ({ ...f, confirm: e.target.value }))}
-              style={{ width: "100%", padding: "10px 12px", background: S.el, border: S.bd, borderRadius: 8, color: S.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
-              placeholder="••••••••" onKeyDown={e => e.key === "Enter" && handleSubmit()} />
+              style={{ width: "100%", padding: "10px 12px", background: STYLE.el, border: STYLE.bd, borderRadius: 8, color: STYLE.t1, fontFamily: "inherit", fontSize: 14, outline: "none", boxSizing: "border-box" }}
+              placeholder="        " onKeyDown={e => e.key === "Enter" && handleSubmit()} />
           </div>
         )}
         {mode === "login" && (
           <div style={{ textAlign: "right", marginBottom: 16 }}>
-            <button onClick={() => { setMode("reset"); setErr("") }} style={{ background: "none", border: "none", color: S.t3, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t.forgotPwd}</button>
+            <button onClick={() => { setMode("reset"); setErr("") }} style={{ background: "none", border: "none", color: STYLE.t3, fontSize: 12, cursor: "pointer", fontFamily: "inherit" }}>{t.forgotPwd}</button>
           </div>
         )}
         <button onClick={handleSubmit} disabled={loading}
-          style={{ width: "100%", padding: "12px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 8, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12, opacity: loading ? 0.7 : 1 }}>
+          style={{ width: "100%", padding: "12px", background: STYLE.ac, color: "#0d0d0f", border: "none", borderRadius: 8, fontFamily: "inherit", fontSize: 14, fontWeight: 700, cursor: "pointer", marginBottom: 12, opacity: loading ? 0.7 : 1 }}>
           {loading ? "..." : mode === "login" ? t.login : mode === "register" ? t.register : t.resetPwd}
         </button>
         {mode !== "reset" && (
           <button onClick={handleGoogle} disabled={loading}
-            style={{ width: "100%", padding: "12px", background: S.el, color: S.t1, border: S.bd, borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            style={{ width: "100%", padding: "12px", background: STYLE.el, color: STYLE.t1, border: STYLE.bd, borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <span style={{ fontSize: 16 }}>G</span> {t.loginGoogle}
           </button>
         )}
-        <div style={{ textAlign: "center", fontSize: 13, color: S.t3 }}>
-          {mode === "login" && <>{t.noAccount} <button onClick={() => { setMode("register"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.register}</button></>}
-          {mode === "register" && <>{t.haveAccount} <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.login}</button></>}
-          {mode === "reset" && <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>← {t.login}</button>}
+        <div style={{ textAlign: "center", fontSize: 13, color: STYLE.t3 }}>
+          {mode === "login" && <>{t.noAccount} <button onClick={() => { setMode("register"); setErr("") }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.register}</button></>}
+          {mode === "register" && <>{t.haveAccount} <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}>{t.login}</button></>}
+          {mode === "reset" && <button onClick={() => { setMode("login"); setErr("") }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600 }}> {t.login}</button>}
         </div>
       </div>
     </div>
@@ -3897,9 +3933,9 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
 
   async function shareSpesa(cat) {
     const items = cat ? spesa.filter(s => s.cat === cat) : spesa
-    const header = cat ? "Lista spesa — " + cat : "Lista della spesa"
-    const text = items.map(s => (s.done ? "✓ " : "◻ ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
-    const full = header + " — " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
+    const header = cat ? "Lista spesa  -  " + cat : "Lista della spesa"
+    const text = items.map(s => (s.done ? "- " : "--  ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
+    const full = header + "  -  " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
     if (navigator.share) {
       try { await navigator.share({ title: header, text: full }); return } catch(e) {}
     }
@@ -3914,19 +3950,19 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
 
   const doneItems = spesa.filter(s => s.done)
 
-  // ── SELEZIONE INGREDIENTI ──────────────────────
+  //  -  -  SELEZIONE INGREDIENTI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (selCat !== null) {
     const catIngs = ings.filter(i => i.cat === selCat)
     return (
       <div>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: S.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Lista spesa</button>
-          <span style={{ color: S.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{selCat}</span>
+          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Lista spesa</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selCat}</span>
         </div>
-        <div style={{ fontSize: 12, color: S.t3, marginBottom: 14 }}>Tocca per aggiungere alla lista</div>
+        <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 14 }}>Tocca per aggiungere alla lista</div>
         {catIngs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: S.t3, fontSize: 13 }}>Nessun ingrediente in questa categoria</div>
+          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente in questa categoria</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {catIngs.map(ing => {
@@ -3934,21 +3970,21 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
               return (
                 <div key={ing.id} onClick={() => toggleIng(ing)}
                   style={{ ...card({ padding: "12px 14px", cursor: "pointer" }),
-                    borderColor: inList ? S.acd : "#1f1f25",
-                    background: inList ? S.acg : S.surf }}>
+                    borderColor: inList ? STYLE.acd : "#1f1f25",
+                    background: inList ? STYLE.acg : STYLE.surf }}>
                   <div style={row({ justifyContent: "space-between" })}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: inList ? S.ac : S.t1, marginBottom: 2 }}>{ing.name}</div>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: inList ? STYLE.ac : STYLE.t1, marginBottom: 2 }}>{ing.name}</div>
                       {(ing.sotto1 || ing.sotto2) && (
                         <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
-                          {ing.sotto1 && <span style={{ fontSize: 9, color: S.ac, background: S.acg, border: "1px solid " + S.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
-                          {ing.sotto2 && <span style={{ fontSize: 9, color: S.t2, background: S.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
+                          {ing.sotto1 && <span style={{ fontSize: 9, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
+                          {ing.sotto2 && <span style={{ fontSize: 9, color: STYLE.t2, background: STYLE.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
                         </div>
                       )}
-                      <div style={{ fontSize: 11, color: S.t3 }}>{ing.cur > 0 ? "€ " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cur > 0 ? "v " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
-                    <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? S.ac : "#2a2a31"), background: inList ? S.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>✓</span>}
+                    <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? STYLE.ac : "#2a2a31"), background: inList ? STYLE.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                      {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>-</span>}
                     </div>
                   </div>
                 </div>
@@ -3960,13 +3996,13 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
     )
   }
 
-  // ── LISTA SPESA ────────────────────────────────
+  //  -  -  LISTA SPESA  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   return (
     <div>
       <div style={row({ justifyContent: "space-between", marginBottom: 20, flexWrap: "wrap" })}>
         <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 2 }}>Lista della spesa</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>{spesa.filter(s => !s.done).length} da comprare · {doneItems.length} completati</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 2 }}>Lista della spesa</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>{spesa.filter(s => !s.done).length} da comprare . {doneItems.length} completati</div>
         </div>
         <div style={row({ gap: 8 })}>
           {doneItems.length > 0 && (
@@ -3980,39 +4016,39 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
             <div onClick={() => setShareMenuOpen(false)}
               style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 500, display: "flex", alignItems: "flex-end" }}>
               <div onClick={e => e.stopPropagation()}
-                style={{ width: "100%", background: S.surf, borderRadius: "16px 16px 0 0", paddingBottom: 24 }}>
-                <div style={{ padding: "16px 20px 12px", borderBottom: S.bds }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: S.t1 }}>Condividi lista spesa</div>
+                style={{ width: "100%", background: STYLE.surf, borderRadius: "16px 16px 0 0", paddingBottom: 24 }}>
+                <div style={{ padding: "16px 20px 12px", borderBottom: STYLE.bds }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1 }}>Condividi lista spesa</div>
                 </div>
                 {/* Tutta la lista */}
                 <div onClick={() => { shareSpesa(null); setShareMenuOpen(false) }}
-                  style={{ padding: "14px 20px", cursor: "pointer", borderBottom: S.bds, display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 20 }}>📋</span>
+                  style={{ padding: "14px 20px", cursor: "pointer", borderBottom: STYLE.bds, display: "flex", alignItems: "center", gap: 12 }}>
+                  <span style={{ fontSize: 20 }}></span>
                   <div>
-                    <div style={{ fontSize: 14, color: S.t1, fontWeight: 600 }}>Tutta la lista</div>
-                    <div style={{ fontSize: 11, color: S.t3 }}>{spesa.filter(s => !s.done).length} prodotti</div>
+                    <div style={{ fontSize: 14, color: STYLE.t1, fontWeight: 600 }}>Tutta la lista</div>
+                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{spesa.filter(s => !s.done).length} prodotti</div>
                   </div>
                 </div>
                 {/* Per categoria */}
                 {[...new Set(spesa.filter(s => !s.done).map(s => s.cat))].map(cat => (
                   <div key={cat} onClick={() => { shareSpesa(cat); setShareMenuOpen(false) }}
-                    style={{ padding: "14px 20px", cursor: "pointer", borderBottom: S.bds, display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 20 }}>📦</span>
+                    style={{ padding: "14px 20px", cursor: "pointer", borderBottom: STYLE.bds, display: "flex", alignItems: "center", gap: 12 }}>
+                    <span style={{ fontSize: 20 }}> </span>
                     <div>
-                      <div style={{ fontSize: 14, color: S.t1 }}>Solo {cat}</div>
-                      <div style={{ fontSize: 11, color: S.t3 }}>{spesa.filter(s => !s.done && s.cat === cat).length} prodotti</div>
+                      <div style={{ fontSize: 14, color: STYLE.t1 }}>Solo {cat}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{spesa.filter(s => !s.done && s.cat === cat).length} prodotti</div>
                     </div>
                   </div>
                 ))}
                 <div onClick={() => setShareMenuOpen(false)}
                   style={{ padding: "14px 20px", textAlign: "center", cursor: "pointer" }}>
-                  <span style={{ fontSize: 13, color: S.t3 }}>Annulla</span>
+                  <span style={{ fontSize: 13, color: STYLE.t3 }}>Annulla</span>
                 </div>
               </div>
             </div>
           )}
           {spesa.length > 0 && (
-            <button style={{ ...btn("g", { fontSize: 12 }), color: S.red }}
+            <button style={{ ...btn("g", { fontSize: 12 }), color: STYLE.red }}
               onClick={() => { if (window.confirm("Svuotare tutta la lista spesa?")) setSpesa([]) }}>
               Svuota lista
             </button>
@@ -4021,7 +4057,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
       </div>
 
       {/* Categorie per aggiungere */}
-      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 10 }}>
+      <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
         Aggiungi dalla lista ingredienti
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 8, marginBottom: 24 }}>
@@ -4031,10 +4067,10 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
           return (
             <div key={cat} onClick={() => setSelCat(cat)}
               style={{ ...card({ padding: "12px 14px", cursor: "pointer" }),
-                borderColor: inList > 0 ? S.acd : "#1f1f25" }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: S.t1, marginBottom: 2 }}>{cat}</div>
-              <div style={{ fontSize: 11, color: S.t3 }}>{count} ingredienti</div>
-              {inList > 0 && <div style={{ fontSize: 10, color: S.ac, marginTop: 2 }}>{inList} in lista</div>}
+                borderColor: inList > 0 ? STYLE.acd : "#1f1f25" }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>{cat}</div>
+              <div style={{ fontSize: 11, color: STYLE.t3 }}>{count} ingredienti</div>
+              {inList > 0 && <div style={{ fontSize: 10, color: STYLE.ac, marginTop: 2 }}>{inList} in lista</div>}
             </div>
           )
         })}
@@ -4042,21 +4078,21 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
 
       {/* Lista da comprare */}
       {spesa.filter(s => !s.done).length === 0 && spesa.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "40px 0", color: S.t3, fontSize: 13 }}>
-          La lista è vuota — aggiungi ingredienti dalle categorie sopra
+        <div style={{ textAlign: "center", padding: "40px 0", color: STYLE.t3, fontSize: 13 }}>
+          La lista    vuota  -  aggiungi ingredienti dalle categorie sopra
         </div>
       ) : (
         <>
           {todoByCat.map(({ cat, items }) => (
             <div key={cat} style={{ marginBottom: 16 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8, paddingBottom: 4, borderBottom: S.bds }}>{cat}</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8, paddingBottom: 4, borderBottom: STYLE.bds }}>{cat}</div>
               {items.map(s => (
-                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: S.surf, border: S.bds, borderRadius: S.r, marginBottom: 6 })}>
+                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: STYLE.surf, border: STYLE.bds, borderRadius: STYLE.r, marginBottom: 6 })}>
                   <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
                     <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: S.t1 }}>{s.name}</span>
+                    <span style={{ fontSize: 14, color: STYLE.t1 }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}> </button>
                 </div>
               ))}
             </div>
@@ -4065,16 +4101,16 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
           {/* Completati */}
           {doneItems.length > 0 && (
             <div style={{ marginTop: 8 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Completati</div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Completati</div>
               {doneItems.map(s => (
-                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: S.el, border: S.bds, borderRadius: S.r, marginBottom: 6, opacity: 0.6 })}>
+                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r, marginBottom: 6, opacity: 0.6 })}>
                   <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + S.green, background: S.gd, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                      <span style={{ fontSize: 11, color: S.green, fontWeight: 700 }}>✓</span>
+                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + STYLE.green, background: STYLE.gd, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <span style={{ fontSize: 11, color: STYLE.green, fontWeight: 700 }}>-</span>
                     </div>
-                    <span style={{ fontSize: 14, color: S.t3, textDecoration: "line-through" }}>{s.name}</span>
+                    <span style={{ fontSize: 14, color: STYLE.t3, textDecoration: "line-through" }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}> </button>
                 </div>
               ))}
             </div>
@@ -4107,7 +4143,7 @@ function Turni({ turni, setTurni, isMobile }) {
   function giorniMese(ym) {
     const [y, m] = ym.split("-").map(Number)
     const giorni = []
-    const nomiLungo = ["Domenica","Lunedì","Martedì","Mercoledì","Giovedì","Venerdì","Sabato"]
+    const nomiLungo = ["Domenica","Luned  ","Marted  ","Mercoled  ","Gioved  ","Venerd  ","Sabato"]
     const n = new Date(y, m, 0).getDate()
     for (let i = 1; i <= n; i++) {
       const d = new Date(y, m - 1, i)
@@ -4138,7 +4174,7 @@ function Turni({ turni, setTurni, isMobile }) {
   async function sendChat() {
     if (!chat.trim() && !fileAttach) return
 
-    // Validazione — blocca richieste non inerenti ai turni
+    // Validazione  -  blocca richieste non inerenti ai turni
     if (chat.trim() && !fileAttach) {
       const c = chat.toLowerCase()
       const keywords = ["turno","turni","pranzo","cena","chiuso","festivo","dipendente","cucina","sala","bar","orario","lun","mar","mer","gio","ven","sab","dom","gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre","staff","personale","settimana","mese","giorno","lavora","riposo"]
@@ -4155,7 +4191,7 @@ function Turni({ turni, setTurni, isMobile }) {
     try {
       const [y, m] = selMese.split("-").map(Number)
       const nomi = ["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"]
-      const basePrompt = `Sei un assistente ESCLUSIVAMENTE per la gestione dei turni di un ristorante. Rispondi SOLO a richieste sui turni del personale — ignora qualsiasi altra domanda. Mese: ${nomi[m-1]} ${y}.
+      const basePrompt = `Sei un assistente ESCLUSIVAMENTE per la gestione dei turni di un ristorante. Rispondi SOLO a richieste sui turni del personale  -  ignora qualsiasi altra domanda. Mese: ${nomi[m-1]} ${y}.
 Dipendenti attuali: ${dip.length > 0 ? dip.map(d => d.nome + " (" + d.reparto + ")").join(", ") : "nessuno"}.
 Analizza l orario e restituisci SOLO JSON valido senza markdown, nessun testo fuori dal JSON:
 {"dipendenti":[{"nome":"Nome","reparto":"Cucina o Sala o Bar o Altro"}],"turni":{"GG/MM/YYYY":{"pranzo":"nomi separati da virgola o CHIUSO o FESTIVO","cena":"nomi separati da virgola o CHIUSO"}}}
@@ -4217,7 +4253,7 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
       if (data.error) throw new Error(data.error.message)
       const raw = data.choices?.[0]?.message?.content || ""
       const match = raw.match(/\{[\s\S]*\}/)
-      if (!match) throw new Error("Risposta non valida — riprova")
+      if (!match) throw new Error("Risposta non valida  -  riprova")
       const parsed = JSON.parse(match[0])
 
       const nuoviDip = parsed.dipendenti || []
@@ -4275,8 +4311,8 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
       y += 7
       for (const g of giorni) {
         const t = mese[g.data] || {}
-        const pranzo = t.pranzo || "—"
-        const cena   = t.cena   || "—"
+        const pranzo = t.pranzo || " - "
+        const cena   = t.cena   || " - "
         if (y > 190) { doc.addPage(); y = 20 }
         if (g.num % 2 === 0) { doc.setFillColor(245,245,248); doc.rect(14, y-4, 268, 7, "F") }
         doc.text(g.data, xs[0], y)
@@ -4311,25 +4347,25 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20, flexWrap: "wrap", gap: 10 }}>
         <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Turni</div>
-          <div style={{ fontSize: 12, color: S.t3 }}>{dip.length} dipendenti · {meseLabel}</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Turni</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>{dip.length} dipendenti . {meseLabel}</div>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={exportPDF} style={{ ...btn("s"), fontSize: 11 }}>📄 PDF</button>
-          <button onClick={() => setRiepilogo(!riepilogo)} style={{ ...btn("s"), fontSize: 11, background: riepilogo ? S.acg : S.el, borderColor: riepilogo ? S.acd : "#2a2a31" }}>📊 Riepilogo</button>
+          <button onClick={exportPDF} style={{ ...btn("s"), fontSize: 11 }}> PDF</button>
+          <button onClick={() => setRiepilogo(!riepilogo)} style={{ ...btn("s"), fontSize: 11, background: riepilogo ? STYLE.acg : STYLE.el, borderColor: riepilogo ? STYLE.acd : "#2a2a31" }}> Riepilogo</button>
         </div>
       </div>
 
       {/* Chat AI */}
-      <div style={{ background: S.el, border: S.bd, borderRadius: S.r2, padding: "14px 16px", marginBottom: 20 }}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 8 }}>Genera orario con AI</div>
+      <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r2, padding: "14px 16px", marginBottom: 20 }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Genera orario con AI</div>
         <textarea value={chat} onChange={e => setChat(e.target.value)}
-          placeholder="Es: Dipendenti Zizzo cucina, Simone cucina, Luca sala, Raffy sala, Mollà bar. Lunedì sempre chiuso. Martedì pranzo Zizzo Simone Mollà, cena Zizzo Luca Mollà. Sabato pranzo tutti..."
+          placeholder="Es: Dipendenti Zizzo cucina, Simone cucina, Luca sala, Raffy sala, Moll   bar. Luned   sempre chiuso. Marted   pranzo Zizzo Simone Moll  , cena Zizzo Luca Moll  . Sabato pranzo tutti..."
           style={{ ...inp(), width: "100%", minHeight: 80, resize: "vertical", fontSize: 13, boxSizing: "border-box", marginBottom: 8 }} />
         {/* File upload */}
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-          <label style={{ display: "flex", alignItems: "center", gap: 6, background: S.surf, border: S.bd, borderRadius: S.r, padding: "6px 12px", cursor: "pointer", fontSize: 12, color: S.t2 }}>
-            📎 Allega file
+          <label style={{ display: "flex", alignItems: "center", gap: 6, background: STYLE.surf, border: STYLE.bd, borderRadius: STYLE.r, padding: "6px 12px", cursor: "pointer", fontSize: 12, color: STYLE.t2 }}>
+             Allega file
             <input type="file" accept=".pdf,image/*" style={{ display: "none" }}
               onChange={async e => {
                 const f = e.target.files?.[0]
@@ -4339,48 +4375,48 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
           </label>
           {fileAttach && (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontSize: 11, color: S.ac }}>{fileAttach.name}</span>
-              <button onClick={() => setFileAttach(null)} style={{ background: "none", border: "none", color: S.t3, cursor: "pointer", fontSize: 13 }}>✕</button>
+              <span style={{ fontSize: 11, color: STYLE.ac }}>{fileAttach.name}</span>
+              <button onClick={() => setFileAttach(null)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 13 }}> </button>
             </div>
           )}
         </div>
-        {err && <div style={{ fontSize: 12, color: S.red, marginBottom: 6 }}>{err}</div>}
+        {err && <div style={{ fontSize: 12, color: STYLE.red, marginBottom: 6 }}>{err}</div>}
         <div style={{ display: "flex", justifyContent: "flex-end" }}>
           <button onClick={sendChat} disabled={loading || (!chat.trim() && !fileAttach)} style={{ ...btn("p"), opacity: loading || (!chat.trim() && !fileAttach) ? 0.5 : 1 }}>
-            {loading ? "Analisi in corso..." : "✦ Genera orario"}
+            {loading ? "Analisi in corso..." : "* Genera orario"}
           </button>
         </div>
       </div>
 
       {/* Nav mese */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-        <button onClick={() => cambioMese(-1)} style={{ ...btn("s"), padding: "6px 12px" }}>‹</button>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: S.t1, flex: 1, textAlign: "center" }}>{meseLabel}</div>
-        <button onClick={() => cambioMese(1)} style={{ ...btn("s"), padding: "6px 12px" }}>›</button>
+        <button onClick={() => cambioMese(-1)} style={{ ...btn("s"), padding: "6px 12px" }}> </button>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, flex: 1, textAlign: "center" }}>{meseLabel}</div>
+        <button onClick={() => cambioMese(1)} style={{ ...btn("s"), padding: "6px 12px" }}> </button>
       </div>
 
       {/* Riepilogo */}
       {riepilogo && (
-        <div style={{ background: S.el, border: S.bd, borderRadius: S.r2, padding: "14px 16px", marginBottom: 20 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: S.t3, marginBottom: 12 }}>Riepilogo turni</div>
+        <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r2, padding: "14px 16px", marginBottom: 20 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Riepilogo turni</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-            <div><div style={{ fontSize: 10, color: S.t3, marginBottom: 4 }}>Da</div><input style={inp({ fontSize: 12, width: 110 })} value={rDa} onChange={e => setRDa(e.target.value)} placeholder="GG/MM/YYYY" /></div>
-            <div><div style={{ fontSize: 10, color: S.t3, marginBottom: 4 }}>A</div><input style={inp({ fontSize: 12, width: 110 })} value={rA} onChange={e => setRA(e.target.value)} placeholder="GG/MM/YYYY" /></div>
+            <div><div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 4 }}>Da</div><input style={inp({ fontSize: 12, width: 110 })} value={rDa} onChange={e => setRDa(e.target.value)} placeholder="GG/MM/YYYY" /></div>
+            <div><div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 4 }}>A</div><input style={inp({ fontSize: 12, width: 110 })} value={rA} onChange={e => setRA(e.target.value)} placeholder="GG/MM/YYYY" /></div>
           </div>
           {dip.length > 0 ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {Object.entries(calcolaRiepilogo()).map(([nome, ore]) => (
-                <div key={nome} style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", background: S.surf, borderRadius: S.r, border: S.bds }}>
-                  <span style={{ fontSize: 13, color: S.t1, fontWeight: 600 }}>{nome}</span>
+                <div key={nome} style={{ display: "flex", justifyContent: "space-between", padding: "8px 10px", background: STYLE.surf, borderRadius: STYLE.r, border: STYLE.bds }}>
+                  <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{nome}</span>
                   <div style={{ display: "flex", gap: 14 }}>
-                    <span style={{ fontSize: 12, color: S.t3 }}>☀️ <b style={{ color: S.t1 }}>{ore.pranzo}</b></span>
-                    <span style={{ fontSize: 12, color: S.t3 }}>🌙 <b style={{ color: S.t1 }}>{ore.cena}</b></span>
-                    <span style={{ fontSize: 12, color: S.ac, fontWeight: 700 }}>Tot: {ore.totale}</span>
+                    <span style={{ fontSize: 12, color: STYLE.t3 }}>   <b style={{ color: STYLE.t1 }}>{ore.pranzo}</b></span>
+                    <span style={{ fontSize: 12, color: STYLE.t3 }}>  <b style={{ color: STYLE.t1 }}>{ore.cena}</b></span>
+                    <span style={{ fontSize: 12, color: STYLE.ac, fontWeight: 700 }}>Tot: {ore.totale}</span>
                   </div>
                 </div>
               ))}
             </div>
-          ) : <div style={{ fontSize: 13, color: S.t3 }}>Nessun dipendente ancora</div>}
+          ) : <div style={{ fontSize: 13, color: STYLE.t3 }}>Nessun dipendente ancora</div>}
         </div>
       )}
 
@@ -4394,21 +4430,21 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
             <div key={g.key} style={{ ...card({ padding: "12px 14px" }), opacity: isChiuso ? 0.5 : 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: isChiuso || isFestivo ? 0 : 8 }}>
                 <div>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: S.t1 }}>{g.data}</span>
-                  <span style={{ fontSize: 12, color: S.t3, marginLeft: 8 }}>{g.giorno}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: STYLE.t1 }}>{g.data}</span>
+                  <span style={{ fontSize: 12, color: STYLE.t3, marginLeft: 8 }}>{g.giorno}</span>
                 </div>
-                {isChiuso  && <span style={{ fontSize: 10, color: S.t3, background: S.el, borderRadius: 4, padding: "2px 8px" }}>CHIUSO</span>}
+                {isChiuso  && <span style={{ fontSize: 10, color: STYLE.t3, background: STYLE.el, borderRadius: 4, padding: "2px 8px" }}>CHIUSO</span>}
                 {isFestivo && <span style={{ fontSize: 10, color: "#f59e0b", background: "rgba(245,158,11,0.1)", borderRadius: 4, padding: "2px 8px" }}>FESTIVO</span>}
               </div>
               {!isChiuso && !isFestivo && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   {["pranzo","cena"].map(tipo => (
                     <div key={tipo} onClick={() => { setEditCell({ data: g.data, turno: tipo }); setEditVal(t[tipo] || "") }}
-                      style={{ background: S.el, border: S.bds, borderRadius: S.r, padding: "8px 10px", cursor: "pointer", minHeight: 44 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: S.t3, marginBottom: 4 }}>
-                        {tipo === "pranzo" ? "☀️ Pranzo" : "🌙 Cena"}
+                      style={{ background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r, padding: "8px 10px", cursor: "pointer", minHeight: 44 }}>
+                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, marginBottom: 4 }}>
+                        {tipo === "pranzo" ? "   Pranzo" : "  Cena"}
                       </div>
-                      <div style={{ fontSize: 12, color: t[tipo] ? S.t1 : S.t3 }}>{t[tipo] || "—"}</div>
+                      <div style={{ fontSize: 12, color: t[tipo] ? STYLE.t1 : STYLE.t3 }}>{t[tipo] || " - "}</div>
                     </div>
                   ))}
                 </div>
@@ -4422,9 +4458,9 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
       {editCell && (
         <div onClick={e => e.target === e.currentTarget && setEditCell(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-          <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 400, padding: "20px 22px" }}>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: S.t1, marginBottom: 4 }}>
-              {editCell.turno === "pranzo" ? "☀️ Pranzo" : "🌙 Cena"} — {editCell.data}
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 400, padding: "20px 22px" }}>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 4 }}>
+              {editCell.turno === "pranzo" ? "   Pranzo" : "  Cena"}  -  {editCell.data}
             </div>
             <textarea value={editVal} onChange={e => setEditVal(e.target.value)}
               placeholder="Nomi separati da virgola, oppure CHIUSO o FESTIVO"
@@ -4433,13 +4469,13 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
                 {dip.map(d => (
                   <button key={d.id} onClick={() => setEditVal(v => v ? v + ", " + d.nome : d.nome)}
-                    style={{ fontSize: 11, background: S.acg, border: "1px solid " + S.acd, borderRadius: 4, padding: "3px 8px", color: S.ac, cursor: "pointer", fontFamily: "inherit" }}>
+                    style={{ fontSize: 11, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 4, padding: "3px 8px", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit" }}>
                     + {d.nome}
                   </button>
                 ))}
                 {["CHIUSO","FESTIVO"].map(s => (
                   <button key={s} onClick={() => setEditVal(s)}
-                    style={{ fontSize: 11, background: S.el, border: S.bds, borderRadius: 4, padding: "3px 8px", color: S.t3, cursor: "pointer", fontFamily: "inherit" }}>
+                    style={{ fontSize: 11, background: STYLE.el, border: STYLE.bds, borderRadius: 4, padding: "3px 8px", color: STYLE.t3, cursor: "pointer", fontFamily: "inherit" }}>
                     {s}
                   </button>
                 ))}
@@ -4460,22 +4496,22 @@ Regole: includi TUTTI i dipendenti esistenti piu i nuovi; se giorno non menziona
 function Onboarding({ onDone }) {
   const steps = [
     {
-      icon: "◈",
+      icon: "-- ",
       title: "Benvenuto in FoodMargin",
-      desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu — tutto dal tuo telefono."
+      desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu  -  tutto dal tuo telefono."
     },
     {
-      icon: "▤",
+      icon: "- ",
       title: "Inizia dalle fatture",
       desc: "Scatta una foto alla bolla del fornitore. FoodMargin legge i prodotti automaticamente, aggiorna i prezzi e popola il magazzino."
     },
     {
-      icon: "◬",
+      icon: "-- ",
       title: "Calcola le ricette",
       desc: "Crea ricette con ingredienti e grammature reali. Il food cost e il prezzo di vendita consigliato vengono calcolati in automatico."
     },
     {
-      icon: "⊞",
+      icon: "",
       title: "Gestisci i turni",
       desc: "Descrivi l'orario all'AI in linguaggio naturale e genera la tabella mensile in pochi secondi. Esportala in PDF e condividila su WhatsApp."
     },
@@ -4485,26 +4521,26 @@ function Onboarding({ onDone }) {
   const isLast = step === steps.length - 1
 
   return (
-    <div style={{ minHeight: "100vh", background: S.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: STYLE.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "system-ui, sans-serif" }}>
       {/* Logo */}
       <div style={{ marginBottom: 40, textAlign: "center" }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: S.ac, letterSpacing: "-0.02em" }}>FoodMargin</div>
-        <div style={{ fontSize: 12, color: S.t3, marginTop: 4 }}>Gestione costi per ristoratori</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: STYLE.ac, letterSpacing: "-0.02em" }}>FoodMargin</div>
+        <div style={{ fontSize: 12, color: STYLE.t3, marginTop: 4 }}>Gestione costi per ristoratori</div>
       </div>
 
       {/* Step card */}
-      <div style={{ width: "100%", maxWidth: 360, background: S.surf, border: S.bd, borderRadius: 20, padding: "32px 24px", marginBottom: 28, textAlign: "center" }}>
-        <div style={{ width: 64, height: 64, background: S.acg, border: "1px solid " + S.acd, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28, color: S.ac }}>
+      <div style={{ width: "100%", maxWidth: 360, background: STYLE.surf, border: STYLE.bd, borderRadius: 20, padding: "32px 24px", marginBottom: 28, textAlign: "center" }}>
+        <div style={{ width: 64, height: 64, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28, color: STYLE.ac }}>
           {cur.icon}
         </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1, marginBottom: 12 }}>{cur.title}</div>
-        <div style={{ fontSize: 14, color: S.t2, lineHeight: 1.7 }}>{cur.desc}</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 12 }}>{cur.title}</div>
+        <div style={{ fontSize: 14, color: STYLE.t2, lineHeight: 1.7 }}>{cur.desc}</div>
       </div>
 
       {/* Dots */}
       <div style={{ display: "flex", gap: 8, marginBottom: 28 }}>
         {steps.map((_, i) => (
-          <div key={i} style={{ width: i === step ? 20 : 8, height: 8, borderRadius: 999, background: i === step ? S.ac : S.el, transition: "width 0.3s" }} />
+          <div key={i} style={{ width: i === step ? 20 : 8, height: 8, borderRadius: 999, background: i === step ? STYLE.ac : STYLE.el, transition: "width 0.3s" }} />
         ))}
       </div>
 
@@ -4512,17 +4548,17 @@ function Onboarding({ onDone }) {
       <div style={{ width: "100%", maxWidth: 360, display: "flex", flexDirection: "column", gap: 10 }}>
         {isLast ? (
           <button onClick={onDone}
-            style={{ width: "100%", padding: "16px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 12, fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
-            📸 Scansiona la tua prima fattura
+            style={{ width: "100%", padding: "16px", background: STYLE.ac, color: "#0d0d0f", border: "none", borderRadius: 12, fontFamily: "inherit", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
+              Scansiona la tua prima fattura
           </button>
         ) : (
           <button onClick={() => setStep(s => s + 1)}
-            style={{ width: "100%", padding: "14px", background: S.ac, color: "#0d0d0f", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
-            Avanti →
+            style={{ width: "100%", padding: "14px", background: STYLE.ac, color: "#0d0d0f", border: "none", borderRadius: 10, fontFamily: "inherit", fontSize: 15, fontWeight: 700, cursor: "pointer" }}>
+            Avanti '
           </button>
         )}
         <button onClick={onDone}
-          style={{ width: "100%", padding: "10px", background: "none", color: S.t3, border: "none", fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>
+          style={{ width: "100%", padding: "10px", background: "none", color: STYLE.t3, border: "none", fontFamily: "inherit", fontSize: 13, cursor: "pointer" }}>
           Salta introduzione
         </button>
       </div>
@@ -4531,14 +4567,14 @@ function Onboarding({ onDone }) {
 }
 
 const NAV = [
-  { id: "inv",    label: "Fatture",     icon: "▤", group: "Gestione" },
-  { id: "ing",    label: "Magazzino",   icon: "⬡", group: "Gestione" },
-  { id: "fc",     label: "Ricette",     icon: "◬", group: "Gestione" },
-  { id: "dishes", label: "Piatti",      icon: "◎", group: "Gestione" },
-  { id: "dash",   label: "Dashboard",   icon: "◈", group: "Gestione" },
-  { id: "menu",   label: "Crea Menu",   icon: "❑", group: "Gestione" },
-  { id: "spesa",  label: "Spesa",       icon: "◉", group: "Gestione" },
-  { id: "turni",  label: "Turni",       icon: "⊞", group: "Gestione" },
+  { id: "inv",    label: "Fatture",     icon: "- ", group: "Gestione" },
+  { id: "ing",    label: "Magazzino",   icon: "v ", group: "Gestione" },
+  { id: "fc",     label: "Ricette",     icon: "-- ", group: "Gestione" },
+  { id: "dishes", label: "Piatti",      icon: "--", group: "Gestione" },
+  { id: "dash",   label: "Dashboard",   icon: "-- ", group: "Gestione" },
+  { id: "menu",   label: "Crea Menu",   icon: "'", group: "Gestione" },
+  { id: "spesa",  label: "Spesa",       icon: "--", group: "Gestione" },
+  { id: "turni",  label: "Turni",       icon: "", group: "Gestione" },
 ]
 
 export default function App() {
@@ -4589,10 +4625,10 @@ export default function App() {
           if (d.spesa)      setSpesa(d.spesa)
           if (d.banchetti)  setBanchetti(d.banchetti)
           if (d.turni)      setTurni(d.turni)
-          // Utente esistente — salta onboarding
+          // Utente esistente  -  salta onboarding
           setOnboarded(true)
         } else {
-          // Nuovo utente — mostra onboarding
+          // Nuovo utente  -  mostra onboarding
           setOnboarded(false)
         }
       } catch (e) { console.log("Load error:", e) }
@@ -4609,7 +4645,7 @@ export default function App() {
   }, [ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded, ready, user])
 
   async function deleteAccount() {
-    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non è reversibile.")) return
+    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non    reversibile.")) return
     try {
       await deleteDoc(doc(db, "users", user.uid, "data", "main"))
       await deleteUser(user)
@@ -4627,7 +4663,7 @@ export default function App() {
   async function sendPasswordReset() {
     try {
       await sendPasswordResetEmail(auth, user.email)
-      alert("Email di reset inviata a " + user.email + " — controlla la casella (anche spam).")
+      alert("Email di reset inviata a " + user.email + "  -  controlla la casella (anche spam).")
     } catch(e) {
       alert("Errore: " + e.message)
     }
@@ -4636,17 +4672,17 @@ export default function App() {
   function SettingsPanel() {
     const createdAt = user?.metadata?.creationTime
       ? new Date(user.metadata.creationTime).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric" })
-      : "—"
+      : " - "
     const lastLogin = user?.metadata?.lastSignInTime
       ? new Date(user.metadata.lastSignInTime).toLocaleDateString("it-IT", { day: "2-digit", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" })
-      : "—"
+      : " - "
     const provider = user?.providerData?.[0]?.providerId === "google.com" ? "Google" : "Email / Password"
 
     const sections = [
       {
         title: "Account",
         items: [
-          { label: "Email", value: user?.email || "—" },
+          { label: "Email", value: user?.email || " - " },
           { label: "Accesso con", value: provider },
           { label: "Registrato il", value: createdAt },
           { label: "Ultimo accesso", value: lastLogin },
@@ -4672,15 +4708,15 @@ export default function App() {
 
     const Wrap = isMobile ? ({ children }) => (
       <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", flexDirection: "column", justifyContent: "flex-end", zIndex: 9999 }}>
-        <div style={{ background: S.surf, borderRadius: "22px 22px 0 0", maxHeight: "92vh", display: "flex", flexDirection: "column" }}>
-          <div style={{ width: 40, height: 4, background: S.el, borderRadius: 999, margin: "12px auto 0", flexShrink: 0 }} />
+        <div style={{ background: STYLE.surf, borderRadius: "22px 22px 0 0", maxHeight: "92vh", display: "flex", flexDirection: "column" }}>
+          <div style={{ width: 40, height: 4, background: STYLE.el, borderRadius: 999, margin: "12px auto 0", flexShrink: 0 }} />
           {children}
         </div>
       </div>
     ) : ({ children }) => (
       <div onClick={e => e.target === e.currentTarget && setSettingsOpen(false)}
         style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 9999 }}>
-        <div style={{ background: S.surf, border: S.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", display: "flex", flexDirection: "column" }}>
           {children}
         </div>
       </div>
@@ -4690,18 +4726,18 @@ export default function App() {
       <Wrap>
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0", flexShrink: 0 }}>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.t1 }}>Impostazioni</div>
-          <button onClick={() => setSettingsOpen(false)} style={{ background: S.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: S.t3, fontSize: 18 }}>✕</button>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Impostazioni</div>
+          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18 }}> </button>
         </div>
 
         {/* Avatar + email */}
-        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 22px", borderBottom: S.bds, flexShrink: 0 }}>
-          <div style={{ width: 52, height: 52, borderRadius: "50%", background: S.acg, border: "2px solid " + S.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 22, color: S.ac, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "16px 22px", borderBottom: STYLE.bds, flexShrink: 0 }}>
+          <div style={{ width: 52, height: 52, borderRadius: "50%", background: STYLE.acg, border: "2px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 22, color: STYLE.ac, flexShrink: 0 }}>
             {user?.email?.[0]?.toUpperCase() || "U"}
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: S.t1 }}>{user?.email?.split("@")[0] || "Utente"}</div>
-            <div style={{ fontSize: 12, color: S.t3 }}>{user?.email || "—"}</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1 }}>{user?.email?.split("@")[0] || "Utente"}</div>
+            <div style={{ fontSize: 12, color: STYLE.t3 }}>{user?.email || " - "}</div>
           </div>
         </div>
 
@@ -4711,12 +4747,12 @@ export default function App() {
           {/* Info sections */}
           {sections.map((sec, si) => (
             <div key={si} style={{ marginBottom: 20 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, marginTop: 16 }}>{sec.title}</div>
-              <div style={{ background: S.el, border: S.bd, borderRadius: S.r2, overflow: "hidden" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, marginBottom: 8, marginTop: 16 }}>{sec.title}</div>
+              <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r2, overflow: "hidden" }}>
                 {sec.items.map(({ label, value }, i) => (
-                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", borderBottom: i < sec.items.length - 1 ? S.bds : "none" }}>
-                    <span style={{ fontSize: 13, color: S.t3 }}>{label}</span>
-                    <span style={{ fontSize: 13, color: S.t1, fontWeight: 500, maxWidth: "55%", textAlign: "right" }}>{value}</span>
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 14px", borderBottom: i < sec.items.length - 1 ? STYLE.bds : "none" }}>
+                    <span style={{ fontSize: 13, color: STYLE.t3 }}>{label}</span>
+                    <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 500, maxWidth: "55%", textAlign: "right" }}>{value}</span>
                   </div>
                 ))}
               </div>
@@ -4725,46 +4761,46 @@ export default function App() {
 
           {/* Azioni account */}
           <div style={{ marginBottom: 20 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: S.t3, marginBottom: 8, marginTop: 16 }}>Azioni</div>
+            <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, marginBottom: 8, marginTop: 16 }}>Azioni</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
 
-              {/* Reset password — solo se non Google */}
+              {/* Reset password  -  solo se non Google */}
               {provider !== "Google" && (
                 <button onClick={sendPasswordReset}
-                  style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2 }}>
+                  style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: STYLE.r2 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: S.t1, textAlign: "left" }}>Reimposta password</div>
-                    <div style={{ fontSize: 11, color: S.t3, marginTop: 2, textAlign: "left" }}>Ricevi un'email per cambiare la password</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, textAlign: "left" }}>Reimposta password</div>
+                    <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 2, textAlign: "left" }}>Ricevi un'email per cambiare la password</div>
                   </div>
-                  <span style={{ color: S.t3, fontSize: 14 }}>›</span>
+                  <span style={{ color: STYLE.t3, fontSize: 14 }}> </span>
                 </button>
               )}
 
               {/* Logout */}
               <button onClick={() => { setSettingsOpen(false); signOut(auth) }}
-                style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2 }}>
+                style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: STYLE.r2 }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: S.t1, textAlign: "left" }}>Esci dall'account</div>
-                  <div style={{ fontSize: 11, color: S.t3, marginTop: 2, textAlign: "left" }}>Rimani registrato, esci solo da questo dispositivo</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, textAlign: "left" }}>Esci dall'account</div>
+                  <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 2, textAlign: "left" }}>Rimani registrato, esci solo da questo dispositivo</div>
                 </div>
-                <span style={{ color: S.t3, fontSize: 14 }}>›</span>
+                <span style={{ color: STYLE.t3, fontSize: 14 }}> </span>
               </button>
 
               {/* Elimina account */}
               <button onClick={() => { setSettingsOpen(false); deleteAccount() }}
-                style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: S.r2, background: S.rd, borderColor: "rgba(248,113,113,0.3)" }}>
+                style={{ ...btn("s"), justifyContent: "space-between", padding: "12px 14px", borderRadius: STYLE.r2, background: STYLE.rd, borderColor: "rgba(248,113,113,0.3)" }}>
                 <div>
-                  <div style={{ fontSize: 13, fontWeight: 600, color: S.red, textAlign: "left" }}>Elimina account</div>
-                  <div style={{ fontSize: 11, color: S.t3, marginTop: 2, textAlign: "left" }}>Cancella tutti i dati in modo permanente</div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.red, textAlign: "left" }}>Elimina account</div>
+                  <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 2, textAlign: "left" }}>Cancella tutti i dati in modo permanente</div>
                 </div>
-                <span style={{ color: S.red, fontSize: 14 }}>›</span>
+                <span style={{ color: STYLE.red, fontSize: 14 }}> </span>
               </button>
 
             </div>
           </div>
 
-          <div style={{ fontSize: 11, color: S.t3, textAlign: "center", paddingBottom: 24 }}>
-            FoodMargin · Tutti i dati sono crittografati e al sicuro
+          <div style={{ fontSize: 11, color: STYLE.t3, textAlign: "center", paddingBottom: 24 }}>
+            FoodMargin . Tutti i dati sono crittografati e al sicuro
           </div>
 
         </div>
@@ -4811,20 +4847,20 @@ export default function App() {
   const sideW = collapsed ? 52 : 160
 
   if (isMobile) return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: S.bg, color: S.t1, fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ height: 52, background: S.surf, borderBottom: S.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: S.ac }}>FoodMargin</div>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: STYLE.bg, color: STYLE.t1, fontFamily: "system-ui, sans-serif" }}>
+      <div style={{ height: 52, background: STYLE.surf, borderBottom: STYLE.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>FoodMargin</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => setSettingsOpen(true)} style={{ background: S.el, border: S.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: S.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>⚙</button>
+          <button onClick={() => setSettingsOpen(true)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: STYLE.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}></button>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
         {renderPage()}
       </div>
       {settingsOpen && <SettingsPanel />}
-      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: S.surf, borderTop: S.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
+      <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: STYLE.surf, borderTop: STYLE.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
         {NAV.map(n => (
-          <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", background: page === n.id ? "rgba(90,89,99,0.25)" : "none", border: "none", borderRadius: 10, cursor: "pointer", color: page === n.id ? S.t3 : S.ac }}>
+          <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", background: page === n.id ? "rgba(90,89,99,0.25)" : "none", border: "none", borderRadius: 10, cursor: "pointer", color: page === n.id ? STYLE.t3 : STYLE.ac }}>
             <span style={{ fontSize: 22 }}>{n.icon}</span>
             <span style={{ fontSize: 9, fontWeight: 600 }}>{n.label}</span>
           </button>
@@ -4834,41 +4870,41 @@ export default function App() {
   )
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: S.bg, color: S.t1, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 13.5, lineHeight: 1.5, overflow: "hidden" }}>
+    <div style={{ display: "flex", height: "100vh", background: STYLE.bg, color: STYLE.t1, fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 13.5, lineHeight: 1.5, overflow: "hidden" }}>
 
-      <div style={{ width: sideW, flexShrink: 0, background: S.surf, borderRight: S.bds, display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.2s ease" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between", padding: collapsed ? "14px 0" : "12px 10px 12px 14px", borderBottom: S.bds, minHeight: 52 }}>
+      <div style={{ width: sideW, flexShrink: 0, background: STYLE.surf, borderRight: STYLE.bds, display: "flex", flexDirection: "column", overflow: "hidden", transition: "width 0.2s ease" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between", padding: collapsed ? "14px 0" : "12px 10px 12px 14px", borderBottom: STYLE.bds, minHeight: 52 }}>
           {!collapsed && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <div style={{ width: 24, height: 24, background: S.acg, border: "1px solid " + S.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: S.ac, flexShrink: 0 }}>◈</div>
-              <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 14, color: S.t1, lineHeight: 1.1 }}>FoodMargin</div><div style={{ fontSize: 8, color: S.ac, letterSpacing: "0.12em", textTransform: "uppercase" }}>SaaS</div></div>
+              <div style={{ width: 24, height: 24, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: STYLE.ac, flexShrink: 0 }}>-- </div>
+              <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 14, color: STYLE.t1, lineHeight: 1.1 }}>FoodMargin</div><div style={{ fontSize: 8, color: STYLE.ac, letterSpacing: "0.12em", textTransform: "uppercase" }}>SaaS</div></div>
             </div>
           )}
-          {collapsed && <div style={{ width: 24, height: 24, background: S.acg, border: "1px solid " + S.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: S.ac }}>◈</div>}
-          <button onClick={() => setCollapsed(c => !c)} title={collapsed ? "Espandi" : "Comprimi"} style={{ background: S.el, border: S.bd, borderRadius: 5, width: 22, height: 22, cursor: "pointer", color: S.t3, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}>
-            {collapsed ? "›" : "‹"}
+          {collapsed && <div style={{ width: 24, height: 24, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: STYLE.ac }}>-- </div>}
+          <button onClick={() => setCollapsed(c => !c)} title={collapsed ? "Espandi" : "Comprimi"} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 5, width: 22, height: 22, cursor: "pointer", color: STYLE.t3, fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginLeft: collapsed ? 0 : 4 }}>
+            {collapsed ? " " : " "}
           </button>
         </div>
 
         {!collapsed && (
-          <div style={{ display: "flex", alignItems: "center", gap: 7, margin: "7px 10px", padding: "6px 10px", background: S.el, border: S.bd, borderRadius: 6 }}>
-            <div style={{ width: 5, height: 5, borderRadius: "50%", background: S.green, boxShadow: "0 0 5px " + S.green, flexShrink: 0 }} />
-            <span style={{ fontSize: 11, color: S.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>La Gioia</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, margin: "7px 10px", padding: "6px 10px", background: STYLE.el, border: STYLE.bd, borderRadius: 6 }}>
+            <div style={{ width: 5, height: 5, borderRadius: "50%", background: STYLE.green, boxShadow: "0 0 5px " + STYLE.green, flexShrink: 0 }} />
+            <span style={{ fontSize: 11, color: STYLE.t2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>La Gioia</span>
           </div>
         )}
 
         <nav style={{ flex: 1, padding: "4px 0", overflowY: "auto" }}>
           {groups.map(g => (
             <div key={g} style={{ padding: "2px 0 6px" }}>
-              {!collapsed && <span style={{ display: "block", padding: "7px 14px 3px", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: S.t3 }}>{g}</span>}
+              {!collapsed && <span style={{ display: "block", padding: "7px 14px 3px", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: STYLE.t3 }}>{g}</span>}
               {NAV.filter(n => n.group === g).map(n => (
                 <button key={n.id} onClick={() => setPage(n.id)} title={collapsed ? n.label : undefined}
-                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", gap: 8, padding: collapsed ? "9px 0" : "7px 10px 7px 14px", background: page === n.id ? S.acg : "none", border: "none", cursor: "pointer", color: page === n.id ? S.ac : S.t2, fontFamily: "inherit", fontSize: 13, textAlign: "left", position: "relative" }}>
-                  {page === n.id && <div style={{ position: "absolute", left: 0, top: 4, bottom: 4, width: 2, background: S.ac, borderRadius: "0 2px 2px 0" }} />}
+                  style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", gap: 8, padding: collapsed ? "9px 0" : "7px 10px 7px 14px", background: page === n.id ? STYLE.acg : "none", border: "none", cursor: "pointer", color: page === n.id ? STYLE.ac : STYLE.t2, fontFamily: "inherit", fontSize: 13, textAlign: "left", position: "relative" }}>
+                  {page === n.id && <div style={{ position: "absolute", left: 0, top: 4, bottom: 4, width: 2, background: STYLE.ac, borderRadius: "0 2px 2px 0" }} />}
                   <span style={{ fontSize: 14, flexShrink: 0 }}>{n.icon}</span>
                   {!collapsed && <span style={{ flex: 1, fontSize: 12.5 }}>{n.label}</span>}
-                  {!collapsed && n.badge && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", background: S.ac, color: "#0d0d0f", borderRadius: 999 }}>{n.badge}</span>}
-                  {collapsed && n.badge && <span style={{ position: "absolute", top: 5, right: 5, width: 6, height: 6, background: S.ac, borderRadius: "50%" }} />}
+                  {!collapsed && n.badge && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", background: STYLE.ac, color: "#0d0d0f", borderRadius: 999 }}>{n.badge}</span>}
+                  {collapsed && n.badge && <span style={{ position: "absolute", top: 5, right: 5, width: 6, height: 6, background: STYLE.ac, borderRadius: "50%" }} />}
                 </button>
               ))}
             </div>
@@ -4876,25 +4912,25 @@ export default function App() {
         </nav>
 
         {!collapsed && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "9px 14px", borderTop: S.bds }}>
-            <span style={{ fontSize: 10, color: S.t3 }}>Piano</span>
-            <span style={{ fontSize: 10, fontWeight: 600, color: S.ac }}>Professional</span>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "9px 14px", borderTop: STYLE.bds }}>
+            <span style={{ fontSize: 10, color: STYLE.t3 }}>Piano</span>
+            <span style={{ fontSize: 10, fontWeight: 600, color: STYLE.ac }}>Professional</span>
           </div>
         )}
       </div>
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 52, background: S.surf, borderBottom: S.bds, flexShrink: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'Georgia',serif", fontSize: 15, color: S.t1 }}>
-            <span style={{ color: S.ac, opacity: 0.8 }}>{NAV.find(n => n.id === page) && NAV.find(n => n.id === page).icon}</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 52, background: STYLE.surf, borderBottom: STYLE.bds, flexShrink: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1 }}>
+            <span style={{ color: STYLE.ac, opacity: 0.8 }}>{NAV.find(n => n.id === page) && NAV.find(n => n.id === page).icon}</span>
             {NAV.find(n => n.id === page) && NAV.find(n => n.id === page).label}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 9px 4px 5px", background: S.el, border: S.bd, borderRadius: 6 }}>
-              <div style={{ width: 22, height: 22, borderRadius: 5, background: S.acg, border: "1px solid " + S.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 11, color: S.ac }}>{user?.email?.[0]?.toUpperCase() || "U"}</div>
-              <span style={{ fontSize: 12, fontWeight: 500, color: S.t1 }}>{user?.email?.split("@")[0] || "User"}</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "4px 9px 4px 5px", background: STYLE.el, border: STYLE.bd, borderRadius: 6 }}>
+              <div style={{ width: 22, height: 22, borderRadius: 5, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 11, color: STYLE.ac }}>{user?.email?.[0]?.toUpperCase() || "U"}</div>
+              <span style={{ fontSize: 12, fontWeight: 500, color: STYLE.t1 }}>{user?.email?.split("@")[0] || "User"}</span>
             </div>
-            <button onClick={() => setSettingsOpen(true)} style={{ background: S.el, border: S.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: S.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }} title="Impostazioni">⚙</button>
+            <button onClick={() => setSettingsOpen(true)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: STYLE.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }} title="Impostazioni"></button>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 48px" }}>
