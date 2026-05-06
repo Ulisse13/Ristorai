@@ -21,7 +21,8 @@ import { doc, getDoc, setDoc, deleteDoc } from "firebase/firestore"
 import {
   onAuthStateChanged, signInWithEmailAndPassword,
   createUserWithEmailAndPassword, signInWithPopup,
-  signOut, sendPasswordResetEmail, deleteUser
+  signOut, sendPasswordResetEmail, deleteUser,
+  reauthenticateWithCredential, EmailAuthProvider, GoogleAuthProvider
 } from "firebase/auth"
 
 const formatEuro = n => "v " + Number(n).toFixed(2).replace(".", ",")
@@ -4645,13 +4646,42 @@ export default function App() {
   }, [ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded, ready, user])
 
   async function deleteAccount() {
-    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati (ingredienti, piatti, fatture, menu) verranno cancellati definitivamente. Questa azione non    reversibile.")) return
-    try {
+    if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati verranno cancellati definitivamente.")) return
+
+    async function doDelete() {
       await deleteDoc(doc(db, "users", user.uid, "data", "main"))
       await deleteUser(user)
+      await signOut(auth)
+    }
+
+    try {
+      await doDelete()
     } catch(e) {
       if (e.code === "auth/requires-recent-login") {
-        alert("Per sicurezza devi prima effettuare il logout e rientrare, poi potrai eliminare l'account.")
+        // Re-autenticazione necessaria
+        const provider = user.providerData?.[0]?.providerId
+        if (provider === "google.com") {
+          // Re-login Google
+          try {
+            const googleProvider = new GoogleAuthProvider()
+            const { signInWithPopup } = await import("firebase/auth")
+            await signInWithPopup(auth, googleProvider)
+            await doDelete()
+          } catch(e2) {
+            alert("Errore: " + e2.message)
+          }
+        } else {
+          // Re-login email/password
+          const pwd = window.prompt("Inserisci la tua password per confermare la cancellazione:")
+          if (!pwd) return
+          try {
+            const credential = EmailAuthProvider.credential(user.email, pwd)
+            await reauthenticateWithCredential(user, credential)
+            await doDelete()
+          } catch(e2) {
+            alert("Password errata o errore: " + e2.message)
+          }
+        }
       } else {
         alert("Errore: " + e.message)
       }
