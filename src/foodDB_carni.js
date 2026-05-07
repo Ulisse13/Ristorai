@@ -1,13 +1,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // foodDB_carni.js — Database prodotti CARNI per Ristorai
-// Struttura: keywords → { cat, sotto1 (animale), sotto2 (taglio) }
+// sotto1: Bovino | Maiale | Pollo | Tacchino | Agnello | Anatra | Coniglio | Selvaggina
+// sotto2: taglio specifico (o "Animale - Taglio" per Selvaggina)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CARNI_DB = [
 
   // ── BOVINO ─────────────────────────────────────────────────────────────────
   { keywords: ["bovino", "manzo", "vitello", "vitellone", "scottona", "bue", "bovino adulto"], sotto1: "Bovino", sotto2: "" },
-  { keywords: ["bovino intero", "manzo intero", "vitello intero"], sotto1: "Bovino", sotto2: "Intero" },
   { keywords: ["fesa", "fesa manzo", "fesa vitello", "fesa scottona", "fesa vitellone"], sotto1: "Bovino", sotto2: "Fesa" },
   { keywords: ["girello", "girello manzo", "girello vitello", "girello scottona"], sotto1: "Bovino", sotto2: "Girello" },
   { keywords: ["cappello del prete", "cappello prete"], sotto1: "Bovino", sotto2: "Cappello del prete" },
@@ -32,7 +32,6 @@ export const CARNI_DB = [
   { keywords: ["carpaccio manzo", "carpaccio vitello", "carpaccio di manzo"], sotto1: "Bovino", sotto2: "Carpaccio" },
   { keywords: ["scaloppine vitello", "scaloppine di vitello", "scaloppina vitello"], sotto1: "Bovino", sotto2: "Scaloppina" },
   { keywords: ["cotoletta vitello", "cotoletta di vitello", "milanese vitello"], sotto1: "Bovino", sotto2: "Cotoletta" },
-  // Frattaglie bovino
   { keywords: ["fegato manzo", "fegato vitello", "fegato bovino"], sotto1: "Bovino", sotto2: "Fegato" },
   { keywords: ["cuore manzo", "cuore vitello"], sotto1: "Bovino", sotto2: "Cuore" },
   { keywords: ["rognone manzo", "rognone vitello"], sotto1: "Bovino", sotto2: "Rognone" },
@@ -41,9 +40,8 @@ export const CARNI_DB = [
   { keywords: ["trippa", "trippa manzo", "trippa vitello"], sotto1: "Bovino", sotto2: "Trippa" },
   { keywords: ["animelle vitello", "animelle"], sotto1: "Bovino", sotto2: "Animelle" },
 
-  // ── SUINO / MAIALE ─────────────────────────────────────────────────────────
-  { keywords: ["suino", "maiale", "maialino", "maialino da latte", "maialino sardo", "maialino dei nebrodi", "porchetta"], sotto1: "Maiale", sotto2: "" },
-  { keywords: ["suino intero", "maiale intero", "maialino intero"], sotto1: "Maiale", sotto2: "Intero" },
+  // ── MAIALE ─────────────────────────────────────────────────────────────────
+  { keywords: ["suino", "maiale", "maialino", "maialino da latte", "maialino sardo", "porchetta"], sotto1: "Maiale", sotto2: "" },
   { keywords: ["lombo maiale", "lombo suino", "lonza maiale", "lonza suina"], sotto1: "Maiale", sotto2: "Lombo" },
   { keywords: ["filetto maiale", "filetto suino", "filetto di maiale"], sotto1: "Maiale", sotto2: "Filetto" },
   { keywords: ["costine maiale", "costine suine", "spare rib", "ribs maiale", "costolette maiale"], sotto1: "Maiale", sotto2: "Costine" },
@@ -68,7 +66,6 @@ export const CARNI_DB = [
   { keywords: ["coscia pollo", "cosce pollo", "sovracoscia pollo", "fusi pollo", "fuso di pollo", "sovracoscio pollo"], sotto1: "Pollo", sotto2: "Coscia" },
   { keywords: ["ali pollo", "alette pollo", "alucce pollo", "ali di pollo"], sotto1: "Pollo", sotto2: "Ali" },
   { keywords: ["collo pollo"], sotto1: "Pollo", sotto2: "Collo" },
-  { keywords: ["zampe pollo"], sotto1: "Pollo", sotto2: "Zampe" },
   { keywords: ["macinato pollo", "pollo macinato"], sotto1: "Pollo", sotto2: "Macinato" },
   { keywords: ["fegato pollo", "fegatini pollo", "fegatini di pollo"], sotto1: "Pollo", sotto2: "Fegato" },
   { keywords: ["cuore pollo", "cuori pollo"], sotto1: "Pollo", sotto2: "Cuore" },
@@ -81,7 +78,6 @@ export const CARNI_DB = [
   { keywords: ["coscia tacchino", "sovracoscia tacchino"], sotto1: "Tacchino", sotto2: "Coscia" },
   { keywords: ["ali tacchino"], sotto1: "Tacchino", sotto2: "Ali" },
   { keywords: ["macinato tacchino"], sotto1: "Tacchino", sotto2: "Macinato" },
-  { keywords: ["collo tacchino"], sotto1: "Tacchino", sotto2: "Collo" },
 
   // ── AGNELLO ────────────────────────────────────────────────────────────────
   { keywords: ["agnello", "abbacchio", "agnellone"], sotto1: "Agnello", sotto2: "" },
@@ -112,40 +108,32 @@ export const CARNI_DB = [
   { keywords: ["sella coniglio", "lombo coniglio"], sotto1: "Coniglio", sotto2: "Sella" },
   { keywords: ["spalla coniglio"], sotto1: "Coniglio", sotto2: "Spalla" },
   { keywords: ["fegato coniglio"], sotto1: "Coniglio", sotto2: "Fegato" },
-  { keywords: ["reni coniglio"], sotto1: "Coniglio", sotto2: "Reni" },
 
-  // ── CINGHIALE ──────────────────────────────────────────────────────────────
-  { keywords: ["cinghiale"], sotto1: "Cinghiale", sotto2: "" },
-  { keywords: ["cinghiale intero"], sotto1: "Cinghiale", sotto2: "Intero" },
-  { keywords: ["coscia cinghiale", "coscia di cinghiale"], sotto1: "Cinghiale", sotto2: "Coscia" },
-  { keywords: ["spalla cinghiale"], sotto1: "Cinghiale", sotto2: "Spalla" },
-  { keywords: ["lombo cinghiale", "filetto cinghiale"], sotto1: "Cinghiale", sotto2: "Filetto" },
-  { keywords: ["costine cinghiale"], sotto1: "Cinghiale", sotto2: "Costine" },
-  { keywords: ["polpa cinghiale", "macinato cinghiale", "spezzatino cinghiale"], sotto1: "Cinghiale", sotto2: "Polpa" },
+  // ── SELVAGGINA (lista piatta — sotto2 = Animale + taglio) ─────────────────
+  { keywords: ["cinghiale"], sotto1: "Selvaggina", sotto2: "Cinghiale" },
+  { keywords: ["cinghiale intero"], sotto1: "Selvaggina", sotto2: "Cinghiale intero" },
+  { keywords: ["coscia cinghiale", "coscia di cinghiale"], sotto1: "Selvaggina", sotto2: "Cinghiale - Coscia" },
+  { keywords: ["spalla cinghiale"], sotto1: "Selvaggina", sotto2: "Cinghiale - Spalla" },
+  { keywords: ["lombo cinghiale", "filetto cinghiale"], sotto1: "Selvaggina", sotto2: "Cinghiale - Filetto" },
+  { keywords: ["costine cinghiale"], sotto1: "Selvaggina", sotto2: "Cinghiale - Costine" },
+  { keywords: ["polpa cinghiale", "macinato cinghiale", "spezzatino cinghiale"], sotto1: "Selvaggina", sotto2: "Cinghiale - Polpa" },
 
-  // ── CERVO ──────────────────────────────────────────────────────────────────
-  { keywords: ["cervo"], sotto1: "Cervo", sotto2: "" },
-  { keywords: ["cervo intero"], sotto1: "Cervo", sotto2: "Intero" },
-  { keywords: ["filetto cervo", "filetto di cervo"], sotto1: "Cervo", sotto2: "Filetto" },
-  { keywords: ["controfiletto cervo"], sotto1: "Cervo", sotto2: "Controfiletto" },
-  { keywords: ["coscia cervo", "coscia di cervo"], sotto1: "Cervo", sotto2: "Coscia" },
-  { keywords: ["spalla cervo"], sotto1: "Cervo", sotto2: "Spalla" },
-  { keywords: ["collo cervo"], sotto1: "Cervo", sotto2: "Collo" },
-  { keywords: ["costine cervo"], sotto1: "Cervo", sotto2: "Costine" },
-  { keywords: ["polpa cervo", "macinato cervo", "spezzatino cervo"], sotto1: "Cervo", sotto2: "Polpa" },
+  { keywords: ["cervo"], sotto1: "Selvaggina", sotto2: "Cervo" },
+  { keywords: ["filetto cervo", "filetto di cervo"], sotto1: "Selvaggina", sotto2: "Cervo - Filetto" },
+  { keywords: ["controfiletto cervo"], sotto1: "Selvaggina", sotto2: "Cervo - Controfiletto" },
+  { keywords: ["coscia cervo", "coscia di cervo"], sotto1: "Selvaggina", sotto2: "Cervo - Coscia" },
+  { keywords: ["spalla cervo"], sotto1: "Selvaggina", sotto2: "Cervo - Spalla" },
+  { keywords: ["costine cervo"], sotto1: "Selvaggina", sotto2: "Cervo - Costine" },
+  { keywords: ["polpa cervo", "macinato cervo", "spezzatino cervo"], sotto1: "Selvaggina", sotto2: "Cervo - Polpa" },
 
-  // ── CAPRIOLO ───────────────────────────────────────────────────────────────
-  { keywords: ["capriolo"], sotto1: "Capriolo", sotto2: "" },
-  { keywords: ["capriolo intero"], sotto1: "Capriolo", sotto2: "Intero" },
-  { keywords: ["filetto capriolo", "filetto di capriolo"], sotto1: "Capriolo", sotto2: "Filetto" },
-  { keywords: ["coscia capriolo", "coscia di capriolo"], sotto1: "Capriolo", sotto2: "Coscia" },
-  { keywords: ["spalla capriolo"], sotto1: "Capriolo", sotto2: "Spalla" },
-  { keywords: ["sella capriolo"], sotto1: "Capriolo", sotto2: "Sella" },
-  { keywords: ["costine capriolo"], sotto1: "Capriolo", sotto2: "Costine" },
-  { keywords: ["polpa capriolo", "macinato capriolo", "spezzatino capriolo"], sotto1: "Capriolo", sotto2: "Polpa" },
+  { keywords: ["capriolo"], sotto1: "Selvaggina", sotto2: "Capriolo" },
+  { keywords: ["filetto capriolo", "filetto di capriolo"], sotto1: "Selvaggina", sotto2: "Capriolo - Filetto" },
+  { keywords: ["coscia capriolo", "coscia di capriolo"], sotto1: "Selvaggina", sotto2: "Capriolo - Coscia" },
+  { keywords: ["sella capriolo"], sotto1: "Selvaggina", sotto2: "Capriolo - Sella" },
+  { keywords: ["costine capriolo"], sotto1: "Selvaggina", sotto2: "Capriolo - Costine" },
+  { keywords: ["polpa capriolo", "macinato capriolo", "spezzatino capriolo"], sotto1: "Selvaggina", sotto2: "Capriolo - Polpa" },
 
-  // ── PICCIONE / QUAGLIA / FARAONA ───────────────────────────────────────────
-  { keywords: ["piccione", "piccione intero", "colombaccio"], sotto1: "Piccione", sotto2: "" },
-  { keywords: ["quaglia", "quaglie", "quaglia intera"], sotto1: "Quaglia", sotto2: "" },
-  { keywords: ["faraona", "faraona intera"], sotto1: "Faraona", sotto2: "" },
+  { keywords: ["piccione", "piccione intero", "colombaccio"], sotto1: "Selvaggina", sotto2: "Piccione" },
+  { keywords: ["quaglia", "quaglie", "quaglia intera"], sotto1: "Selvaggina", sotto2: "Quaglia" },
+  { keywords: ["faraona", "faraona intera"], sotto1: "Selvaggina", sotto2: "Faraona" },
 ]
