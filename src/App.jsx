@@ -1,4 +1,4 @@
-import { useState, useEffect, Component } from "react"
+import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
 import { lookupFood } from "./foodDB"
 
@@ -346,6 +346,22 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
   const [err, setErr]           = useState({})
   const [migrating, setMigrating] = useState(false)
+
+  const migratedRef = useRef(false)
+
+  // Auto-reclassifica ingredienti al caricamento
+  useEffect(() => {
+    if (migratedRef.current || ings.length === 0) return
+    migratedRef.current = true
+    const updated = ings.map(ing => {
+      if (ing.cat === "Vini") return ing
+      const match = lookupFood(ing.name)
+      if (!match) return ing
+      return { ...ing, cat: match.cat || ing.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" }
+    })
+    const hasChanges = updated.some((u, i) => u.cat !== ings[i].cat || u.sotto1 !== ings[i].sotto1 || u.sotto2 !== ings[i].sotto2)
+    if (hasChanges) setIngs(updated)
+  }, [ings])
 
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
 
