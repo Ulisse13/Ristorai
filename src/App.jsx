@@ -345,38 +345,26 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const [edit, setEdit]         = useState(null)
   const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
   const [err, setErr]           = useState({})
-  const [migrating, setMigrating] = useState(false)
 
-  const migratedRef = useRef(false)
 
-  // Auto-reclassifica ingredienti al caricamento
+  // Auto-corregge silenziosamente categorie sbagliate al caricamento
+  const _migrated = useRef(false)
   useEffect(() => {
-    if (migratedRef.current || ings.length === 0) return
-    migratedRef.current = true
+    if (_migrated.current || ings.length === 0) return
+    _migrated.current = true
+    let changed = false
     const updated = ings.map(ing => {
       if (ing.cat === "Vini") return ing
-      const match = lookupFood(ing.name)
-      if (!match) return ing
-      return { ...ing, cat: match.cat || ing.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" }
+      const m = lookupFood(ing.name)
+      if (!m) return ing
+      if (m.cat === ing.cat && m.sotto1 === ing.sotto1) return ing
+      changed = true
+      return { ...ing, cat: m.cat, sotto1: m.sotto1 || "", sotto2: m.sotto2 || "" }
     })
-    const hasChanges = updated.some((u, i) => u.cat !== ings[i].cat || u.sotto1 !== ings[i].sotto1 || u.sotto2 !== ings[i].sotto2)
-    if (hasChanges) setIngs(updated)
+    if (changed) setIngs(updated)
   }, [ings])
 
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
-
-  // Reclassifica tutti gli ingredienti esistenti usando il DB locale
-  async function migrateAll() {
-    setMigrating(true)
-    const updated = ings.map(ing => {
-      if (ing.cat === "Vini") return ing
-      const match = lookupFood(ing.name)
-      if (!match) return ing
-      return { ...ing, cat: match.cat || ing.cat, sotto1: match.sotto1 || ing.sotto1 || "", sotto2: match.sotto2 || ing.sotto2 || "" }
-    })
-    setIngs(updated)
-    setMigrating(false)
-  }
 
   // Categorie con navigazione a livelli (sotto1 cards)
   const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Bevande"]
@@ -454,12 +442,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Magazzino</div>
           <div style={{ fontSize: 12, color: STYLE.t3 }}>{ings.length} ingredienti totali</div>
         </div>
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          <button style={btn("s", { fontSize: 12 })} onClick={migrateAll} disabled={migrating}>
-            {migrating ? "Reclassifico..." : "↻ Reclassifica magazzino"}
-          </button>
-          <button style={btn("p")} onClick={openAdd}>+ Aggiungi ingrediente</button>
-        </div>
+        <button style={btn("p")} onClick={openAdd}>+ Aggiungi ingrediente</button>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
@@ -1500,7 +1483,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       // Carica prompt da Firebase
       setProg(10); setProgLabel("Caricamento prompt AI...")
       const promptBase = await loadPrompt()
-      const PROMPT = promptBase || `Sei un esperto contabile specializzato nel settore della ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown: {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"Carni o Pesce o Frutta e Verdura o Latticini o Freschi o Surgelati o Vini o Bevande o Scatolame o Detersivi","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o pz o l","prezzoUnitario":0.00,"sconto":""}]}`
+      const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown. CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi. PREZZI: prezzoUnitario deve essere sempre per kg, per litro o per pezzo singolo (mai per collo o cartone). {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o pz o l","prezzoUnitario":0.00,"sconto":""}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
@@ -1653,17 +1636,16 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
 
     const prodotti = parsed.prodotti || []
     const foundList = prodotti.filter(p => p && p.nome).map(p => {
-      // Usa categoria dall'AI, fallback a guessCat
-      const cat = normCat(p.categoria) || guessCat(p.nome)
+      // DB locale ha SEMPRE priorità su AI per categoria e sottocategorie
+      const dbMatch = lookupFood(p.nome)
+      const cat = (dbMatch ? dbMatch.cat : null) || normCat(p.categoria) || guessCat(p.nome)
+      const sotto1Final = (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
+      const sotto2Final = (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const nameLower = p.nome.toLowerCase()
       const existing = ings.find(i =>
         i.name.toLowerCase().includes(nameLower.split(" ")[0]) ||
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
-      // Arricchisci sotto1/sotto2 dal database se l'AI non li ha forniti
-      const dbMatch = lookupFood(p.nome)
-      const sotto1Final = p.sotto1 || (dbMatch ? dbMatch.sotto1 : "")
-      const sotto2Final = p.sotto2 || (dbMatch ? dbMatch.sotto2 : "")
 
       return {
         nome: p.nome, nomeEdit: p.nome,
@@ -1698,7 +1680,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
     if (c.includes("carne") || c === "carni") return "Carni"
     if (c.includes("pesce")) return "Pesce"
     if (c.includes("frutta") || c.includes("verdura")) return "Frutta e Verdura"
-    if (c.includes("latticin")) return "Latticini"
+    if (c.includes("latticin")) return "Freschi"
     if (c.includes("fresco") || c.includes("freschi")) return "Freschi"
     if (c.includes("surgel")) return "Surgelati"
     if (c.includes("vino") || c.includes("vini")) return "Vini"
