@@ -1505,6 +1505,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
 REGOLE PREZZI:
+0. ATTENZIONE: In molte fatture italiane l'ultima colonna è l'ALIQUOTA IVA (4, 10, 22). NON è uno sconto! Lo sconto è una colonna separata tra Prezzo e Importo. Se vedi solo 4, 10 o 22 alla fine di una riga senza la parola "sconto", è IVA — metti sconto="".
 1. Copia ESATTAMENTE il valore della colonna "Prezzo" nel campo "prezzoListino" senza fare calcoli.
 2. Copia ESATTAMENTE il valore della colonna "Sconto" nel campo "sconto" (solo il numero, es. "18" non "18%").
 3. Nel campo "prezzoUnitario" metti 0 — sarà calcolato dal sistema.
@@ -1688,8 +1689,10 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         const rawListino = parseFloat(String(p.prezzoListino || p.prezzoUnitario || "0").replace(",", ".")) || 0
         if (rawListino <= 0) return 0
 
-        // Applica peso confezione (es. Maionese 5kg NR → prezzo/5)
-        const peso = parseFloat(String(p.pesoConfezione || "0").replace(",", ".")) || 0
+        // Applica peso confezione SOLO se UM è per pezzo (NR/PZ/N), non per KG/LT
+        const unitaNorm = (p.unita || "").trim().toLowerCase()
+        const isPerPiece = /^(nr|n|n\.|pz|pcs|pezzi|pezzo)$/.test(unitaNorm)
+        const peso = isPerPiece ? (parseFloat(String(p.pesoConfezione || "0").replace(",", ".")) || 0) : 0
         let price = peso > 0 ? rawListino / peso : rawListino
 
         // Applica sconto
