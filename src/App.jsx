@@ -707,10 +707,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
 
   // Categorie con sotto1  -  mostra cards sotto1 se non selezionata
   if (CATS_WITH_SOTTO1.includes(selCat) && !selSotto1) {
-    const presentSotto1 = new Set(catIngs.map(i => i.sotto1).filter(Boolean))
-    const ordine = SOTTO1_ORDER[selCat]
-    const sotto1List = ordine || [...presentSotto1].sort()
-    const noSotto1 = catIngs.filter(i => !i.sotto1)
+    const sotto1List = SOTTO1_ORDER[selCat] || []
     return (
       <div>
         <div style={row({ marginBottom: 16 })}>
@@ -738,14 +735,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                 </div>
               )
             })}
-            {noSotto1.length > 0 && (
-              <div onClick={() => setSelSotto1("__none__")}
-                style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.t3 + ",transparent)", opacity: 0.3 }} />
-                <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1, marginBottom: 4 }}>Altri</div>
-                <div style={{ fontSize: 12, color: STYLE.t3 }}>{noSotto1.length} ingredienti</div>
-              </div>
-            )}
+
           </div>
         ) : (
           <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente</div>
