@@ -1504,19 +1504,16 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const promptBase = await loadPrompt()
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE PREZZI:
-0. ATTENZIONE: In molte fatture italiane l'ultima colonna è l'ALIQUOTA IVA (4, 10, 22). NON è uno sconto! Lo sconto è una colonna separata tra Prezzo e Importo. Se vedi solo 4, 10 o 22 alla fine di una riga senza la parola "sconto", è IVA — metti sconto="".
-1. Copia ESATTAMENTE il valore della colonna "Prezzo" nel campo "prezzoListino" senza fare calcoli.
-2. Copia ESATTAMENTE il valore della colonna "Sconto" nel campo "sconto" (solo il numero, es. "18" non "18%").
-3. Nel campo "prezzoUnitario" metti 0 — sarà calcolato dal sistema.
-4. Per UM=KG o UM=LT: unita="kg" o "l". Per UM=NR/N/PZ: controlla il nome.
-5. Se UM=NR e il nome contiene un peso (es. "5kg", "2kg", "500g", "5L"): estrai il peso e metti unita="kg" o "l", pesoConfezione=peso_in_kg_o_litri.
-   Esempi: "MAIONESE 5kg" → pesoConfezione=5, unita="kg" | "BURRO 2kg" → pesoConfezione=2, unita="kg" | "OLIO 5L" → pesoConfezione=5, unita="l" | "CREMA 300G" → pesoConfezione=0.3, unita="kg"
-6. Se UM=NR e nessun peso rilevante: pesoConfezione=0, unita="pz".
+REGOLE PREZZI - FONDAMENTALE:
+1. IVA NON E' SCONTO: L'ultima colonna di molte fatture italiane è l'aliquota IVA (4, 10, 22). NON metterla come sconto. Lo sconto è una colonna esplicita chiamata "Sconto" o "%". Se vedi 4/10/22 alla fine riga senza intestazione "sconto", metti sconto="".
+2. "prezzoUnitario" = valore della colonna "Prezzo" (già per kg, litro o pezzo). Per UM=KG/LT non dividere per quantità.
+3. Se c'è sconto reale: calcola tu. Esempio: Prezzo=23.10 Sconto=18% → prezzoUnitario=18.94.
+4. Per UM=NR/N/PZ con peso nel nome (es "BURRO 2kg", "MAIONESE 5kg", "OLIO 5L"): dividi prezzo per il peso. Esempio: MAIONESE 5kg Prezzo=19.90 → prezzoUnitario=3.98, unita="kg", pesoConfezione=5.
+5. Per UM=NR senza peso: prezzoUnitario = prezzo per pezzo, pesoConfezione=0, unita="pz".
 
 CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoListino":0.00,"prezzoUnitario":0.00,"pesoConfezione":0.0,"sconto":""}]}`
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"pesoConfezione":0.0,"sconto":""}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
@@ -1683,24 +1680,19 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
 
-      // Calcolo prezzo unitario client-side (affidabile)
+      // Calcolo prezzo unitario client-side
       const prezzoUnitario = (() => {
-        // Usa prezzoListino se disponibile, altrimenti prezzoUnitario
-        const rawListino = parseFloat(String(p.prezzoListino || p.prezzoUnitario || "0").replace(",", ".")) || 0
-        if (rawListino <= 0) return 0
+        const raw = parseFloat(String(p.prezzoUnitario || "0").replace(",", ".")) || 0
+        if (raw <= 0) return 0
 
-        // Applica peso confezione SOLO se UM è per pezzo (NR/PZ/N), non per KG/LT
-        const unitaNorm = (p.unita || "").trim().toLowerCase()
-        const isPerPiece = /^(nr|n|n\.|pz|pcs|pezzi|pezzo)$/.test(unitaNorm)
-        const peso = isPerPiece ? (parseFloat(String(p.pesoConfezione || "0").replace(",", ".")) || 0) : 0
-        let price = peso > 0 ? rawListino / peso : rawListino
-
-        // Applica sconto
+        // Verifica che lo sconto non sia in realtà un'aliquota IVA (4, 10, 22)
         const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
         const sconto = parseFloat(scontoStr)
-        if (sconto > 0 && sconto < 100) {
-          price = price * (1 - sconto / 100)
-        }
+        const IVA_RATES = [4, 10, 22, 5]
+        const isRealDiscount = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
+
+        let price = raw
+        if (isRealDiscount) price = price * (1 - sconto / 100)
 
         return Math.round(price * 100) / 100
       })()
@@ -4664,14 +4656,14 @@ function Onboarding({ onDone }) {
 }
 
 const NAV = [
-  { id: "inv",    label: "Fatture",     icon: "- ", group: "Gestione" },
-  { id: "ing",    label: "Magazzino",   icon: "v ", group: "Gestione" },
-  { id: "fc",     label: "Ricette",     icon: "-- ", group: "Gestione" },
-  { id: "dishes", label: "Piatti",      icon: "--", group: "Gestione" },
-  { id: "dash",   label: "Dashboard",   icon: "-- ", group: "Gestione" },
-  { id: "menu",   label: "Crea Menu",   icon: "'", group: "Gestione" },
-  { id: "spesa",  label: "Spesa",       icon: "--", group: "Gestione" },
-  { id: "turni",  label: "Turni",       icon: "", group: "Gestione" },
+  { id: "inv",    label: "Fatture",     icon: "🧾", group: "Gestione" },
+  { id: "ing",    label: "Magazzino",   icon: "📦", group: "Gestione" },
+  { id: "fc",     label: "Ricette",     icon: "📋", group: "Gestione" },
+  { id: "dishes", label: "Piatti",      icon: "🍽️", group: "Gestione" },
+  { id: "dash",   label: "Dashboard",   icon: "📊", group: "Gestione" },
+  { id: "menu",   label: "Crea Menu",   icon: "📄", group: "Gestione" },
+  { id: "spesa",  label: "Spesa",       icon: "🛒", group: "Gestione" },
+  { id: "turni",  label: "Turni",       icon: "📅", group: "Gestione" },
 ]
 
 export default function App() {
