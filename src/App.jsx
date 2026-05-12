@@ -73,7 +73,7 @@ function Fld({ label, children }) {
 
 const SOTTO1_ORDER = {
   "Carni":            ["Bovino", "Maiale", "Agnello", "Pollo", "Tacchino", "Anatra", "Coniglio", "Selvaggina"],
-  "Pesce":            ["Orata", "Branzino", "Salmone", "Pesce Spada", "Tonno", "Ricciola", "Dentice", "Cernia", "Ombrina", "Merluzzo", "Sogliola", "Rombo", "Trota", "Acciuga", "Sarda", "Sgombro", "Pagro", "Pesce di fondale", "Crostacei", "Molluschi"],
+  "Pesce":            ["Orata", "Branzino", "Salmone", "Pesce Spada", "Tonno", "Ricciola", "Dentice", "Cernia", "Ombrina", "Alghe", "Crostacei", "Molluschi", "Altri Pesci"],
   "Freschi":          ["Formaggi Nobili", "Latticini", "Salumi", "Altri Freschi"],
   "Frutta e Verdura": ["Frutta", "Verdura"],
   "Bevande":          ["Analcolici", "Alcolici"],
@@ -1483,16 +1483,14 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const promptBase = await loadPrompt()
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE PREZZI - FONDAMENTALE:
-1. IVA NON E' SCONTO: L'ultima colonna di molte fatture italiane è l'aliquota IVA (4, 10, 22). NON metterla come sconto. Lo sconto è una colonna esplicita chiamata "Sconto" o "%". Se vedi 4/10/22 alla fine riga senza intestazione "sconto", metti sconto="".
-2. "prezzoUnitario" = valore della colonna "Prezzo" (già per kg, litro o pezzo). Per UM=KG/LT non dividere per quantità.
-3. Se c'è sconto reale: calcola tu. Esempio: Prezzo=23.10 Sconto=18% → prezzoUnitario=18.94.
-4. Per UM=NR/N/PZ con peso nel nome (es "BURRO 2kg", "MAIONESE 5kg", "OLIO 5L"): dividi prezzo per il peso. Esempio: MAIONESE 5kg Prezzo=19.90 → prezzoUnitario=3.98, unita="kg", pesoConfezione=5.
-5. Per UM=NR senza peso: prezzoUnitario = prezzo per pezzo, pesoConfezione=0, unita="pz".
+REGOLE:
+1. "prezzoUnitario" = copia esattamente il valore della colonna "Prezzo" senza fare nessun calcolo.
+2. "sconto" = copia il valore della colonna "Sconto" se presente (solo il numero, es. "18"). ATTENZIONE: i numeri 4, 10, 22 alla fine di una riga sono aliquote IVA, NON sconti. Metti sconto="" se non c'è una colonna sconto esplicita.
+3. Per tutto il resto (unità, categoria, nome) trascrivi quello che vedi.
 
 CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"pesoConfezione":0.0,"sconto":""}]}`
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":""}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
@@ -1660,20 +1658,16 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
 
-      // Calcolo prezzo unitario client-side
+      // Prezzo: valore dalla fattura con eventuale sconto applicato
       const prezzoUnitario = (() => {
-        const raw = parseFloat(String(p.prezzoUnitario || "0").replace(",", ".")) || 0
-        if (raw <= 0) return 0
-
-        // Verifica che lo sconto non sia in realtà un'aliquota IVA (4, 10, 22)
+        const price = parseFloat(String(p.prezzoUnitario || "0").replace(",", ".")) || 0
+        if (price <= 0) return 0
         const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
         const sconto = parseFloat(scontoStr)
-        const IVA_RATES = [4, 10, 22, 5]
-        const isRealDiscount = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
-
-        let price = raw
-        if (isRealDiscount) price = price * (1 - sconto / 100)
-
+        const IVA_RATES = [4, 5, 10, 22]
+        if (sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)) {
+          return Math.round(price * (1 - sconto / 100) * 100) / 100
+        }
         return Math.round(price * 100) / 100
       })()
 
