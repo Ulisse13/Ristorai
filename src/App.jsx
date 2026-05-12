@@ -1646,7 +1646,8 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
     const prodotti = parsed.prodotti || []
     const foundList = prodotti.filter(p => p && p.nome).map(p => {
       // 1. Controlla prima il dizionario imparato dall'utente
-      const nomeKey = p.nome.toLowerCase().trim()
+      const learningKey = n => n.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().split(/\s+/).slice(0, 3).join(" ")
+      const nomeKey = learningKey(p.nome)
       const learnedMatch = learned && learned[nomeKey]
       // 2. Poi il DB locale
       const dbMatch = !learnedMatch ? lookupFood(p.nome) : null
@@ -1765,12 +1766,13 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
       setIngs(prev => [...prev, ...newIngs])
     }
 
-    // Impara le correzioni manuali dell'utente
+    // Impara le correzioni manuali dell'utente (su TUTTI i prodotti, non solo quelli con prezzo)
     const newLearned = { ...learned }
     let learnedChanged = false
-    toProcess.forEach(p => {
-      if (p.catChanged && p.cat) {
-        const key = (p.nomeEdit || p.nome).toLowerCase().trim()
+    const learningKey = n => n.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().split(/\s+/).slice(0, 3).join(" ")
+    found.filter(p => p.catChanged && p.cat).forEach(p => {
+      const key = learningKey(p.nomeEdit || p.nome)
+      if (key.length >= 3) {
         newLearned[key] = { cat: p.cat, sotto1: p.sotto1 || "", sotto2: p.sotto2 || "" }
         learnedChanged = true
       }
