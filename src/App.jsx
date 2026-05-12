@@ -354,8 +354,11 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     if (_migrated.current || ings.length === 0) return
     _migrated.current = true
     let changed = false
+    const VALID_CATS = ["Carni","Pesce","Freschi","Frutta e Verdura","Scatolame","Surgelati","Bevande","Vini","Detersivi"]
     const updated = ings.map(ing => {
       if (ing.cat === "Vini") return ing
+      // Salta se ha già sotto1 impostata (categoria già corretta o impostata manualmente)
+      if (ing.sotto1) return ing
       const m = lookupFood(ing.name)
       if (!m) return ing
       if (m.cat === ing.cat && m.sotto1 === ing.sotto1) return ing
@@ -1416,7 +1419,7 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
 
 //  -  -  INVOICES  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
 
-function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, isMobile }) {
+function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banchetti, setBanchetti, learned, setLearned, isMobile }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
@@ -1501,18 +1504,18 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       const promptBase = await loadPrompt()
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE PREZZI - FONDAMENTALE:
-1. La colonna "Prezzo" nella fattura è il prezzo UNITARIO LORDO (per kg, per litro, o per pezzo singolo).
-2. Se esiste una colonna "Sconto" con percentuale: prezzoUnitario = Prezzo × (1 - Sconto/100). Esempio: Prezzo=23,10 Sconto=18% → prezzoUnitario=18,94.
-3. Se il fornitore indica già "Valore unitario netto" usa quello direttamente.
-4. NON usare MAI la colonna "Importo" o "Totale riga" come prezzoUnitario.
-5. Per UM=KG: prezzoUnitario è già per kg, non dividere per quantità.
-6. Per UM=LT: prezzoUnitario è già per litro, non dividere per quantità.
-7. Per UM=NR/PZ/N: prezzoUnitario è per singolo pezzo/confezione, non dividere per quantità.
+REGOLE PREZZI:
+1. Copia ESATTAMENTE il valore della colonna "Prezzo" nel campo "prezzoListino" senza fare calcoli.
+2. Copia ESATTAMENTE il valore della colonna "Sconto" nel campo "sconto" (solo il numero, es. "18" non "18%").
+3. Nel campo "prezzoUnitario" metti 0 — sarà calcolato dal sistema.
+4. Per UM=KG o UM=LT: unita="kg" o "l". Per UM=NR/N/PZ: controlla il nome.
+5. Se UM=NR e il nome contiene un peso (es. "5kg", "2kg", "500g", "5L"): estrai il peso e metti unita="kg" o "l", pesoConfezione=peso_in_kg_o_litri.
+   Esempi: "MAIONESE 5kg" → pesoConfezione=5, unita="kg" | "BURRO 2kg" → pesoConfezione=2, unita="kg" | "OLIO 5L" → pesoConfezione=5, unita="l" | "CREMA 300G" → pesoConfezione=0.3, unita="kg"
+6. Se UM=NR e nessun peso rilevante: pesoConfezione=0, unita="pz".
 
 CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":""}]}`
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoListino":0.00,"prezzoUnitario":0.00,"pesoConfezione":0.0,"sconto":""}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
@@ -1665,26 +1668,47 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
 
     const prodotti = parsed.prodotti || []
     const foundList = prodotti.filter(p => p && p.nome).map(p => {
-      // DB locale ha SEMPRE priorità su AI per categoria e sottocategorie
-      const dbMatch = lookupFood(p.nome)
-      const cat = (dbMatch ? dbMatch.cat : null) || normCat(p.categoria) || guessCat(p.nome)
-      const sotto1Final = (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
-      const sotto2Final = (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
+      // 1. Controlla prima il dizionario imparato dall'utente
+      const nomeKey = p.nome.toLowerCase().trim()
+      const learnedMatch = learned && learned[nomeKey]
+      // 2. Poi il DB locale
+      const dbMatch = !learnedMatch ? lookupFood(p.nome) : null
+      const cat = (learnedMatch ? learnedMatch.cat : null) || (dbMatch ? dbMatch.cat : null) || normCat(p.categoria) || guessCat(p.nome)
+      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
+      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const nameLower = p.nome.toLowerCase()
       const existing = ings.find(i =>
         i.name.toLowerCase().includes(nameLower.split(" ")[0]) ||
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
 
+      // Calcolo prezzo unitario client-side (affidabile)
+      const prezzoUnitario = (() => {
+        // Usa prezzoListino se disponibile, altrimenti prezzoUnitario
+        const rawListino = parseFloat(String(p.prezzoListino || p.prezzoUnitario || "0").replace(",", ".")) || 0
+        if (rawListino <= 0) return 0
+
+        // Applica peso confezione (es. Maionese 5kg NR → prezzo/5)
+        const peso = parseFloat(String(p.pesoConfezione || "0").replace(",", ".")) || 0
+        let price = peso > 0 ? rawListino / peso : rawListino
+
+        // Applica sconto
+        const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
+        const sconto = parseFloat(scontoStr)
+        if (sconto > 0 && sconto < 100) {
+          price = price * (1 - sconto / 100)
+        }
+
+        return Math.round(price * 100) / 100
+      })()
+
       return {
         nome: p.nome, nomeEdit: p.nome,
         quantita: p.quantita, unita: p.unita,
-        prezzoUnitario: (() => {
-          const raw = String(p.prezzoUnitario || "0").replace(",", ".")
-          return Math.round(parseFloat(raw) * 100) / 100
-        })(),
+        prezzoUnitario,
         sconto: p.sconto || "",
         sotto1: sotto1Final, sotto2: sotto2Final,
+        catOriginal: cat, catChanged: false,
         tipo: existing ? "update" : "new",
         ingId: existing ? existing.id : null,
         ingName: existing ? existing.name : null,
@@ -1738,13 +1762,14 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         if (!match) return ing
         const newCur = match.prezzoUnitario
         const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-        // Se    un vino, aggiorna anche tipoVino e regioneVino se disponibili
         const vinoFields = ing.cat === "Vini" ? {
           ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
           ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
           ...(match.produttore ? { produttore: match.produttore } : {}),
         } : {}
-        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg, ...vinoFields }
+        // Aggiorna anche cat/sotto1/sotto2 se l'utente li ha modificati nella revisione
+        const catFields = match.cat && match.cat !== ing.cat ? { cat: match.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" } : {}
+        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg, ...vinoFields, ...catFields }
       }))
     }
 
@@ -1765,6 +1790,18 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
+
+    // Impara le correzioni manuali dell'utente
+    const newLearned = { ...learned }
+    let learnedChanged = false
+    toProcess.forEach(p => {
+      if (p.catChanged && p.cat) {
+        const key = (p.nomeEdit || p.nome).toLowerCase().trim()
+        newLearned[key] = { cat: p.cat, sotto1: p.sotto1 || "", sotto2: p.sotto2 || "" }
+        learnedChanged = true
+      }
+    })
+    if (learnedChanged) setLearned(newLearned)
 
     // Salva fattura
     const v = +fattura.vat || 0
@@ -2110,7 +2147,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
                         </label>
                         <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: STYLE.acd })}
                           value={p.cat}
-                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value, sotto1: "", sotto2: "" } : x))}>
+                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value, sotto1: "", sotto2: "", catChanged: e.target.value !== x.catOriginal } : x))}>
                           {CATS.map(c => <option key={c}>{c}</option>)}
                         </select>
                       </div>
@@ -4645,6 +4682,7 @@ export default function App() {
   useEffect(() => { const h = () => setW(window.innerWidth); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h) }, [])
 
   const [ings,      setIngs]      = useState([])
+  const [learned,    setLearned]   = useState({}) // prodotti imparati dall'utente
   const [dishes,    setDishes]    = useState([])
   const [invs,      setInvs]      = useState([])
   const [menus, setMenus] = useState([])
@@ -4682,6 +4720,7 @@ export default function App() {
           if (d.spesa)      setSpesa(d.spesa)
           if (d.banchetti)  setBanchetti(d.banchetti)
           if (d.turni)      setTurni(d.turni)
+          if (d.learned)    setLearned(d.learned)
           // Utente esistente  -  salta onboarding
           setOnboarded(true)
         } else {
@@ -4697,9 +4736,9 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded: onboarded }, { merge: true })
+    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded: onboarded, learned }, { merge: true })
       .catch(e => console.log("Save error:", e))
-  }, [ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded, ready, user])
+  }, [ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded, learned, ready, user])
 
   async function deleteAccount() {
     if (!window.confirm("Sei sicuro di voler eliminare il tuo account? Tutti i tuoi dati verranno cancellati definitivamente.")) return
@@ -4917,7 +4956,7 @@ export default function App() {
         case "dash":   return <Dashboard ings={ings} dishes={dishes} isMobile={isMobile} />
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={setPage} setEditDish={setEditDish} />
-        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} banchetti={banchetti} setBanchetti={setBanchetti} isMobile={isMobile} />
+        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} banchetti={banchetti} setBanchetti={setBanchetti} learned={learned} setLearned={setLearned} isMobile={isMobile} />
         case "fc":     return <Ricette dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} />
         case "menu":   return <CreateMenu menus={menus} setMenus={setMenus} dishes={dishes} isMobile={isMobile} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} isMobile={isMobile} />
