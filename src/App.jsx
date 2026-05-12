@@ -71,6 +71,14 @@ function Fld({ label, children }) {
   return <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 12 }}><label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2 }}>{label}</label>{children}</div>
 }
 
+const SOTTO1_ORDER = {
+  "Carni":            ["Bovino", "Maiale", "Agnello", "Pollo", "Tacchino", "Anatra", "Coniglio", "Selvaggina"],
+  "Pesce":            ["Orata", "Branzino", "Salmone", "Pesce Spada", "Tonno", "Ricciola", "Dentice", "Cernia", "Ombrina", "Merluzzo", "Sogliola", "Rombo", "Trota", "Acciuga", "Sarda", "Sgombro", "Pagro", "Pesce di fondale", "Crostacei", "Molluschi"],
+  "Freschi":          ["Formaggi Nobili", "Latticini", "Salumi", "Altri Freschi"],
+  "Frutta e Verdura": ["Frutta", "Verdura"],
+  "Bevande":          ["Analcolici", "Alcolici"],
+}
+
 function Dashboard({ ings, dishes, isMobile }) {
   const [tab, setTab] = useState("prezzi") // "prezzi" | "insights"
 
@@ -298,13 +306,6 @@ function Dashboard({ ings, dishes, isMobile }) {
 
 function Ingredients({ ings, setIngs, invs, isMobile }) {
   const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Scatolame", "Surgelati", "Bevande", "Vini", "Detersivi"]
-  const SOTTO1_ORDER = {
-    "Carni":            ["Bovino", "Maiale", "Agnello", "Pollo", "Tacchino", "Anatra", "Coniglio", "Selvaggina"],
-    "Pesce":            ["Orata", "Branzino", "Salmone", "Pesce Spada", "Tonno", "Ricciola", "Dentice", "Cernia", "Ombrina", "Merluzzo", "Sogliola", "Rombo", "Trota", "Acciuga", "Sarda", "Sgombro", "Pagro", "Pesce di fondale", "Crostacei", "Molluschi"],
-    "Freschi":          ["Formaggi Nobili", "Latticini", "Salumi", "Altri Freschi"],
-    "Frutta e Verdura": ["Frutta", "Verdura"],
-    "Bevande":          ["Analcolici", "Alcolici"],
-  }
   const VINO_TIPI = ["Rossi", "Bianchi", "Ros  ", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
