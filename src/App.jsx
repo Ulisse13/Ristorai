@@ -374,7 +374,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
 
   function openAdd() {
     setEdit(null)
-    setForm({ name: "", cat: selCat || "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
+    setForm({ name: "", cat: selCat || "Carni", sotto1: "", sotto2: "", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
     setErr({})
     setOpen(true)
   }
@@ -382,7 +382,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   function openEdit(ing) {
     setEdit(ing)
     setForm({
-      name: ing.name, cat: ing.cat, unit: ing.unit,
+      name: ing.name, cat: ing.cat, sotto1: ing.sotto1 || "", sotto2: ing.sotto2 || "", unit: ing.unit,
       cur: String(ing.cur),
       confPrice: ing.confPrice ? String(ing.confPrice) : "",
       confWeight: ing.confWeight ? String(ing.confWeight) : ""
@@ -420,6 +420,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     const newAvg = edit ? Math.round(((oldAvg * 0.7) + (cur * 0.3)) * 100) / 100 : cur
     const d = {
       name: form.name.trim(), cat: form.cat,
+      sotto1: form.sotto1 || "", sotto2: form.sotto2 || "",
       unit: unitBase, cur, avg: newAvg,
       prev: edit ? edit.cur : cur,
       ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {}),
@@ -489,6 +490,14 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                   </select>
                 </Fld>
               </div>
+              {SOTTO1_ORDER[form.cat] && (
+                <Fld label="Sottocategoria">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.sotto1 || ""} onChange={e => setForm(f => ({ ...f, sotto1: e.target.value }))}>
+                    <option value="">— seleziona —</option>
+                    {SOTTO1_ORDER[form.cat].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </Fld>
+              )}
               {form.cat === "Vini" && (
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <Fld label="Tipologia">
@@ -779,7 +788,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                       </div>
                     )}
                   </div>
-                  <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}> </button>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    <button onClick={() => openEdit(ing)} style={{ background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r, padding: "3px 10px", color: STYLE.t2, fontSize: 11, fontFamily: "inherit", cursor: "pointer" }}>Modifica</button>
+                    <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                  </div>
                 </div>
                 <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
                   <span style={{ fontSize: 14, color: spiked ? STYLE.red : STYLE.t2, fontWeight: spiked ? 700 : 400 }}>
@@ -857,7 +869,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                       })()}
                     </td>
                     <td style={{ padding: "11px 16px", borderBottom: STYLE.bds, textAlign: "right" }}>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina"> </button>
+                      <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                        <button onClick={() => openEdit(ing)} style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 8px", borderRadius: STYLE.r }}>Modifica</button>
+                        <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">✕</button>
+                      </div>
                     </td>
                   </tr>
                 )
@@ -1484,7 +1499,20 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       // Carica prompt da Firebase
       setProg(10); setProgLabel("Caricamento prompt AI...")
       const promptBase = await loadPrompt()
-      const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown. CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi. PREZZI: prezzoUnitario deve essere sempre per kg, per litro o per pezzo singolo (mai per collo o cartone). {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o pz o l","prezzoUnitario":0.00,"sconto":""}]}`
+      const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
+
+REGOLE PREZZI - FONDAMENTALE:
+1. La colonna "Prezzo" nella fattura è il prezzo UNITARIO LORDO (per kg, per litro, o per pezzo singolo).
+2. Se esiste una colonna "Sconto" con percentuale: prezzoUnitario = Prezzo × (1 - Sconto/100). Esempio: Prezzo=23,10 Sconto=18% → prezzoUnitario=18,94.
+3. Se il fornitore indica già "Valore unitario netto" usa quello direttamente.
+4. NON usare MAI la colonna "Importo" o "Totale riga" come prezzoUnitario.
+5. Per UM=KG: prezzoUnitario è già per kg, non dividere per quantità.
+6. Per UM=LT: prezzoUnitario è già per litro, non dividere per quantità.
+7. Per UM=NR/PZ/N: prezzoUnitario è per singolo pezzo/confezione, non dividere per quantità.
+
+CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
+
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":""}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
