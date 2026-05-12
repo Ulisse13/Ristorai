@@ -347,27 +347,6 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
   const [err, setErr]           = useState({})
 
-
-  // Auto-corregge silenziosamente categorie sbagliate al caricamento
-  const _migrated = useRef(false)
-  useEffect(() => {
-    if (_migrated.current || ings.length === 0) return
-    _migrated.current = true
-    let changed = false
-    const VALID_CATS = ["Carni","Pesce","Freschi","Frutta e Verdura","Scatolame","Surgelati","Bevande","Vini","Detersivi"]
-    const updated = ings.map(ing => {
-      if (ing.cat === "Vini") return ing
-      // Salta se ha già sotto1 impostata (categoria già corretta o impostata manualmente)
-      if (ing.sotto1) return ing
-      const m = lookupFood(ing.name)
-      if (!m) return ing
-      if (m.cat === ing.cat && m.sotto1 === ing.sotto1) return ing
-      changed = true
-      return { ...ing, cat: m.cat, sotto1: m.sotto1 || "", sotto2: m.sotto2 || "" }
-    })
-    if (changed) setIngs(updated)
-  }, [ings])
-
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
 
   // Categorie con navigazione a livelli (sotto1 cards)
@@ -4620,7 +4599,7 @@ function Onboarding({ onDone }) {
       {/* Step card */}
       <div style={{ width: "100%", maxWidth: 360, background: STYLE.surf, border: STYLE.bd, borderRadius: 20, padding: "32px 24px", marginBottom: 28, textAlign: "center" }}>
         <div style={{ width: 64, height: 64, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 16, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", fontSize: 28, color: STYLE.ac }}>
-          {cur.icon}
+          <NavIcon id={cur.id} />
         </div>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 12 }}>{cur.title}</div>
         <div style={{ fontSize: 14, color: STYLE.t2, lineHeight: 1.7 }}>{cur.desc}</div>
@@ -4655,15 +4634,29 @@ function Onboarding({ onDone }) {
   )
 }
 
+
+function NavIcon({ id }) {
+  const s = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }
+  if (id === "inv")    return <svg {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
+  if (id === "ing")    return <svg {...s}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+  if (id === "fc")     return <svg {...s}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+  if (id === "dishes") return <svg {...s}><circle cx="12" cy="12" r="9"/><path d="M9 7v10M15 7v4a2 2 0 0 1-4 0V7"/></svg>
+  if (id === "dash")   return <svg {...s}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  if (id === "menu")   return <svg {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
+  if (id === "spesa")  return <svg {...s}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+  if (id === "turni")  return <svg {...s}><circle cx="12" cy="12" r="9"/><polyline points="12,6 12,12 16,14"/></svg>
+  return null
+}
+
 const NAV = [
-  { id: "inv",    label: "Fatture",     icon: "🧾", group: "Gestione" },
-  { id: "ing",    label: "Magazzino",   icon: "📦", group: "Gestione" },
-  { id: "fc",     label: "Ricette",     icon: "📋", group: "Gestione" },
-  { id: "dishes", label: "Piatti",      icon: "🍽️", group: "Gestione" },
-  { id: "dash",   label: "Dashboard",   icon: "📊", group: "Gestione" },
-  { id: "menu",   label: "Crea Menu",   icon: "📄", group: "Gestione" },
-  { id: "spesa",  label: "Spesa",       icon: "🛒", group: "Gestione" },
-  { id: "turni",  label: "Turni",       icon: "📅", group: "Gestione" },
+  { id: "inv",    label: "Fatture",   group: "Gestione" },
+  { id: "ing",    label: "Magazzino", group: "Gestione" },
+  { id: "fc",     label: "Ricette",   group: "Gestione" },
+  { id: "dishes", label: "Piatti",    group: "Gestione" },
+  { id: "dash",   label: "Dashboard", group: "Gestione" },
+  { id: "menu",   label: "Crea Menu", group: "Gestione" },
+  { id: "spesa",  label: "Spesa",     group: "Gestione" },
+  { id: "turni",  label: "Turni",     group: "Gestione" },
 ]
 
 export default function App() {
@@ -4980,7 +4973,7 @@ export default function App() {
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: STYLE.surf, borderTop: STYLE.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
         {NAV.map(n => (
           <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", background: page === n.id ? "rgba(90,89,99,0.25)" : "none", border: "none", borderRadius: 10, cursor: "pointer", color: page === n.id ? STYLE.t3 : STYLE.ac }}>
-            <span style={{ fontSize: 22 }}>{n.icon}</span>
+            <NavIcon id={n.id} />
             <span style={{ fontSize: 9, fontWeight: 600 }}>{n.label}</span>
           </button>
         ))}
@@ -5020,7 +5013,7 @@ export default function App() {
                 <button key={n.id} onClick={() => setPage(n.id)} title={collapsed ? n.label : undefined}
                   style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", gap: 8, padding: collapsed ? "9px 0" : "7px 10px 7px 14px", background: page === n.id ? STYLE.acg : "none", border: "none", cursor: "pointer", color: page === n.id ? STYLE.ac : STYLE.t2, fontFamily: "inherit", fontSize: 13, textAlign: "left", position: "relative" }}>
                   {page === n.id && <div style={{ position: "absolute", left: 0, top: 4, bottom: 4, width: 2, background: STYLE.ac, borderRadius: "0 2px 2px 0" }} />}
-                  <span style={{ fontSize: 14, flexShrink: 0 }}>{n.icon}</span>
+                  <NavIcon id={n.id} />
                   {!collapsed && <span style={{ flex: 1, fontSize: 12.5 }}>{n.label}</span>}
                   {!collapsed && n.badge && <span style={{ fontSize: 9, fontWeight: 700, padding: "1px 5px", background: STYLE.ac, color: "#0d0d0f", borderRadius: 999 }}>{n.badge}</span>}
                   {collapsed && n.badge && <span style={{ position: "absolute", top: 5, right: 5, width: 6, height: 6, background: STYLE.ac, borderRadius: "50%" }} />}
@@ -5041,7 +5034,7 @@ export default function App() {
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 52, background: STYLE.surf, borderBottom: STYLE.bds, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1 }}>
-            <span style={{ color: STYLE.ac, opacity: 0.8 }}>{NAV.find(n => n.id === page) && NAV.find(n => n.id === page).icon}</span>
+            <span style={{ color: STYLE.ac, opacity: 0.8 }}><NavIcon id={page} /></span>
             {NAV.find(n => n.id === page) && NAV.find(n => n.id === page).label}
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
