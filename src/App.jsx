@@ -2081,14 +2081,19 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
                         </label>
                         <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12, borderColor: STYLE.acd })}
                           value={p.cat}
-                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value } : x))}>
+                          onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value, sotto1: "", sotto2: "" } : x))}>
                           {CATS.map(c => <option key={c}>{c}</option>)}
                         </select>
                       </div>
-                      {(p.sotto1 || p.sotto2) && (
-                        <div style={{ gridColumn: "1/-1", display: "flex", gap: 6, marginTop: 4 }}>
-                          {p.sotto1 && <span style={{ fontSize: 10, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 4, padding: "2px 7px" }}>{p.sotto1}</span>}
-                          {p.sotto2 && <span style={{ fontSize: 10, color: STYLE.t2, background: STYLE.el, border: STYLE.bds, borderRadius: 4, padding: "2px 7px" }}>{p.sotto2}</span>}
+                      {SOTTO1_ORDER[p.cat] && (
+                        <div>
+                          <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Sottocategoria</label>
+                          <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
+                            value={p.sotto1 || ""}
+                            onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, sotto1: e.target.value } : x))}>
+                            <option value="">— seleziona —</option>
+                            {SOTTO1_ORDER[p.cat].map(s => <option key={s} value={s}>{s}</option>)}
+                          </select>
                         </div>
                       )}
                       <div>
