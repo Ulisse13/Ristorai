@@ -2,16 +2,13 @@ import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
 
 function cleanJSON(str) {
-  let s = str.trim()
+  const s = str.trim()
   let depth = 0, end = 0
   for (let i = 0; i < s.length; i++) {
     if (s[i] === "{") depth++
     else if (s[i] === "}") { depth--; if (depth === 0) { end = i; break } }
   }
-  s = end > 0 ? s.slice(0, end + 1) : s
-  s = s.replace(/[ -
--]/g, "")
-  return s
+  return end > 0 ? s.slice(0, end + 1) : s
 }
 import { lookupFood } from "./foodDB"
 
