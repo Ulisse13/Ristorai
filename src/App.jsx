@@ -597,7 +597,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
                     <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
                       <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
                         style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "4px 10px", color: STYLE.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}> </button>
+                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
                     </div>
                   </div>
                 ))}
@@ -1024,7 +1024,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                               </div>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginLeft: 8, flexShrink: 0 }}>
-                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}> </button>
+                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                               <button onClick={() => { if(setEditDish && setPage) { setEditDish(v); setPage("fc") } }}
                                 style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r }}>Modifica</button>
                             </div>
@@ -1098,7 +1098,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                 <div style={row({ gap: 8 })}>
                   <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
                     style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
-                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}> </button>
+                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
                 </div>
               </div>
               {/* Food cost bar */}
@@ -1683,8 +1683,8 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         ingName: existing ? existing.name : null,
         cat, include: true,
         ...(cat === "Vini" ? {
-          tipoVino: p.sotto1 || guessTipoVino(p.nome),
-          regioneVino: p.sotto2 || guessRegioneVino(p.nome),
+          tipoVino: guessTipoVino(p.nome),
+          regioneVino: guessRegioneVino(p.nome),
           produttore: p.produttore || ""
         } : {})
       }
@@ -1755,7 +1755,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         fornitore: fattura.sup.trim() || "",
         sotto1: p.sotto1 || "",
         sotto2: p.sotto2 || "",
-        ...(p.cat === "Vini" ? { tipoVino: p.sotto1 || p.tipoVino || "Rossi", regioneVino: p.sotto2 || p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
+        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
@@ -2121,7 +2121,26 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
                           {CATS.map(c => <option key={c}>{c}</option>)}
                         </select>
                       </div>
-                      {SOTTO1_ORDER[p.cat] && (
+                      {p.cat === "Vini" ? (
+                        <>
+                          <div>
+                            <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Tipologia</label>
+                            <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
+                              value={p.tipoVino || "Rossi"}
+                              onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, tipoVino: e.target.value } : x))}>
+                              {["Rossi","Bianchi","Rosé","Bollicine"].map(t => <option key={t}>{t}</option>)}
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Regione</label>
+                            <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
+                              value={p.regioneVino || "Altre regioni"}
+                              onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, regioneVino: e.target.value } : x))}>
+                              {["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"].map(r => <option key={r}>{r}</option>)}
+                            </select>
+                          </div>
+                        </>
+                      ) : SOTTO1_ORDER[p.cat] ? (
                         <div>
                           <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Sottocategoria</label>
                           <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
@@ -2131,7 +2150,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
                             {SOTTO1_ORDER[p.cat].map(s => <option key={s} value={s}>{s}</option>)}
                           </select>
                         </div>
-                      )}
+                      ) : null}
                       <div>
                         <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Prezzo unitario v</label>
                         <input type="text" inputMode="decimal"
@@ -4156,7 +4175,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                     <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
                     <span style={{ fontSize: 14, color: STYLE.t1 }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}> </button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                 </div>
               ))}
             </div>
@@ -4174,7 +4193,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                     </div>
                     <span style={{ fontSize: 14, color: STYLE.t3, textDecoration: "line-through" }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}> </button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                 </div>
               ))}
             </div>
