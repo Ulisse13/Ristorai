@@ -1,5 +1,18 @@
 import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
+
+function cleanJSON(str) {
+  let s = str.trim()
+  let depth = 0, end = 0
+  for (let i = 0; i < s.length; i++) {
+    if (s[i] === "{") depth++
+    else if (s[i] === "}") { depth--; if (depth === 0) { end = i; break } }
+  }
+  s = end > 0 ? s.slice(0, end + 1) : s
+  s = s.replace(/[ -
+-]/g, "")
+  return s
+}
 import { lookupFood } from "./foodDB"
 
 class ErrorBoundary extends Component {
@@ -1208,21 +1221,6 @@ function BanchettiTab({ banchetti, setBanchetti, isMobile }) {
         img.src = url
       } catch(e) { res(file) }
     })
-  }
-
-  function cleanJSON(str) {
-    // Rimuove testo extra dopo il JSON, corregge problemi comuni
-    let s = str.trim()
-    // Trova la fine corretta del JSON contando le parentesi
-    let depth = 0, end = 0
-    for (let i = 0; i < s.length; i++) {
-      if (s[i] === "{") depth++
-      else if (s[i] === "}") { depth--; if (depth === 0) { end = i; break } }
-    }
-    s = end > 0 ? s.slice(0, end + 1) : s
-    // Rimuove caratteri di controllo
-    s = s.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, "")
-    return s
   }
 
   async function handleFile(f) {
