@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
 import { lookupFood } from "./foodDB"
+import { detectInvoiceSchema, schemaHint } from "./invoiceSchemas"
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null } }
@@ -316,6 +317,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
   const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
   const [selTipo, setSelTipo] = useState(null)
+  const [selRegione, setSelRegione] = useState(null)
   const [selSotto1, setSelSotto1] = useState(null)
   const [editVino, setEditVino] = useState(null) // vino in modifica
   const [editVinoForm, setEditVinoForm] = useState({ name: "", tipoVino: "Rossi", regioneVino: "Piemonte", produttore: "", cur: "" })
@@ -540,7 +542,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     if (!selTipo) return (
       <div>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
+          <button onClick={() => { setSelCat(null); setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
           <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
           <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Vini</span>
         </div>
@@ -549,7 +551,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
           {VINO_TIPI.map(tipo => {
             const count = vini.filter(v => v.tipoVino === tipo).length
             return (
-              <div key={tipo} onClick={() => setSelTipo(tipo)}
+              <div key={tipo} onClick={() => { setSelTipo(tipo); setSelRegione(null) }}
                 style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
                 <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{tipo}</div>
@@ -560,7 +562,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
         </div>
       </div>
     )
-    // Tipo selected  -  show by regione
+    // Tipo selected
     const byTipo = vini.filter(v => v.tipoVino === selTipo)
     const REGIONI_IT_ING = {
       Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
@@ -568,43 +570,65 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
       "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
       Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
     }
-    const regioniOrdinate = REGIONI_IT_ING[selTipo] || VINO_REGIONI
-    return (
+    const regioniOrdinate = (REGIONI_IT_ING[selTipo] || VINO_REGIONI).filter(r => byTipo.some(v => v.regioneVino === r))
+
+    // Level 2: regione not selected → show regione CARDS
+    if (!selRegione) return (
       <div>
         <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
+          <button onClick={() => { setSelCat(null); setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
           <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <button onClick={() => setSelTipo(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
+          <button onClick={() => { setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
           <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
           <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selTipo}</span>
         </div>
         {byTipo.length === 0 ? (
           <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun vino in questa tipologia</div>
         ) : (
-          regioniOrdinate.map(reg => {
-            const byReg = byTipo.filter(v => v.regioneVino === reg)
-            if (byReg.length === 0) return null
-            return (
-              <div key={reg} style={{ marginBottom: 20 }}>
-                <div style={{ fontSize: 11, color: STYLE.t3, fontStyle: "italic", marginBottom: 8, paddingBottom: 4, borderBottom: STYLE.bds }}>{reg}</div>
-                {byReg.map(ing => (
-                  <div key={ing.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }), display: "flex", alignItems: "center", gap: 12 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: ing.produttore ? 2 : 0 }}>{ing.name}</div>
-                      {ing.produttore && <div style={{ fontSize: 11, color: STYLE.ac, fontStyle: "italic", marginBottom: 2 }}>{ing.produttore}</div>}
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(ing.cur)}/{ing.unit}</div>
-                    </div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-                      <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
-                        style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "4px 10px", color: STYLE.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
-                      <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )
-          })
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 12 }}>
+            {regioniOrdinate.map(reg => {
+              const count = byTipo.filter(v => v.regioneVino === reg).length
+              return (
+                <div key={reg} onClick={() => setSelRegione(reg)}
+                  style={card({ padding: "16px 14px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
+                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.3 }} />
+                  <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 4 }}>{reg}</div>
+                  <div style={{ fontSize: 11, color: STYLE.t3 }}>{count} vini</div>
+                </div>
+              )
+            })}
+          </div>
         )}
+      </div>
+    )
+
+    // Level 3: regione selected → show wines
+    const byRegione = byTipo.filter(v => v.regioneVino === selRegione)
+    return (
+      <div>
+        <div style={row({ marginBottom: 16 })}>
+          <button onClick={() => { setSelCat(null); setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <button onClick={() => { setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <button onClick={() => setSelRegione(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>{selTipo}</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selRegione}</span>
+        </div>
+        {byRegione.map(ing => (
+          <div key={ing.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }), display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: ing.produttore ? 2 : 0 }}>{ing.name}</div>
+              {ing.produttore && <div style={{ fontSize: 11, color: STYLE.ac, fontStyle: "italic", marginBottom: 2 }}>{ing.produttore}</div>}
+              <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(ing.cur)}/{ing.unit}</div>
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+              <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
+                style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "4px 10px", color: STYLE.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
+              <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
+            </div>
+          </div>
+        ))}
         {/* Modal modifica vino */}
         {editVino && (
           <div onClick={e => e.target === e.currentTarget && setEditVino(null)}
@@ -1481,16 +1505,47 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       // Carica prompt da Firebase
       setProg(10); setProgLabel("Caricamento prompt AI...")
       const promptBase = await loadPrompt()
+      let extractedText = ""
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE:
-1. "prezzoUnitario" = copia esattamente il valore della colonna "Prezzo" senza fare nessun calcolo.
-2. "sconto" = copia il valore della colonna "Sconto" se presente (solo il numero, es. "18"). ATTENZIONE: i numeri 4, 10, 22 alla fine di una riga sono aliquote IVA, NON sconti. Metti sconto="" se non c'è una colonna sconto esplicita.
-3. Per tutto il resto (unità, categoria, nome) trascrivi quello che vedi.
+REGOLE PREZZI — IDENTIFICA LO SCHEMA E SEGUI L'ESEMPIO CORRISPONDENTE:
 
-CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
+SCHEMA A — Fattura con colonna Sconto esplicita sulla stessa riga del prodotto:
+Struttura: Descrizione | UM | Qtà | Prezzo | Sconto% | Importo | IVA
+Regola: prezzoUnitario = Prezzo × (1 - Sconto/100). Se Sconto è vuoto: prezzoUnitario = Prezzo.
+Attenzione: l'ultima colonna (4, 5, 10, 22) è IVA — NON è sconto.
+Esempi:
+  Prodotto A | KG | 29,2 | 72,00 | 25,0 | 1576,80 | 10 → prezzoUnitario=54.00
+  Prodotto B | KG | 8,9  | 23,10 | 18,0 |  168,58 | 10 → prezzoUnitario=18.94
+  Prodotto C | NR | 2    | 21,00 |      |   42,00 | 10 → prezzoUnitario=21.00 (no sconto)
+  Prodotto D | NR | 4    |  3,60 |      |   14,40 | 22 → prezzoUnitario=3.60 (22=IVA non sconto)
 
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":"","produttore":"solo per vini: nome cantina o produttore se presente"}]}`
+SCHEMA B — Fattura senza colonna Sconto, Prezzo già netto, IVA in ultima colonna:
+Struttura: Descrizione | UM | Qtà | Prezzo | Importo | IVA
+Regola: prezzoUnitario = Prezzo direttamente. Non applicare nessuno sconto.
+Esempi:
+  Prodotto E | LT |  20 |  5,90 | 118,00 |  4 → prezzoUnitario=5.90
+  Prodotto F | KG |  10 |  2,00 |   8,00 | 10 → prezzoUnitario=2.00
+  Prodotto G | N. |   2 | 19,90 |  39,80 | 10 → prezzoUnitario=19.90
+
+SCHEMA C — Fattura vini con UM=Pezzi, Prezzo già per bottiglia:
+Struttura: Descrizione | UM=Pezzi | Qtà bottiglie | Prezzo/bottiglia | Importo
+Regola: prezzoUnitario = Prezzo direttamente (già per bottiglia). Non dividere per quantità.
+Esempi:
+  Vino A | Pezzi | 36 | 10,69 | 384,71 → prezzoUnitario=10.69
+  Vino B | Pezzi |  6 | 30,00 | 180,00 → prezzoUnitario=30.00
+
+SCHEMA D — Fattura vini con UM=PAC (cartone), sconto su riga separata sopra:
+Struttura: riga sopra "% X,00 importo_netto" poi riga prodotto con CART.6 o AST.CT.6 | UM=PAC | Qtà | Prezzo/cartone
+Regola: prezzoUnitario = (Prezzo × (1 - sconto/100)) / 6  [6 bottiglie per cartone]
+Esempi:
+  riga: % 9,00 / Vino C CART.6 | PAC | 5 | 51,60 → prezzoUnitario=7.83 (51.60×0.91/6)
+  riga: % 9,00 / Vino D CART.6 | PAC | 3 | 57,60 → prezzoUnitario=8.74 (57.60×0.91/6)
+  riga: % 9,00 / Vino E AST.CT.6 | PAC | 1 | 114,00 → prezzoUnitario=17.29 (114×0.91/6)
+
+${hint}CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
+
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":"","produttore":"solo per vini"}]}\`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
@@ -1507,10 +1562,12 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         const arrayBuffer = await f.arrayBuffer()
         const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise
         let fullText = ""
+        let extractedText = ""
         for (let i = 1; i <= pdfDoc.numPages; i++) {
           const page = await pdfDoc.getPage(i)
           const tc = await page.getTextContent()
           fullText += tc.items.map(item => item.str).join(" ") + "\n"
+          extractedText = fullText
         }
 
         setProg(45); setProgLabel("Analisi AI in corso...")
@@ -1522,7 +1579,8 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
-            messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
+            const hint = schemaHint(detectInvoiceSchema(fullText))
+            messages: [{ role: "user", content: PROMPT.replace("${hint}", hint) + "\n\nTESTO FATTURA:\n" + fullText }]
           })
         })
         clearTimeout(to)
@@ -1535,6 +1593,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
 
       } else {
         //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
+        const hint = ""
         setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
         setProg(35); setProgLabel("Lettura immagine...")
@@ -1605,8 +1664,20 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
       return "Scatolame"
     }
 
+    // Pulisce il nome del vino rimuovendo codici articolo, quantità, annate, formati
+    function cleanWineName(nome) {
+      return nome
+        .replace(/PAC|B[0-9]+V[A-Z]+Q?|[A-Z]{2,6}[0-9]{5,}/g, "") // codici articolo
+        .replace(/(CART|AST\.CT|CT|CASSA|ASTUCCIO|SCATOLA|CS)\.?\s*\d+/gi, "") // cartoni
+        .replace(/\d{3,4}\s*ML|\d{1,2}[.,]\d\s*L|750|375|1500|1\.5/gi, "") // formati
+        .replace(/(19|20)\d{2}/g, "") // annate
+        .replace(/(MILLESIMATO|MILLESIM|MILL)/gi, "millesimato")
+        .replace(/\s+/g, " ").trim()
+    }
+
     function guessTipoVino(nome) {
-      const dbResult = lookupWine(nome)
+      const cleaned = cleanWineName(nome)
+      const dbResult = lookupWine(cleaned) || lookupWine(nome)
       if (dbResult) return dbResult.tipo
       const n = nome.toLowerCase()
       if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante/.test(n)) return "Bollicine"
@@ -1616,6 +1687,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
     }
 
     function guessRegioneVino(nome) {
+      const cleaned = cleanWineName(nome)
       const n = nome.toLowerCase()
       // Controlla prima il nome direttamente (più affidabile per nomi lunghi)
       if (/sicilia|etna|nero d.avola|nerello|marsala/i.test(nome)) return "Sicilia"
@@ -1633,7 +1705,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
       if (/puglia|primitivo|negroamaro|salice salentino/i.test(nome)) return "Puglia"
       if (/calabria|ciro|gaglioppo/i.test(nome)) return "Calabria"
       // Poi controlla DB
-      const dbResult = lookupWine(nome)
+      const dbResult = lookupWine(cleaned) || lookupWine(nome)
       if (dbResult && dbResult.regione !== "Altre regioni") return dbResult.regione
       if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto|arneis|conterno|giacosa|ceretto|vietti|gaja/.test(n)) return "Piemonte"
       if (/chianti|brunello|vernaccia|bolgheri|toscana|sassicaia|ornellaia|tignanello|antinori|frescobaldi|banfi/.test(n)) return "Toscana"
