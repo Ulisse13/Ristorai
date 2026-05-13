@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
 import { lookupFood } from "./foodDB"
-import { detectInvoiceSchema, schemaHint } from "./invoiceSchemas"
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null } }
@@ -1506,46 +1505,19 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       setProg(10); setProgLabel("Caricamento prompt AI...")
       const promptBase = await loadPrompt()
       let extractedText = ""
-      const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione italiana. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
+      const PROMPT = promptBase || `Sei un esperto contabile. Analizza questa fattura italiana e restituisci SOLO JSON valido senza markdown.
 
-REGOLE PREZZI — IDENTIFICA LO SCHEMA E SEGUI L'ESEMPIO CORRISPONDENTE:
+ISTRUZIONI:
+1. Per ogni prodotto copia ESATTAMENTE i valori che vedi nella fattura senza fare calcoli.
+2. "prezzoLordo": il valore nella colonna Prezzo (esattamente come scritto).
+3. "sconto": il valore nella colonna Sconto se presente (solo il numero, es. "18"). Se non c'è colonna Sconto: "".
+4. "importoTotale": il valore nella colonna Importo/Totale riga.
+5. ATTENZIONE: i numeri 4, 5, 10, 22 in ultima colonna sono IVA — NON sono sconti.
+6. Per vini con UM=PAC: cerca il valore "% X,00" sulla riga sopra il prodotto e mettilo in "sconto".
 
-SCHEMA A — Fattura con colonna Sconto esplicita sulla stessa riga del prodotto:
-Struttura: Descrizione | UM | Qtà | Prezzo | Sconto% | Importo | IVA
-Regola: prezzoUnitario = Prezzo × (1 - Sconto/100). Se Sconto è vuoto: prezzoUnitario = Prezzo.
-Attenzione: l'ultima colonna (4, 5, 10, 22) è IVA — NON è sconto.
-Esempi:
-  Prodotto A | KG | 29,2 | 72,00 | 25,0 | 1576,80 | 10 → prezzoUnitario=54.00
-  Prodotto B | KG | 8,9  | 23,10 | 18,0 |  168,58 | 10 → prezzoUnitario=18.94
-  Prodotto C | NR | 2    | 21,00 |      |   42,00 | 10 → prezzoUnitario=21.00 (no sconto)
-  Prodotto D | NR | 4    |  3,60 |      |   14,40 | 22 → prezzoUnitario=3.60 (22=IVA non sconto)
+CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 
-SCHEMA B — Fattura senza colonna Sconto, Prezzo già netto, IVA in ultima colonna:
-Struttura: Descrizione | UM | Qtà | Prezzo | Importo | IVA
-Regola: prezzoUnitario = Prezzo direttamente. Non applicare nessuno sconto.
-Esempi:
-  Prodotto E | LT |  20 |  5,90 | 118,00 |  4 → prezzoUnitario=5.90
-  Prodotto F | KG |  10 |  2,00 |   8,00 | 10 → prezzoUnitario=2.00
-  Prodotto G | N. |   2 | 19,90 |  39,80 | 10 → prezzoUnitario=19.90
-
-SCHEMA C — Fattura vini con UM=Pezzi, Prezzo già per bottiglia:
-Struttura: Descrizione | UM=Pezzi | Qtà bottiglie | Prezzo/bottiglia | Importo
-Regola: prezzoUnitario = Prezzo direttamente (già per bottiglia). Non dividere per quantità.
-Esempi:
-  Vino A | Pezzi | 36 | 10,69 | 384,71 → prezzoUnitario=10.69
-  Vino B | Pezzi |  6 | 30,00 | 180,00 → prezzoUnitario=30.00
-
-SCHEMA D — Fattura vini con UM=PAC (cartone), sconto su riga separata sopra:
-Struttura: riga sopra "% X,00 importo_netto" poi riga prodotto con CART.6 o AST.CT.6 | UM=PAC | Qtà | Prezzo/cartone
-Regola: prezzoUnitario = (Prezzo × (1 - sconto/100)) / 6  [6 bottiglie per cartone]
-Esempi:
-  riga: % 9,00 / Vino C CART.6 | PAC | 5 | 51,60 → prezzoUnitario=7.83 (51.60×0.91/6)
-  riga: % 9,00 / Vino D CART.6 | PAC | 3 | 57,60 → prezzoUnitario=8.74 (57.60×0.91/6)
-  riga: % 9,00 / Vino E AST.CT.6 | PAC | 1 | 114,00 → prezzoUnitario=17.29 (114×0.91/6)
-
-__HINT__CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
-
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":"","produttore":"solo per vini"}]}`
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoLordo":0.00,"sconto":"","importoTotale":0.00,"produttore":"solo per vini"}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
@@ -1573,14 +1545,13 @@ __HINT__CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vi
         setProg(45); setProgLabel("Analisi AI in corso...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
-        const hint = schemaHint(detectInvoiceSchema(fullText))
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
-            messages: [{ role: "user", content: PROMPT.replace("__HINT__", hint) + "\n\nTESTO FATTURA:\n" + fullText }]
+            messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
           })
         })
         clearTimeout(to)
@@ -1593,7 +1564,6 @@ __HINT__CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vi
 
       } else {
         //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
-        const hint = ""
         setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
         setProg(35); setProgLabel("Lettura immagine...")
@@ -1617,7 +1587,7 @@ __HINT__CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vi
               role: "user",
               content: [
                 { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
-                { type: "text", text: PROMPT.replace("__HINT__", "") }
+                { type: "text", text: PROMPT }
               ]
             }]
           })
@@ -1746,25 +1716,41 @@ __HINT__CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vi
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
 
-      // Prezzo: valore dalla fattura con eventuale sconto applicato
+      // Calcolo prezzo client-side: AI dà prezzoLordo, sconto, importoTotale
       const prezzoUnitario = (() => {
-        let price = parseFloat(String(p.prezzoUnitario || "0").replace(",", ".")) || 0
-        if (price <= 0) return 0
-        // Per vini in cartoni: CART.6, AST.CT.6, CT.6, ecc. → dividi per numero bottiglie
-        if (cat === "Vini") {
-          const cartMatch = p.nome.match(/(?:cart|ast\.ct|ct|cassa)[.\s]*(\d+)/i)
-          if (cartMatch) {
-            const nBottiglie = parseInt(cartMatch[1])
-            if (nBottiglie > 0) price = price / nBottiglie
-          }
-        }
-        const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
-        const sconto = parseFloat(scontoStr)
         const IVA_RATES = [4, 5, 10, 22]
-        if (sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)) {
-          price = price * (1 - sconto / 100)
+        const lordo = parseFloat(String(p.prezzoLordo || p.prezzoUnitario || "0").replace(",", ".")) || 0
+        const importo = parseFloat(String(p.importoTotale || "0").replace(",", ".")) || 0
+        const qty = parseFloat(String(p.quantita || "1").replace(",", ".")) || 1
+        const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
+        const sconto = parseFloat(scontoStr) || 0
+        const scontoReale = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
+
+        // Schema C: vini UM=Pezzi, prezzo già per bottiglia
+        if (cat === "Vini" && /pezzi/i.test(p.unita || "")) {
+          return Math.round(lordo * 100) / 100
         }
-        return Math.round(price * 100) / 100
+
+        // Schema D: vini PAC con CART.X → prezzo per bottiglia
+        if (cat === "Vini" && /pac/i.test(p.unita || "")) {
+          const cartMatch = (p.nome || "").match(/(?:cart|ast\.ct|cassa)[.\s]*(\d+)/i)
+          const nBott = cartMatch ? parseInt(cartMatch[1]) : 6
+          const prezzoNetto = scontoReale ? lordo * (1 - sconto / 100) : lordo
+          return Math.round(prezzoNetto / nBott * 100) / 100
+        }
+
+        // Schema A: prezzo lordo con sconto esplicito
+        if (scontoReale && lordo > 0) {
+          return Math.round(lordo * (1 - sconto / 100) * 100) / 100
+        }
+
+        // Schema B: prezzo già netto — se lordo > 0 usalo direttamente
+        if (lordo > 0) return Math.round(lordo * 100) / 100
+
+        // Fallback: importo / quantità
+        if (importo > 0 && qty > 0) return Math.round(importo / qty * 100) / 100
+
+        return 0
       })()
 
       return {
