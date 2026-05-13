@@ -1573,13 +1573,13 @@ ${hint}CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vin
         setProg(45); setProgLabel("Analisi AI in corso...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
+        const hint = schemaHint(detectInvoiceSchema(fullText))
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
-            const hint = schemaHint(detectInvoiceSchema(fullText))
             messages: [{ role: "user", content: PROMPT.replace("${hint}", hint) + "\n\nTESTO FATTURA:\n" + fullText }]
           })
         })
