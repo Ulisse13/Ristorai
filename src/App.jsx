@@ -1543,7 +1543,7 @@ Esempi:
   riga: % 9,00 / Vino D CART.6 | PAC | 3 | 57,60 → prezzoUnitario=8.74 (57.60×0.91/6)
   riga: % 9,00 / Vino E AST.CT.6 | PAC | 1 | 114,00 → prezzoUnitario=17.29 (114×0.91/6)
 
-${hint}CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
+__HINT__CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 
 {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":"","produttore":"solo per vini"}]}`
 
@@ -1580,7 +1580,7 @@ ${hint}CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vin
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
-            messages: [{ role: "user", content: PROMPT.replace("${hint}", hint) + "\n\nTESTO FATTURA:\n" + fullText }]
+            messages: [{ role: "user", content: PROMPT.replace("__HINT__", hint) + "\n\nTESTO FATTURA:\n" + fullText }]
           })
         })
         clearTimeout(to)
@@ -1617,7 +1617,7 @@ ${hint}CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vin
               role: "user",
               content: [
                 { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
-                { type: "text", text: PROMPT }
+                { type: "text", text: PROMPT.replace("__HINT__", "") }
               ]
             }]
           })
