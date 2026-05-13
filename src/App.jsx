@@ -4770,7 +4770,15 @@ export default function App() {
   // Save data per user
   useEffect(() => {
     if (!ready || !user) return
-    setDoc(doc(db, "users", user.uid, "data", "main"), { ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded: onboarded, learned }, { merge: true })
+    // Rimuove valori undefined che Firebase non accetta
+    const clean = obj => {
+      if (Array.isArray(obj)) return obj.map(clean)
+      if (obj && typeof obj === "object") {
+        return Object.fromEntries(Object.entries(obj).filter(([,v]) => v !== undefined).map(([k,v]) => [k, clean(v)]))
+      }
+      return obj
+    }
+    setDoc(doc(db, "users", user.uid, "data", "main"), clean({ ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded: onboarded, learned }), { merge: true })
       .catch(e => console.log("Save error:", e))
   }, [ings, dishes, invs, menus, fornitori, spesa, banchetti, turni, onboarded, learned, ready, user])
 
