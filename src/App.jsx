@@ -1716,40 +1716,25 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         nameLower.includes(i.name.toLowerCase().split(" ")[0])
       )
 
-      // Calcolo prezzo client-side: AI dà prezzoLordo, sconto, importoTotale
+      // Prezzo: usa prezzoUnitario dell'AI (già calcolato dal prompt Firebase)
+      // Fallback client-side se AI non ha calcolato
       const prezzoUnitario = (() => {
         const IVA_RATES = [4, 5, 10, 22]
-        const lordo = parseFloat(String(p.prezzoLordo || p.prezzoUnitario || "0").replace(",", ".")) || 0
+        // Se AI ha già calcolato prezzoUnitario, usalo direttamente
+        const aiPrice = parseFloat(String(p.prezzoUnitario || "0").replace(",", ".")) || 0
+        if (aiPrice > 0) return Math.round(aiPrice * 100) / 100
+        // Fallback: usa prezzoLordo con sconto client-side
+        const lordo = parseFloat(String(p.prezzoLordo || "0").replace(",", ".")) || 0
         const importo = parseFloat(String(p.importoTotale || "0").replace(",", ".")) || 0
         const qty = parseFloat(String(p.quantita || "1").replace(",", ".")) || 1
-        const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
-        const sconto = parseFloat(scontoStr) || 0
-        const scontoReale = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
-
-        // Schema C: vini UM=Pezzi, prezzo già per bottiglia
-        if (cat === "Vini" && /pezzi/i.test(p.unita || "")) {
-          return Math.round(lordo * 100) / 100
+        if (lordo > 0) {
+          const scontoStr = String(p.sconto || "").replace(",", ".").replace("%", "").trim()
+          const sconto = parseFloat(scontoStr) || 0
+          const scontoReale = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
+          const price = scontoReale ? lordo * (1 - sconto / 100) : lordo
+          return Math.round(price * 100) / 100
         }
-
-        // Schema D: vini PAC con CART.X → prezzo per bottiglia
-        if (cat === "Vini" && /pac/i.test(p.unita || "")) {
-          const cartMatch = (p.nome || "").match(/(?:cart|ast\.ct|cassa)[.\s]*(\d+)/i)
-          const nBott = cartMatch ? parseInt(cartMatch[1]) : 6
-          const prezzoNetto = scontoReale ? lordo * (1 - sconto / 100) : lordo
-          return Math.round(prezzoNetto / nBott * 100) / 100
-        }
-
-        // Schema A: prezzo lordo con sconto esplicito
-        if (scontoReale && lordo > 0) {
-          return Math.round(lordo * (1 - sconto / 100) * 100) / 100
-        }
-
-        // Schema B: prezzo già netto — se lordo > 0 usalo direttamente
-        if (lordo > 0) return Math.round(lordo * 100) / 100
-
-        // Fallback: importo / quantità
         if (importo > 0 && qty > 0) return Math.round(importo / qty * 100) / 100
-
         return 0
       })()
 
