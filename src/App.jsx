@@ -1545,7 +1545,7 @@ Esempi:
 
 ${hint}CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":"","produttore":"solo per vini"}]}\`
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoUnitario":0.00,"sconto":"","produttore":"solo per vini"}]}`
 
       if (isPdf) {
         //  -  -  PDF: estrai testo e manda a Groq come testo  -  -  -  -  -  -  -  -  -  - 
