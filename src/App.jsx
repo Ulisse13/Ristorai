@@ -1530,7 +1530,7 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
 {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoLordo":0.00,"sconto":"","importoTotale":0.00,"produttore":"solo per vini"}]}`
 
       if (isPdf) {
-        //  -  -  PDF: estrai tabella per posizione colonne (no AI per i prezzi)
+        //  PDF: estrai testo e manda ad AI
         setProg(20); setProgLabel("Estrazione testo dal PDF...")
         if (!window.pdfjsLib) {
           await new Promise((res, rej) => {
@@ -1543,121 +1543,13 @@ CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Beva
         }
         const arrayBuffer = await f.arrayBuffer()
         const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise
-
-        // Estrai tutti gli item con posizioni X/Y da tutte le pagine
-        const allItems = []
         let fullText = ""
         for (let i = 1; i <= pdfDoc.numPages; i++) {
           const page = await pdfDoc.getPage(i)
           const tc = await page.getTextContent()
-          tc.items.forEach(item => {
-            if (item.str.trim()) {
-              allItems.push({ x: Math.round(item.transform[4]), y: Math.round(item.transform[5]), text: item.str.trim() })
-            }
-          })
           fullText += tc.items.map(item => item.str).join(" ") + "\n"
         }
-
-        // Raggruppa per riga (stessa Y ±3px)
-        const rowMap = {}
-        allItems.forEach(item => {
-          const yk = Math.round(item.y / 4) * 4
-          if (!rowMap[yk]) rowMap[yk] = []
-          rowMap[yk].push(item)
-        })
-        const rows = Object.values(rowMap)
-          .map(items => items.sort((a, b) => a.x - b.x))
-          .sort((a, b) => b[0].y - a[0].y) // top→bottom
-
-        // Trova riga intestazione colonne
-        const headerKw = ["prezzo", "quantit", "sconto", "importo", "descrizione", "u.m.", " um "]
-        let headerRow = null, headerIdx = 0
-        for (let i = 0; i < rows.length; i++) {
-          const txt = rows[i].map(c => c.text.toLowerCase()).join(" ")
-          if (headerKw.filter(k => txt.includes(k)).length >= 2) {
-            headerRow = rows[i]; headerIdx = i; break
-          }
-        }
-
-        // Mappa colonne per posizione X
-        const cols = {}
-        if (headerRow) {
-          headerRow.forEach(cell => {
-            const t = cell.text.toLowerCase()
-            if (t.includes("prezzo")) cols.prezzo = cell.x
-            if (t.includes("quantit") || t === "qtà" || t === "q.tà") cols.quantita = cell.x
-            if (t.includes("sconto")) cols.sconto = cell.x
-            if (t.includes("importo") || t.includes("totale")) cols.importo = cell.x
-            if (t.includes("descrizione") || t.includes("articolo")) cols.nome = cell.x
-            if (t.includes("u.m.") || t === "um" || t === "u.m") cols.um = cell.x
-          })
-        }
-
-        // Funzione: trova il valore più vicino a una colonna X in una riga
-        const getCol = (row, xTarget, tolerance = 40) => {
-          if (xTarget === undefined) return ""
-          const candidates = row.filter(c => Math.abs(c.x - xTarget) <= tolerance)
-          if (!candidates.length) return ""
-          return candidates.sort((a, b) => Math.abs(a.x - xTarget) - Math.abs(b.x - xTarget))[0].text
-        }
-
-        const parseNum = s => parseFloat(String(s || "").replace(",", ".").replace(/[^0-9.-]/g, "")) || 0
-
-        // Estrai righe prodotto (dopo header, righe con almeno un numero)
-        const prodotti = []
-        const dataRows = headerRow ? rows.slice(headerIdx + 1) : rows
-        for (const row of dataRows) {
-          const rowTxt = row.map(c => c.text).join(" ")
-          if (!/\d/.test(rowTxt)) continue // skip righe senza numeri
-          if (row.length < 3) continue
-
-          // Nome: prima cella significativa della riga (testo lungo, non solo numeri)
-          const nomeCandidates = row.filter(c => c.text.length > 3 && !/^[\d.,]+$/.test(c.text))
-          if (!nomeCandidates.length) continue
-          const nome = nomeCandidates[0].text
-
-          // Salta righe che sembrano intestazioni o totali
-          const nomeLow = nome.toLowerCase()
-          if (/fornitore|fattura|totale|pagamento|iva|scadenza|descrizione|articolo|riferimento|banca|^rif/i.test(nomeLow)) continue
-
-          const um = getCol(row, cols.um) || ""
-          const qtyRaw = getCol(row, cols.quantita)
-          const prezzoRaw = getCol(row, cols.prezzo)
-          const scontoRaw = getCol(row, cols.sconto)
-          const importoRaw = getCol(row, cols.importo)
-
-          const quantita = parseNum(qtyRaw)
-          const prezzoLordo = parseNum(prezzoRaw)
-          const sconto = parseNum(scontoRaw)
-          const importo = parseNum(importoRaw)
-
-          // Calcola prezzoUnitario client-side
-          const IVA = [4, 5, 10, 22]
-          const scontoReale = sconto > 0 && sconto < 100 && !IVA.includes(sconto)
-          let prezzoUnitario = prezzoLordo
-          if (scontoReale) prezzoUnitario = Math.round(prezzoLordo * (1 - sconto / 100) * 100) / 100
-          if (prezzoUnitario <= 0 && importo > 0 && quantita > 0) prezzoUnitario = Math.round(importo / quantita * 100) / 100
-
-          if (prezzoUnitario <= 0 && importo <= 0) continue // skip righe senza prezzo
-
-          prodotti.push({ nome, um, quantita, prezzoLordo, sconto: scontoReale ? String(sconto) : "", prezzoUnitario, importo })
-        }
-
-        if (prodotti.length === 0) throw new Error("Nessun prodotto trovato nel PDF — riprova con foto")
-
-        setProg(45); setProgLabel("Categorizzazione AI in corso...")
-
-        // Manda solo i NOMI all'AI per la categorizzazione
-        const PROMPT_CAT = (promptBase || "") + `Categorizza questi prodotti alimentari e restituisci SOLO JSON valido.
-Per ogni prodotto assegna: categoria, sotto1, sotto2, unita, produttore (solo vini).
-CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
-VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
-SURGELATI: prodotti con C***, S***, *CONGELATO*, gelo, frozen.
-JSON: {"fornitore":"","numero":"","data":"","prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","unita":"kg o pz o l o bottiglia","produttore":""}]}
-
-PRODOTTI:
-` + prodotti.map((p, i) => `${i + 1}. ${p.nome} (UM: ${p.um || "?"})`).join("\n")
-
+        setProg(45); setProgLabel("Analisi AI in corso...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -1665,8 +1557,8 @@ PRODOTTI:
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
-            max_tokens: 2048,
-            messages: [{ role: "user", content: PROMPT_CAT }]
+            max_tokens: 4096,
+            messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
           })
         })
         clearTimeout(to)
@@ -1674,31 +1566,8 @@ PRODOTTI:
         if (data.error) throw new Error(data.error.message || "Errore Groq")
         const raw = data.choices?.[0]?.message?.content || ""
         const match = raw.match(/\{[\s\S]*\}/)
-        if (!match) throw new Error("Risposta AI non valida — riprova")
-        const catData = JSON.parse(cleanJSON(match[0]))
-
-        // Combina: prezzi dal parser + categorie dall'AI
-        const catMap = {}
-        ;(catData.prodotti || []).forEach((p, i) => { catMap[i] = p })
-        const prodottiFinal = {
-          fornitore: catData.fornitore || f.name,
-          numero: catData.numero || "",
-          data: catData.data || "",
-          totale: 0,
-          iva: 0,
-          prodotti: prodotti.map((p, i) => ({
-            nome: p.nome,
-            categoria: catMap[i]?.categoria || "",
-            sotto1: catMap[i]?.sotto1 || "",
-            sotto2: catMap[i]?.sotto2 || "",
-            quantita: p.quantita,
-            unita: catMap[i]?.unita || p.um || "pz",
-            prezzoUnitario: p.prezzoUnitario,
-            sconto: p.sconto,
-            produttore: catMap[i]?.produttore || ""
-          }))
-        }
-        processResult(prodottiFinal)
+        if (!match) throw new Error("Risposta AI non valida - riprova")
+        processResult(JSON.parse(cleanJSON(match[0])))
 
       } else {
         //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
