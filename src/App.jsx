@@ -1817,11 +1817,14 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const nameLower = p.nome.toLowerCase()
       const existing = ings.find(i => {
-        const aWords = i.name.toLowerCase().split(/\s+/).filter(w => w.length >= 5)
-        const bWords = nameLower.split(/\s+/).filter(w => w.length >= 5)
+        const aWords = i.name.toLowerCase().split(/\s+/).filter(w => w.length >= 4)
+        const bWords = nameLower.split(/\s+/).filter(w => w.length >= 4)
         if (!aWords.length || !bWords.length) return false
-        // Almeno una parola significativa in comune esatta
-        return aWords.some(w => bWords.includes(w))
+        const common = aWords.filter(w => bWords.includes(w))
+        const union = new Set([...aWords, ...bWords]).size
+        const jaccard = common.length / union
+        // Jaccard >= 0.5 E almeno 2 parole in comune
+        return jaccard >= 0.5 && common.length >= 2
       })
 
       // Prezzo: usa prezzoUnitario dell'AI (già calcolato dal prompt Firebase)
