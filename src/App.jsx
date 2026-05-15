@@ -2,13 +2,32 @@ import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
 
 function cleanJSON(str) {
-  const s = str.trim()
-  let depth = 0, end = 0
+  let s = str.trim()
+  // Trova il JSON completo contando le parentesi
+  let depth = 0, end = 0, inStr = false, escape = false
   for (let i = 0; i < s.length; i++) {
-    if (s[i] === "{") depth++
-    else if (s[i] === "}") { depth--; if (depth === 0) { end = i; break } }
+    const c = s[i]
+    if (escape) { escape = false; continue }
+    if (c === "\\") { escape = true; continue }
+    if (c === '"' && !escape) { inStr = !inStr; continue }
+    if (inStr) continue
+    if (c === "{") depth++
+    else if (c === "}") { depth--; if (depth === 0) { end = i; break } }
   }
-  return end > 0 ? s.slice(0, end + 1) : s
+  s = end > 0 ? s.slice(0, end + 1) : s
+  // Rimuovi newline non escaped dentro le stringhe JSON
+  s = s.replace(/("(?:[^"\\]|\\.)*")|([\n\r\t])/g, (m, str) => str ? str : " ")
+  // Prova a parsare, se fallisce rimuovi l ultimo elemento incompleto
+  try { JSON.parse(s); return s } catch(e) {
+    const lastComma = s.lastIndexOf(",")
+    if (lastComma > 0) {
+      const trimmed = s.slice(0, lastComma)
+      const open = (trimmed.match(/\[/g) || []).length - (trimmed.match(/\]/g) || []).length
+      const close = "]".repeat(open) + "}" 
+      try { const fixed = trimmed + close; JSON.parse(fixed); return fixed } catch(e2) {}
+    }
+    return s
+  }
 }
 import { lookupFood } from "./foodDB"
 
@@ -1515,19 +1534,14 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
       setProg(10); setProgLabel("Caricamento prompt AI...")
       const promptBase = await loadPrompt()
       let extractedText = ""
-      const PROMPT = promptBase || `Sei un esperto contabile. Analizza questa fattura italiana e restituisci SOLO JSON valido senza markdown.
+      const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-ISTRUZIONI:
-1. Per ogni prodotto copia ESATTAMENTE i valori che vedi nella fattura senza fare calcoli.
-2. "prezzoLordo": il valore nella colonna Prezzo (esattamente come scritto).
-3. "sconto": il valore nella colonna Sconto se presente (solo il numero, es. "18"). Se non c'è colonna Sconto: "".
-4. "importoTotale": il valore nella colonna Importo/Totale riga.
-5. ATTENZIONE: i numeri 4, 5, 10, 22 in ultima colonna sono IVA — NON sono sconti.
-6. Per vini con UM=PAC: cerca il valore "% X,00" sulla riga sopra il prodotto e mettilo in "sconto".
+REGOLE NOME: massimo 3 parole, solo il prodotto (es: "Maionese Calve", "Petto Barberie", "Triglia Scoglio"). NO pesi, NO volumi, NO codici, NO varianti.
+REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti.
+CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
+VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
 
-CATEGORIE VALIDE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
-
-{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0.00,"iva":0.00,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0.0,"unita":"kg o l o pz","prezzoLordo":0.00,"sconto":"","importoTotale":0.00,"produttore":"solo per vini"}]}`
+{"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0,"iva":0,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0,"unita":"kg o pz o l","prezzoUnitario":0,"sconto":"","produttore":""}]}`
 
       if (isPdf) {
         //  PDF: estrai testo e manda ad AI
