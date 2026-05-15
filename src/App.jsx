@@ -1,6 +1,25 @@
 import { useState, useEffect, useRef, Component } from "react"
 import { lookupWine } from "./winesDB"
 
+function isLikelyWine(name) {
+  const n = name.toLowerCase()
+  const currentYear = new Date().getFullYear()
+  // Annata dinamica: 1960 → anno corrente +5
+  if (/(19[6-9]\d|20\d{2})/.test(n)) {
+    const year = parseInt(n.match(/(19[6-9]\d|20\d{2})/)[0])
+    if (year >= 1960 && year <= currentYear + 5) return true
+  }
+  // Denominazioni
+  if (/(doc|docg|igt|classico|superiore|riserva|gran selezione)/.test(n)) return true
+  // Produttore/azienda
+  if (/(cantina|tenuta|podere|castello|fattoria|vigna|vigneto|cantine)/.test(n)) return true
+  // Termini enologici
+  if (/(brut|demi.sec|blanc|cru|millesimato|cuv[eé]e|barrique|bollicine|metodo classico|metodo charmat|ros[eé]|spumante|frizzante|passito|vendemmia tardiva)/.test(n)) return true
+  // Tipologie note
+  if (/(prosecco|franciacorta|barolo|barbaresco|brunello|chianti|amarone|ripasso|soave|pinot|chardonnay|cabernet|merlot|sangiovese|nebbiolo|vermentino|falanghina|greco di tufo|fiano|nero d.avola|montepulciano|barbera|dolcetto|corvina|gewurztraminer|riesling|sauvignon|viognier|syrah|primitivo|negroamaro|aglianico)/.test(n)) return true
+  return false
+}
+
 function cleanJSON(str) {
   let s = str.trim()
   // Trova il JSON completo contando le parentesi
@@ -1810,9 +1829,12 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
       const learningKey = n => n.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim().split(/\s+/).slice(0, 3).join(" ")
       const nomeKey = learningKey(p.nome)
       const learnedMatch = learned && learned[nomeKey]
-      // 2. Poi il DB locale
-      const dbMatch = !learnedMatch ? lookupFood(p.nome) : null
-      const cat = (learnedMatch ? learnedMatch.cat : null) || (dbMatch ? dbMatch.cat : null) || normCat(p.categoria) || guessCat(p.nome)
+      // 2. Determina categoria AI
+      const aiCat = normCat(p.categoria) || guessCat(p.nome)
+      // 3. Se l'AI dice Vini E il nome ha indicatori vino → salta lookupFood, usa solo lookupWine
+      const skipFood = (aiCat === "Vini" || learnedMatch?.cat === "Vini") && isLikelyWine(p.nome)
+      const dbMatch = !learnedMatch && !skipFood ? lookupFood(p.nome) : null
+      const cat = (learnedMatch ? learnedMatch.cat : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const nameLower = p.nome.toLowerCase()
