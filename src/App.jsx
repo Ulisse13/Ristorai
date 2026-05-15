@@ -780,6 +780,90 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
 
   return (
     <div>
+      {open && (
+        <div onClick={e => e.target === e.currentTarget && setOpen(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 9999 }}>
+          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto" }}>
+            <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
+              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>{edit ? "Modifica ingrediente" : "Nuovo ingrediente"}</span>
+              <button onClick={() => setOpen(false)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
+            </div>
+            <div style={{ padding: "16px 22px" }}>
+              <Fld label="Nome *">
+                <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Petto di pollo" />
+                {err.name && <span style={{ fontSize: 11, color: STYLE.red }}>{err.name}</span>}
+              </Fld>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                <Fld label="Categoria">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
+                    {CATS.map(c => <option key={c}>{c}</option>)}
+                  </select>
+                </Fld>
+                <Fld label="Unit   di misura">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.unit} onChange={e => setForm(f => ({ ...f, unit: e.target.value }))}>
+                    {["kg", "litri", "confezione", "bottiglia"].map(u => <option key={u}>{u}</option>)}
+                  </select>
+                </Fld>
+              </div>
+              {SOTTO1_ORDER[form.cat] && (
+                <Fld label="Sottocategoria">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.sotto1 || ""} onChange={e => setForm(f => ({ ...f, sotto1: e.target.value }))}>
+                    <option value="">— seleziona —</option>
+                    {SOTTO1_ORDER[form.cat].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </Fld>
+              )}
+              {form.cat === "Vini" && (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <Fld label="Tipologia">
+                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.tipoVino} onChange={e => setForm(f => ({ ...f, tipoVino: e.target.value }))}>
+                      {VINO_TIPI.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </Fld>
+                  <Fld label="Regione">
+                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.regioneVino} onChange={e => setForm(f => ({ ...f, regioneVino: e.target.value }))}>
+                      {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
+                    </select>
+                  </Fld>
+                </div>
+              )}
+              {form.unit !== "confezione" ? (
+                <Fld label={"Prezzo (v/" + form.unit + ") *"}>
+                  <input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
+                  {err.cur && <span style={{ fontSize: 11, color: STYLE.red }}>{err.cur}</span>}
+                </Fld>
+              ) : (
+                <>
+                  <div style={{ background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: STYLE.r, padding: "10px 12px", marginBottom: 12, fontSize: 12, color: STYLE.t2 }}>
+                    Inserisci il prezzo della confezione e il peso/volume netto  -  il prezzo per kg/litro verr   calcolato automaticamente.
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                    <Fld label="Prezzo confezione (v) *">
+                      <input style={inp()} type="number" step="0.01" value={form.confPrice} onChange={e => setForm(f => ({ ...f, confPrice: e.target.value }))} placeholder="0.00" />
+                      {err.confPrice && <span style={{ fontSize: 11, color: STYLE.red }}>{err.confPrice}</span>}
+                    </Fld>
+                    <Fld label="Peso/volume netto (kg o l) *">
+                      <input style={inp()} type="number" step="0.001" value={form.confWeight} onChange={e => setForm(f => ({ ...f, confWeight: e.target.value }))} placeholder="es. 0.750" />
+                      {err.confWeight && <span style={{ fontSize: 11, color: STYLE.red }}>{err.confWeight}</span>}
+                    </Fld>
+                  </div>
+                  {form.confPrice && form.confWeight && +form.confWeight > 0 && (
+                    <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "10px 12px", marginBottom: 12 }}>
+                      <span style={{ fontSize: 11, color: STYLE.t3 }}>Prezzo calcolato: </span>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: STYLE.ac }}>{formatEuro(Math.round((+form.confPrice / +form.confWeight) * 100) / 100)}/kg</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+            <div style={row({ justifyContent: "flex-end", padding: "0 22px 18px", gap: 8 })}>
+              <button style={btn("g")} onClick={() => setOpen(false)}>Annulla</button>
+              <button style={btn("p")} onClick={save}>Salva</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Breadcrumb */}
       <div style={row({ marginBottom: 16 })}>
         <button onClick={() => { setSelCat(null); setSelSotto1(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>
