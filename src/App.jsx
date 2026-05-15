@@ -479,10 +479,10 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
       {/* Add modal */}
       {open && (
         <div onClick={e => e.target === e.currentTarget && setOpen(false)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 999 }}>
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, zIndex: 9999 }}>
           <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 480, maxHeight: "90vh", overflow: "auto" }}>
             <div style={row({ justifyContent: "space-between", padding: "18px 22px 0" })}>
-              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>Nuovo ingrediente</span>
+              <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>{edit ? "Modifica ingrediente" : "Nuovo ingrediente"}</span>
               <button onClick={() => setOpen(false)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
             </div>
             <div style={{ padding: "16px 22px" }}>
@@ -1732,10 +1732,13 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const nameLower = p.nome.toLowerCase()
-      const existing = ings.find(i =>
-        i.name.toLowerCase().includes(nameLower.split(" ")[0]) ||
-        nameLower.includes(i.name.toLowerCase().split(" ")[0])
-      )
+      const existing = ings.find(i => {
+        const aWords = i.name.toLowerCase().split(/\s+/).filter(w => w.length >= 5)
+        const bWords = nameLower.split(/\s+/).filter(w => w.length >= 5)
+        if (!aWords.length || !bWords.length) return false
+        // Almeno una parola significativa in comune esatta
+        return aWords.some(w => bWords.includes(w))
+      })
 
       // Prezzo: usa prezzoUnitario dell'AI (già calcolato dal prompt Firebase)
       // Fallback client-side se AI non ha calcolato
