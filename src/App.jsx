@@ -1642,7 +1642,10 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, banch
 REGOLE NOME: massimo 3 parole, solo il prodotto (es: "Maionese Calve", "Petto Barberie", "Triglia Scoglio"). NO pesi, NO volumi, NO codici, NO varianti.
 REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti.
 CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
-VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
+VINI - OBBLIGATORIO compilare SEMPRE sotto1 E sotto2:
+  sotto1=tipologia: Rossi, Bianchi, Rosé, o Bollicine (spumante/prosecco/franciacorta/brut/millesimato=Bollicine)
+  sotto2=regione: Piemonte, Toscana, Veneto, Sicilia, Trentino Alto Adige, Friuli Venezia Giulia, Lombardia, Campania, Sardegna, Puglia, Liguria, Valle d'Aosta, Calabria, Francia, o Altre regioni
+  Es: Barolo→Rossi/Piemonte | Prosecco→Bollicine/Veneto | Altemasi→Bollicine/Trentino Alto Adige | Chianti→Rossi/Toscana | Donnafugata→Rossi/Sicilia
 
 {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0,"iva":0,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0,"unita":"kg o pz o l","prezzoUnitario":0,"sconto":"","produttore":""}]}`
 
