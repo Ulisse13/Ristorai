@@ -1774,7 +1774,7 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
       const dbResult = lookupWine(cleaned) || lookupWine(nome)
       if (dbResult) return dbResult.tipo
       const n = nome.toLowerCase()
-      if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante/.test(n)) return "Bollicine"
+      if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante|millesimato|brut|demi.sec|metodo charmat|cuv[eé]e/.test(n)) return "Bollicine"
       if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Rosé"
       if (/bianco|pinot grigio|vermentino|soave|chardonnay|sauvignon|gewurz|riesling|vernaccia|trebbiano|greco|fiano|falanghina|arneis|gavi|ribolla|grillo|catarratto|nuragus|verdicchio/.test(n)) return "Bianchi"
       return "Rossi"
@@ -1831,10 +1831,11 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
       const learnedMatch = learned && learned[nomeKey]
       // 2. Determina categoria AI
       const aiCat = normCat(p.categoria) || guessCat(p.nome)
-      // 3. Se l'AI dice Vini E il nome ha indicatori vino → salta lookupFood, usa solo lookupWine
-      const skipFood = (aiCat === "Vini" || learnedMatch?.cat === "Vini") && isLikelyWine(p.nome)
+      // 3. Se il nome ha indicatori vino → forza Vini e salta lookupFood sempre
+      const wineByName = isLikelyWine(p.nome)
+      const skipFood = wineByName || aiCat === "Vini" || learnedMatch?.cat === "Vini"
       const dbMatch = !learnedMatch && !skipFood ? lookupFood(p.nome) : null
-      const cat = (learnedMatch ? learnedMatch.cat : null) || (dbMatch ? dbMatch.cat : null) || aiCat
+      const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const nameLower = p.nome.toLowerCase()

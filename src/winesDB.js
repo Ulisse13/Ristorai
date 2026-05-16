@@ -9,7 +9,7 @@ export function lookupWine(nome) {
   if (WINE_INDEX[n]) return { tipo: WINE_INDEX[n].t, regione: WINE_INDEX[n].r };
   const keys = Object.keys(WINE_INDEX).sort((a, b) => b.length - a.length);
   for (const k of keys) {
-    if (n.includes(k) && k.length >= 4) return { tipo: WINE_INDEX[k].t, regione: WINE_INDEX[k].r };
+    if ((n.includes(k) || k.includes(n)) && k.length >= 4 && n.length >= 5) return { tipo: WINE_INDEX[k].t, regione: WINE_INDEX[k].r };
   }
   return null;
 }
