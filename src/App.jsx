@@ -1643,9 +1643,46 @@ REGOLE NOME: massimo 3 parole, solo il prodotto (es: "Maionese Calve", "Petto Ba
 REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti.
 CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 VINI - OBBLIGATORIO compilare SEMPRE sotto1 E sotto2:
-  sotto1=tipologia: Rossi, Bianchi, Rosé, o Bollicine (spumante/prosecco/franciacorta/brut/millesimato=Bollicine)
-  sotto2=regione: Piemonte, Toscana, Veneto, Sicilia, Trentino Alto Adige, Friuli Venezia Giulia, Lombardia, Campania, Sardegna, Puglia, Liguria, Valle d'Aosta, Calabria, Francia, o Altre regioni
-  Es: Barolo→Rossi/Piemonte | Prosecco→Bollicine/Veneto | Altemasi→Bollicine/Trentino Alto Adige | Chianti→Rossi/Toscana | Donnafugata→Rossi/Sicilia
+  sotto1 = Rossi, Bianchi, Rosé, o Bollicine
+  sotto2 = regione di appartenenza
+  Usa questa mappa per riconoscere i vini:
+Bianchi/Altre regioni: barberani, orvieto classico, falanghina del molise, verdicchio di matelica vi, verdicchio dei castelli d, verdicchio di matelica ri, moscato del molise apiana
+Bianchi/Campania: greco di tufo, ciro picariello, fiano di avellino, falanghina del sannio, falanghina vigna astroni, campi flegrei falanghina, sant'agata de' goti falanghina
+Bianchi/Francia: pouilly-fumé, hermitage blanc, riesling jubilee, riesling réserve, sancerre d'antan, riesling heimbourg, riesling cuvée théo, riesling le kottabe, riesling grossi laüe, riesling engelgarten
+Bianchi/Friuli Venezia Giulia: ribolla, collio bianco, collio malvasia, collio friulano, collio sauvignon, collio chardonnay, collio pinot bianco, collio pinot grigio, collio vecchie vigne, friuli isonzo tal lùc
+Bianchi/Liguria: pigato, cinque terre bianco, cinque terre sciacchetrà, vermentino colli di luni
+Bianchi/Lombardia: chardonnay, oltrepò pavese riesling
+Bianchi/Piemonte: gavi, roero arneis, arneis blangé, moscato d'asti, brachetto d'acqui, erbaluce di caluso
+Bianchi/Puglia: falanghina, fiano minutolo, moscato di trani, castel del monte bianco, primitivo di manduria dol
+Bianchi/Sardegna: opale vermentino, moscato di sardegna, vermentino di gallura, vernaccia di oristano, vermentino di sardegna, cantina della vernaccia, villa solais vermentino
+Bianchi/Sicilia: cometa, lighea, etna bianco, moscato di noto, marsala superiore, la fuga chardonnay, grand cru chardonnay, moscato di pantelleria, passito di pantelleria, marsala vergine soleras
+Bianchi/Toscana: vermentino, bianco ornellaia, vin santo del chianti, vernaccia di san gimignan, vin santo di montepulcian
+Bianchi/Trentino Alto Adige: trentino nosiola, vino santo trentino, alto adige sauvignon, trentino pinot grigio, alto adige chardonnay, alto adige moscato rosa, trentino müller thurgau, alto adige pinot bianco, trentino gewürztraminer, alto adige pinot grigio
+Bianchi/Valle d'Aosta: blanc de morgex et de la, valle d'aosta chardonnay
+Bianchi/Veneto: lugana, soave classico, cantina di soave, recioto di soave col fosc, recioto di soave le colom, recioto di soave le spond, recioto della valpolicella classico, recioto della valpolicella giovanni allegrini
+Bollicine/Altre regioni: lambrusco reggiano, lambrusco di sorbara, lambrusco grasparossa di, concerto lambrusco reggia
+Bollicine/Francia: taittinger comtes de champagne rosé, taittinger comtes de champagne blanc de blancs
+Bollicine/Friuli Venezia Giulia: ribolla gialla brut
+Bollicine/Lombardia: franciacorta brut, franciacorta rosé, franciacorta zero, franciacorta satèn, franciacorta pas dosé, franciacorta alma rosé, franciacorta '61 rosé, franciacorta pas operé, franciacorta '61 brut, franciacorta extra brut
+Bollicine/Piemonte: alta langa, asti spumante
+Bollicine/Sicilia: etna brut
+Bollicine/Trentino Alto Adige: ferrari brut, ferrari rosé, ferrari perlé, trento doc brut, trento doc rosé, trento doc riserva, trento doc extra brut, trento doc rotari rosé, trento doc rotari brut, trento doc altemasi rosé
+Bollicine/Valle d'Aosta: blanc de morgex et de la salle brut
+Bollicine/Veneto: prosecco doc brut, prosecco doc extra dry, prosecco superiore brut, prosecco superiore crede, conegliano valdobbiadene, prosecco superiore primo, prosecco superiore bosco, prosecco superiore grave, prosecco superiore extra, prosecco superiore giardi
+Rossi/Altre regioni: montiano merlot, cerasuolo d'abruzzo, aglianico del vulture, torgiano rosso riserva, rosso conero sassi neri, sagrantino di montefalco, lacrima di morro d'alba, montefalco rosso riserva, montepulciano d'abruzzo, aglianico del molise don
+Rossi/Campania: taurasi, devon aglianico, aglianico del taburno, vigna astroni aglianico, terra d'eclano aglianico, sant'agata de' goti aglianico
+Rossi/Francia: hermitage rouge, hermitage le méal, hermitage le pavillon, hermitage la chapelle, hermitage les greffieux, hermitage cuvée cathelin, crozes-hermitage thalaber, sancerre rouge clos du ch
+Rossi/Friuli Venezia Giulia: merlot, friuli aquileia refosco, friuli colli orientali me, friuli colli orientali re, friuli colli orientali sc, friuli colli orientali ta
+Rossi/Liguria: rossese di dolceacqua
+Rossi/Lombardia: valtellina rosso, sforzato di valtellina, valtellina superiore torr, valtellina superiore grum, valtellina superiore maze, valtellina superiore valg, valtellina superiore sass, valtellina superiore somm, valtellina superiore infe, valtellina superiore cort
+Rossi/Piemonte: barolo, barbaresco, roero braja, roero sudisfà, barbera d'alba, langhe nebbiolo, nebbiolo d'alba, dolcetto d'alba, roero prachiosso, dolcetto di ovada
+Rossi/Puglia: negroamaro, nero primitivo, primitivo rosato, salice salentino, neprica primitivo, primitivo portile, primitivo old vines, prima mano primitivo, primitivo di manduria, castel del monte rosso
+Rossi/Sardegna: buio carignano, cannonau romangia, carignano del sulcis, cannonau di sardegna, terre rare carignano, cantina del vermentino
+Rossi/Sicilia: sur sur, tancredi, etna rosso, etna rosato, maroccoli syrah, nerello cappuccio, nerello mascalese, cerasuolo di vittoria
+Rossi/Toscana: syrah, solaia, ornellaia, sassicaia, tignanello, carmignano, guidalberto, bolgheri rosso, chianti rufina, chianti classico
+Rossi/Trentino Alto Adige: alto adige schiava, alto adige lagrein, trentino marzemino, trentino pinot nero, teroldego rotaliano, alto adige pinot nero, alto adige lago di caldar, alto adige cabernet sauvi, alto adige merlot siebene, alto adige santa maddalen
+Rossi/Valle d'Aosta: valle d'aosta syrah, valle d'aosta nebbiolo
+Rossi/Veneto: amarone creso, amarone mazzano, amarone il bosco, amarone costasera, amarone calcarole, bardolino classico, bardolino chiaretto, valpolicella ripasso, amarone villa novare, cantina di bardolino
 
 {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0,"iva":0,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0,"unita":"kg o pz o l","prezzoUnitario":0,"sconto":"","produttore":""}]}`
 
@@ -2350,13 +2387,7 @@ VINI - OBBLIGATORIO compilare SEMPRE sotto1 E sotto2:
                               {["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"].map(r => <option key={r}>{r}</option>)}
                             </select>
                           </div>
-                          <div style={{ gridColumn: "1/-1" }}>
-                            <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Cantina / Produttore</label>
-                            <input style={inp({ fontSize: 12, padding: "5px 8px" })} type="text"
-                              value={p.produttore || ""}
-                              placeholder="es. Planeta, Tasca d'Almerita..."
-                              onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, produttore: e.target.value } : x))} />
-                          </div>
+
                         </>
                       ) : SOTTO1_ORDER[p.cat] ? (
                         <div>
