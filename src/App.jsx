@@ -1769,10 +1769,29 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
         .replace(/\s+/g, " ").trim()
     }
 
+    // Normalizza tipologia vino dall'AI
+    function normTipoVino(s) {
+      if (!s) return null
+      const t = s.toLowerCase().trim()
+      if (/rosso|rossi|red|rouge/.test(t)) return "Rossi"
+      if (/bianco|bianchi|white|blanc/.test(t)) return "Bianchi"
+      if (/ros[eé]|rosato|rosé|pink/.test(t)) return "Rosé"
+      if (/bollic|spumant|brut|prosecco|franciacorta|champagne|crémant|cremant/.test(t)) return "Bollicine"
+      return null
+    }
+
+    // Normalizza regione vino dall'AI
+    function normRegioneVino(s) {
+      if (!s) return null
+      const REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
+      const t = s.toLowerCase().trim()
+      for (const r of REGIONI) {
+        if (t.includes(r.toLowerCase()) || r.toLowerCase().includes(t)) return r
+      }
+      return null
+    }
+
     function guessTipoVino(nome) {
-      const cleaned = cleanWineName(nome)
-      const dbResult = lookupWine(cleaned) || lookupWine(nome)
-      if (dbResult) return dbResult.tipo
       const n = nome.toLowerCase()
       if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante|millesimato|brut|demi.sec|metodo charmat|cuv[eé]e/.test(n)) return "Bollicine"
       if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Rosé"
@@ -1798,18 +1817,6 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
       if (/liguria|riviera ligure|pigato|rossese/i.test(nome)) return "Liguria"
       if (/puglia|primitivo|negroamaro|salice salentino/i.test(nome)) return "Puglia"
       if (/calabria|ciro|gaglioppo/i.test(nome)) return "Calabria"
-      // Poi controlla DB
-      const dbResult = lookupWine(cleaned) || lookupWine(nome)
-      if (dbResult && dbResult.regione !== "Altre regioni") return dbResult.regione
-      if (/barolo|barbaresco|barbera|nebbiolo|moscato|asti|langhe|piemonte|gavi|roero|dolcetto|arneis|conterno|giacosa|ceretto|vietti|gaja/.test(n)) return "Piemonte"
-      if (/chianti|brunello|vernaccia|bolgheri|toscana|sassicaia|ornellaia|tignanello|antinori|frescobaldi|banfi/.test(n)) return "Toscana"
-      if (/prosecco|soave|amarone|valpolicella|veneto|lugana|ripasso/.test(n)) return "Veneto"
-      if (/franciacorta|lombardia|valtellina/.test(n)) return "Lombardia"
-      if (/friuli|collio|ribolla/.test(n)) return "Friuli Venezia Giulia"
-      if (/trentino|alto adige|teroldego|lagrein|trento doc/.test(n)) return "Trentino Alto Adige"
-      if (/nero d.avola|nerello|etna|sicilia|donnafugata|planeta/.test(n)) return "Sicilia"
-      if (/aglianico|taurasi|greco di tufo|fiano di avellino|falanghina|campania/.test(n)) return "Campania"
-      if (/champagne|bordeaux|borgogna|alsace|france|loire/.test(n)) return "Francia"
       return "Altre regioni"
     }
 
@@ -1884,8 +1891,8 @@ VINI: sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione.
         ingName: existing ? existing.name : null,
         cat, include: true,
         ...(cat === "Vini" ? {
-          tipoVino: guessTipoVino(p.nome),
-          regioneVino: guessRegioneVino(p.nome),
+          tipoVino: normTipoVino(p.sotto1) || guessTipoVino(p.nome),
+          regioneVino: normRegioneVino(p.sotto2) || guessRegioneVino(p.nome),
           produttore: p.produttore || ""
         } : {})
       }
