@@ -1687,7 +1687,7 @@ Rossi/Veneto: amarone creso, amarone mazzano, amarone il bosco, amarone costaser
 {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0,"iva":0,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0,"unita":"kg o pz o l","prezzoUnitario":0,"sconto":"","produttore":""}]}`
 
       if (isPdf) {
-        //  PDF: estrai testo e manda ad AI
+        // PDF: parser positionale per prezzi + AI per categorie
         setProg(20); setProgLabel("Estrazione testo dal PDF...")
         if (!window.pdfjsLib) {
           await new Promise((res, rej) => {
@@ -1700,23 +1700,153 @@ Rossi/Veneto: amarone creso, amarone mazzano, amarone il bosco, amarone costaser
         }
         const arrayBuffer = await f.arrayBuffer()
         const pdfDoc = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise
+
+        // Estrai tutti gli item con posizione da tutte le pagine
+        const allItems = []
         let fullText = ""
-        for (let i = 1; i <= pdfDoc.numPages; i++) {
-          const page = await pdfDoc.getPage(i)
+        for (let pg = 1; pg <= pdfDoc.numPages; pg++) {
+          const page = await pdfDoc.getPage(pg)
           const tc = await page.getTextContent()
-          fullText += tc.items.map(item => item.str).join(" ") + "\n"
+          // pdfjs Y è bottom-up, convertiamo in top-down usando pageHeight
+          const vp = page.getViewport({ scale: 1 })
+          tc.items.forEach(item => {
+            const str = item.str.trim()
+            if (!str) return
+            const x = Math.round(item.transform[4])
+            const y = Math.round(vp.height - item.transform[5]) + (pg - 1) * 1000
+            allItems.push({ x, y, str, pg })
+          })
+          fullText += tc.items.map(i => i.str).join(" ") + "\n"
         }
-        setProg(45); setProgLabel("Analisi AI in corso...")
+
+        // Raggruppa per riga (Y ±4px)
+        const rowMap = {}
+        allItems.forEach(item => {
+          const yk = Math.round(item.y / 4) * 4
+          if (!rowMap[yk]) rowMap[yk] = []
+          rowMap[yk].push(item)
+        })
+        const rows = Object.values(rowMap)
+          .map(items => ({ y: items[0].y, items: items.sort((a, b) => a.x - b.x) }))
+          .sort((a, b) => a.y - b.y)
+
+        // Trova riga intestazione colonne
+        const headerKws = ['prezzo', 'quantit', 'sconto', 'importo', 'descrizione', 'u.m.', 'articolo']
+        let headerRow = null, headerIdx = 0
+        for (let i = 0; i < rows.length; i++) {
+          const txt = rows[i].items.map(c => c.str.toLowerCase()).join(" ")
+          if (headerKws.filter(k => txt.includes(k)).length >= 2) {
+            headerRow = rows[i]; headerIdx = i; break
+          }
+        }
+
+        // Mappa colonne per X
+        const cols = {}
+        if (headerRow) {
+          headerRow.items.forEach(cell => {
+            const t = cell.str.toLowerCase()
+            if (t.includes('prezzo')) cols.prezzo = cell.x
+            if (t.includes('quantit') || t === 'qtà' || t === 'q.tà') cols.quantita = cell.x
+            if (t.includes('sconto')) cols.sconto = cell.x
+            if (t.includes('importo') || (t.includes('totale') && !t.includes('documento'))) cols.importo = cell.x
+            if (t.includes('descrizione') || t.includes('articolo')) cols.descr = cell.x
+            if (t.includes('u.m.') || t === 'um' || t === 'u.m') cols.um = cell.x
+          })
+        }
+
+        // Trova valore più vicino a colonna X in una riga
+        const getCol = (rowItems, xTarget, tol = 50) => {
+          if (xTarget === undefined) return ""
+          const cands = rowItems.filter(c => Math.abs(c.x - xTarget) <= tol)
+          if (!cands.length) return ""
+          return cands.sort((a, b) => Math.abs(a.x - xTarget) - Math.abs(b.x - xTarget))[0].str
+        }
+
+        const parseNum = s => {
+          if (!s) return 0
+          return parseFloat(s.replace(/\./g, '').replace(',', '.').replace(/[^0-9.-]/g, '')) || 0
+        }
+
+        // Estrai prodotti dalle righe dati
+        const IVA_RATES = [4, 5, 10, 22]
+        const prodotti = []
+        const dataRows = headerRow ? rows.slice(headerIdx + 1) : rows
+
+        for (const row of dataRows) {
+          const rowTxt = row.items.map(c => c.str).join(" ")
+          // Salta righe senza numeri o troppo corte
+          if (!/\d/.test(rowTxt) || row.items.length < 3) continue
+          // Salta righe intestazione/totale
+          if (/totale|pagamento|scadenza|iva|banca|iban|riferimento|fornitore|fattura|spese|contributo/i.test(rowTxt)) continue
+
+          // Nome: prima cella testuale significativa
+          const nameCells = row.items.filter(c => c.str.length > 2 && !/^[\d.,]+$/.test(c.str))
+          if (!nameCells.length) continue
+          const nome = nameCells[0].str
+          if (/^(tot|iva|pag|rif|ban|iban|sca)/i.test(nome)) continue
+
+          const um = getCol(row.items, cols.um) || ""
+          const prezzoRaw = getCol(row.items, cols.prezzo)
+          const scontoRaw = getCol(row.items, cols.sconto)
+          const importoRaw = getCol(row.items, cols.importo)
+          const qtaRaw = getCol(row.items, cols.quantita)
+
+          const prezzo = parseNum(prezzoRaw)
+          const sconto = parseNum(scontoRaw)
+          const importo = parseNum(importoRaw)
+          const qta = parseNum(qtaRaw) || 1
+
+          if (prezzo <= 0 && importo <= 0) continue
+
+          // Calcola prezzo unitario
+          const scontoReale = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
+          let prezzoUnitario = prezzo > 0 ? prezzo : (importo / qta)
+          if (scontoReale && prezzo > 0) prezzoUnitario = prezzo * (1 - sconto / 100)
+          prezzoUnitario = Math.round(prezzoUnitario * 100) / 100
+
+          prodotti.push({ nome, um, qta, prezzo, sconto: scontoReale ? String(sconto) : "", prezzoUnitario, importo })
+        }
+
+        if (prodotti.length === 0) {
+          // Fallback: manda tutto all'AI se parser non trova niente
+          setProg(45); setProgLabel("Analisi AI in corso...")
+          const ctrl2 = new AbortController()
+          const to2 = setTimeout(() => ctrl2.abort(), 90000)
+          const res2 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST", signal: ctrl2.signal,
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
+            body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", max_tokens: 4096,
+              messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }] })
+          })
+          clearTimeout(to2)
+          const data2 = await res2.json()
+          if (data2.error) throw new Error(data2.error.message || "Errore Groq")
+          const raw2 = data2.choices?.[0]?.message?.content || ""
+          const match2 = raw2.match(/\{[\s\S]*\}/)
+          if (!match2) throw new Error("Risposta AI non valida - riprova")
+          processResult(JSON.parse(cleanJSON(match2[0])))
+          return
+        }
+
+        // Manda solo i nomi all'AI per categoria/tipologia/regione
+        setProg(45); setProgLabel("Categorizzazione AI in corso...")
+        const PROMPT_CAT = `Categorizza questi prodotti alimentari. Restituisci SOLO JSON valido.
+Per ogni prodotto: categoria, sotto1, sotto2, unita.
+CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
+VINI - sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione (Piemonte/Toscana/Veneto/Sicilia/Trentino Alto Adige/etc).
+SURGELATI: prodotti con asterisco C*** S*** o parola surgelato/gelo/congelato.
+{"fornitore":"","numero":"","data":"","prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","unita":"kg o pz o l o bottiglia"}]}
+
+PRODOTTI:
+` + prodotti.map((p, i) => `${i+1}. ${p.nome} (UM:${p.um||"?"})`).join("\n")
+
         const ctrl = new AbortController()
-        const to = setTimeout(() => ctrl.abort(), 90000)
+        const to = setTimeout(() => ctrl.abort(), 60000)
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
-          body: JSON.stringify({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
-            max_tokens: 4096,
-            messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }]
-          })
+          body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", max_tokens: 2048,
+            messages: [{ role: "user", content: PROMPT_CAT }] })
         })
         clearTimeout(to)
         const data = await res.json()
@@ -1724,7 +1854,27 @@ Rossi/Veneto: amarone creso, amarone mazzano, amarone il bosco, amarone costaser
         const raw = data.choices?.[0]?.message?.content || ""
         const match = raw.match(/\{[\s\S]*\}/)
         if (!match) throw new Error("Risposta AI non valida - riprova")
-        processResult(JSON.parse(cleanJSON(match[0])))
+        const catData = JSON.parse(cleanJSON(match[0]))
+        const catMap = {}
+        ;(catData.prodotti || []).forEach((p, i) => { catMap[i] = p })
+
+        processResult({
+          fornitore: catData.fornitore || f.name.replace(/\.pdf$/i, ""),
+          numero: catData.numero || "",
+          data: catData.data || "",
+          totale: 0, iva: 0,
+          prodotti: prodotti.map((p, i) => ({
+            nome: p.nome,
+            categoria: catMap[i]?.categoria || "",
+            sotto1: catMap[i]?.sotto1 || "",
+            sotto2: catMap[i]?.sotto2 || "",
+            quantita: p.qta,
+            unita: catMap[i]?.unita || p.um || "pz",
+            prezzoUnitario: p.prezzoUnitario,
+            sconto: p.sconto,
+            produttore: ""
+          }))
+        })
 
       } else {
         //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
