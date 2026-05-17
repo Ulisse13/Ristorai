@@ -1776,13 +1776,19 @@ Rossi/Veneto: amarone creso, amarone mazzano, amarone il bosco, amarone costaser
           const rowTxt = row.items.map(c => c.str).join(" ")
           // Salta righe senza numeri o troppo corte
           if (!/\d/.test(rowTxt) || row.items.length < 3) continue
-          // Salta righe intestazione/totale
-          if (/totale|pagamento|scadenza|iva|banca|iban|riferimento|fornitore|fattura|spese|contributo/i.test(rowTxt)) continue
+          // Salta righe intestazione/totale e righe dettaglio Cavit (Valore/Sconto/Pezzi/Tipo)
+          if (/totale|pagamento|scadenza|banca|iban|riferimento|fornitore|fattura|spese|contributo/i.test(rowTxt)) continue
 
           // Nome: prima cella testuale significativa
           const nameCells = row.items.filter(c => c.str.length > 2 && !/^[\d.,]+$/.test(c.str))
           if (!nameCells.length) continue
-          const nome = nameCells[0].str
+          let nome = nameCells[0].str
+          // Salta righe dettaglio (Valore, Sconto, Pezzi, Tipo pr.)
+          if (/^(valore|sconto|pezzi|tipo pr|kit |arrotond)/i.test(nome)) continue
+          // Se il nome sembra un codice articolo (es. VI13025B), prendi la cella successiva
+          if (/^[A-Z]{1,4}\d{4,}[A-Z]?$/i.test(nome) && nameCells.length > 1) {
+            nome = nameCells[1].str
+          }
           if (/^(tot|iva|pag|rif|ban|iban|sca)/i.test(nome)) continue
 
           const um = getCol(row.items, cols.um) || ""
@@ -1792,14 +1798,15 @@ Rossi/Veneto: amarone creso, amarone mazzano, amarone il bosco, amarone costaser
           const qtaRaw = getCol(row.items, cols.quantita)
 
           const prezzo = parseNum(prezzoRaw)
-          const sconto = parseNum(scontoRaw)
           const importo = parseNum(importoRaw)
           const qta = parseNum(qtaRaw) || 1
 
           if (prezzo <= 0 && importo <= 0) continue
 
-          // Calcola prezzo unitario
-          const scontoReale = sconto > 0 && sconto < 100 && !IVA_RATES.includes(sconto)
+          // Con parser positionale: se viene dalla colonna Sconto è sempre sconto reale
+          // Rimuoviamo il filtro IVA_RATES perché sappiamo già da quale colonna viene
+          const sconto = cols.sconto !== undefined ? parseNum(scontoRaw) : 0
+          const scontoReale = sconto > 0 && sconto < 100
           let prezzoUnitario = prezzo > 0 ? prezzo : (importo / qta)
           if (scontoReale && prezzo > 0) prezzoUnitario = prezzo * (1 - sconto / 100)
           prezzoUnitario = Math.round(prezzoUnitario * 100) / 100
