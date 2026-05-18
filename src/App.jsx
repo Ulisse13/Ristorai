@@ -4440,21 +4440,68 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
   const doneItems = spesa.filter(s => s.done)
 
   //  -  -  SELEZIONE INGREDIENTI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
+  const [selSotto1, setSelSotto1] = useState(null)
+
   if (selCat !== null) {
     const catIngs = ings.filter(i => i.cat === selCat)
+    const sotto1List = SOTTO1_ORDER[selCat] || []
+    const sotto1WithIngs = sotto1List.filter(s => catIngs.some(i => i.sotto1 === s))
+    const ungrouped = catIngs.filter(i => !i.sotto1)
+
+    // Livello 2: mostra card sottocategorie
+    if (selSotto1 === null && sotto1WithIngs.length > 0) {
+      return (
+        <div>
+          <div style={row({ marginBottom: 16 })}>
+            <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Lista spesa</button>
+            <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+            <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selCat}</span>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
+            {sotto1WithIngs.map(s1 => {
+              const count = catIngs.filter(i => i.sotto1 === s1).length
+              const inList = catIngs.filter(i => i.sotto1 === s1 && spesa.some(sp => sp.ingId === i.id)).length
+              return (
+                <div key={s1} onClick={() => setSelSotto1(s1)}
+                  style={{ ...card({ padding: "14px 12px", cursor: "pointer" }), borderColor: inList > 0 ? STYLE.acd : "#1f1f25" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>{s1}</div>
+                  <div style={{ fontSize: 11, color: STYLE.t3 }}>{count} ingredienti</div>
+                  {inList > 0 && <div style={{ fontSize: 10, color: STYLE.ac, marginTop: 2 }}>{inList} in lista</div>}
+                </div>
+              )
+            })}
+            {ungrouped.length > 0 && (
+              <div onClick={() => setSelSotto1("__altri__")}
+                style={{ ...card({ padding: "14px 12px", cursor: "pointer" }) }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>Altri</div>
+                <div style={{ fontSize: 11, color: STYLE.t3 }}>{ungrouped.length} ingredienti</div>
+              </div>
+            )}
+          </div>
+        </div>
+      )
+    }
+
+    // Livello 3: lista ingredienti nella sottocategoria
+    const filteredIngs = selSotto1 === "__altri__"
+      ? ungrouped
+      : selSotto1 ? catIngs.filter(i => i.sotto1 === selSotto1) : catIngs
+
     return (
       <div>
         <div style={row({ marginBottom: 16 })}>
           <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Lista spesa</button>
           <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selCat}</span>
+          <button onClick={() => setSelSotto1(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>{selCat}</button>
+          {selSotto1 && <><span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selSotto1 === "__altri__" ? "Altri" : selSotto1}</span></>}
         </div>
         <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 14 }}>Tocca per aggiungere alla lista</div>
-        {catIngs.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente in questa categoria</div>
+        {filteredIngs.length === 0 ? (
+          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente</div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {catIngs.map(ing => {
+            {filteredIngs.map(ing => {
               const inList = spesa.some(s => s.ingId === ing.id)
               return (
                 <div key={ing.id} onClick={() => toggleIng(ing)}
@@ -4464,12 +4511,6 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                   <div style={row({ justifyContent: "space-between" })}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: inList ? STYLE.ac : STYLE.t1, marginBottom: 2 }}>{ing.name}</div>
-                      {(ing.sotto1 || ing.sotto2) && (
-                        <div style={{ display: "flex", gap: 4, marginBottom: 2 }}>
-                          {ing.sotto1 && <span style={{ fontSize: 9, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto1}</span>}
-                          {ing.sotto2 && <span style={{ fontSize: 9, color: STYLE.t2, background: STYLE.el, borderRadius: 3, padding: "1px 5px" }}>{ing.sotto2}</span>}
-                        </div>
-                      )}
                       <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cur > 0 ? "v " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
                     <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? STYLE.ac : "#2a2a31"), background: inList ? STYLE.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
