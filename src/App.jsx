@@ -3299,7 +3299,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
     const text = items.map(s => (parseFloat(s.qty) || 1) + " " + (s.unitSpesa || s.unit || "pz") + " " + s.name).join("\n")
     const now = new Date()
     const dataOra = now.toLocaleDateString("it-IT") + " ore " + now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
-    const consegnaStr = consegnaDate ? "Consegna richiesta: " + new Date(consegnaDate).toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }) : ""
+    const consegnaStr = consegnaDate ? "Consegna richiesta: " + consegnaDate : ""
     const header = (ristoranteName ? ristoranteName + "\n" : "") + "Data ordine: " + dataOra + (consegnaStr ? "\n" + consegnaStr : "")
     const msg = header + "\n\n" + text
     if (fornitore.tel) {
@@ -3431,7 +3431,8 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Data consegna richiesta</label>
-                  <input type="date" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
+                  <input type="text" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
+                    placeholder="es. Lunedì 20/05 o Sabato mattina"
                     style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 8 }}>Seleziona fornitore:</div>
