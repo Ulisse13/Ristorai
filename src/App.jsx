@@ -4423,7 +4423,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
   async function shareSpesa(cat) {
     const items = cat ? spesa.filter(s => s.cat === cat) : spesa
     const header = cat ? "Lista spesa  -  " + cat : "Lista della spesa"
-    const text = items.filter(s => !s.done).map(s => (s.qty || 1) + " " + (s.unit || "pz") + " " + s.name).join("\n")
+    const text = items.filter(s => !s.done).map(s => (parseFloat(s.qty) || 1) + " " + (s.unitSpesa || s.unit || "pz") + " " + s.name).join("\n")
     const full = header + "  -  " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
     if (navigator.share) {
       try { await navigator.share({ title: header, text: full }); return } catch(e) {}
@@ -4586,13 +4586,19 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                   </div>
                   <div style={row({ gap: 8, alignItems: "center" })}>
                     <input type="number" min="0" step="0.1"
-                      value={s.qty || 1}
-                      onChange={e => setSpesa(prev => prev.map(x => x.id === s.id ? { ...x, qty: parseFloat(e.target.value) || 0 } : x))}
+                      value={s.qty === undefined ? "" : s.qty}
+                      onChange={e => setSpesa(prev => prev.map(x => x.id === s.id ? { ...x, qty: e.target.value === "" ? "" : parseFloat(e.target.value) } : x))}
+                      onBlur={e => setSpesa(prev => prev.map(x => x.id === s.id ? { ...x, qty: parseFloat(e.target.value) || 1 } : x))}
                       style={{ width: 60, background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "3px 6px", textAlign: "center", fontFamily: "inherit" }} />
-                    <span style={{ fontSize: 12, color: STYLE.t3 }}>{s.unit || "pz"}</span>
+                    <select
+                      value={s.unitSpesa || s.unit || "pz"}
+                      onChange={e => setSpesa(prev => prev.map(x => x.id === s.id ? { ...x, unitSpesa: e.target.value } : x))}
+                      style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t2, fontSize: 12, padding: "3px 6px", fontFamily: "inherit", cursor: "pointer" }}>
+                      {["kg","g","l","ml","pz","cassa","cartone","busta","scatola","bottiglie","conf"].map(u => <option key={u}>{u}</option>)}
+                    </select>
                     {s.cur > 0 && <>
                       <span style={{ fontSize: 11, color: STYLE.t3, marginLeft: "auto" }}>{formatEuro(s.cur)}/{s.unit || "pz"}</span>
-                      <span style={{ fontSize: 12, color: STYLE.ac, fontWeight: 600 }}>{formatEuro(Math.round((s.qty || 1) * s.cur * 100) / 100)}</span>
+                      <span style={{ fontSize: 12, color: STYLE.ac, fontWeight: 600 }}>{formatEuro(Math.round((parseFloat(s.qty) || 1) * s.cur * 100) / 100)}</span>
                     </>}
                   </div>
                 </div>
