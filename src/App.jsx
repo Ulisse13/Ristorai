@@ -73,7 +73,7 @@ import {
   reauthenticateWithCredential, EmailAuthProvider, GoogleAuthProvider
 } from "firebase/auth"
 
-const formatEuro = n => "v " + Number(n).toFixed(2).replace(".", ",")
+const formatEuro = n => "€ " + Number(n).toFixed(2).replace(".", ",")
 const formatPct = n => (n * 100).toFixed(1) + "%"
 const formatDate = s => new Date(s).toLocaleDateString("it-IT", { day: "2-digit", month: "short", year: "numeric" })
 const FC_COLOR = (a, t) => a <= t ? "#4ade80" : a <= t * 1.1 ? "#e8a838" : "#f87171"
@@ -1251,6 +1251,9 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   </div>
                 </div>
                 <div style={row({ gap: 8 })}>
+            {spesa.filter(s => !s.done).length > 0 && (
+              <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>📤 Invia ordine</button>
+            )}
                   <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
                     style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
                   <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
@@ -3248,7 +3251,7 @@ function LoginPage() {
 
 
 
-function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
+function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
@@ -3287,6 +3290,28 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
     }
     navigator.clipboard?.writeText(full)
     alert("Lista copiata negli appunti!")
+  }
+
+  const [sendModalOpen, setSendModalOpen] = useState(false)
+  const [ristoranteName, setRistoranteName] = useState(localStorage.getItem("ristoranteName") || "")
+  const [consegnaDate, setConsegnaDate] = useState("")
+
+  function sendOrder(fornitore) {
+    const items = spesa.filter(s => !s.done)
+    if (!items.length) return
+    const text = items.map(s => (parseFloat(s.qty) || 1) + " " + (s.unitSpesa || s.unit || "pz") + " " + s.name).join("\n")
+    const now = new Date()
+    const dataOra = now.toLocaleDateString("it-IT") + " ore " + now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
+    const consegnaStr = consegnaDate ? "Consegna richiesta: " + new Date(consegnaDate).toLocaleDateString("it-IT", { weekday: "long", day: "2-digit", month: "2-digit", year: "numeric" }) : ""
+    const header = (ristoranteName ? ristoranteName + "\n" : "") + "Data ordine: " + dataOra + (consegnaStr ? "\n" + consegnaStr : "")
+    const msg = header + "\n\n" + text
+    if (fornitore.tel) {
+      const tel = fornitore.tel.replace(/\s/g, "")
+      window.open("https://wa.me/" + (tel.startsWith("+") ? tel.slice(1) : "39" + tel) + "?text=" + encodeURIComponent(msg))
+    } else if (fornitore.email) {
+      window.open("mailto:" + fornitore.email + "?subject=Ordine " + new Date().toLocaleDateString("it-IT") + "&body=" + encodeURIComponent(msg))
+    }
+    setSendModalOpen(false)
   }
 
   const todoByCat = CATS.map(cat => ({
@@ -3368,7 +3393,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
                   <div style={row({ justifyContent: "space-between" })}>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: inList ? STYLE.ac : STYLE.t1, marginBottom: 2 }}>{ing.name}</div>
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cur > 0 ? "v " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cur > 0 ? "€ " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
                     <div style={{ width: 22, height: 22, borderRadius: 4, border: "2px solid " + (inList ? STYLE.ac : "#2a2a31"), background: inList ? STYLE.ac : "none", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                       {inList && <span style={{ fontSize: 12, color: "#0d0d0f", fontWeight: 700 }}>-</span>}
@@ -3394,6 +3419,39 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
         <div style={row({ gap: 8 })}>
           {doneItems.length > 0 && (
             <button style={btn("g", { fontSize: 12 })} onClick={clearDone}>Rimuovi completati</button>
+          )}
+          {sendModalOpen && (
+            <div onClick={() => setSendModalOpen(false)}
+              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+              <div onClick={e => e.stopPropagation()}
+                style={{ background: STYLE.surf, borderRadius: STYLE.r, padding: 20, width: "100%", maxWidth: 480 }}>
+                <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1, marginBottom: 16 }}>Invia ordine</div>
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Nome ristorante</label>
+                  <input value={ristoranteName} onChange={e => { setRistoranteName(e.target.value); localStorage.setItem("ristoranteName", e.target.value) }}
+                    placeholder="es. Ristorante Da Marco"
+                    style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Data consegna richiesta</label>
+                  <input type="date" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
+                    style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 8 }}>Seleziona fornitore:</div>
+                {(fornitori || []).length === 0 ? (
+                  <div style={{ fontSize: 13, color: STYLE.t3, textAlign: "center", padding: "20px 0" }}>Nessun fornitore salvato — aggiungili nella sezione Fatture</div>
+                ) : (
+                  (fornitori || []).map(f => (
+                    <div key={f.id} onClick={() => sendOrder(f)}
+                      style={{ ...card({ padding: "12px 14px", marginBottom: 8, cursor: "pointer" }) }}>
+                      <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{f.name}</div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{f.tel ? "📱 " + f.tel : f.email ? "✉️ " + f.email : "Nessun contatto"}</div>
+                    </div>
+                  ))
+                )}
+                <button onClick={() => setSendModalOpen(false)} style={{ ...btn("g", { width: "100%", marginTop: 8 }) }}>Annulla</button>
+              </div>
+            </div>
           )}
           {spesa.length > 0 && (
             <button style={btn("s", { fontSize: 12 })} onClick={() => setShareMenuOpen(true)}>Condividi</button>
@@ -3919,7 +3977,7 @@ export default function App() {
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={setPage} setEditDish={setEditDish} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} />
         case "fc":     return <Ricette dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} />
-        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} isMobile={isMobile} />
+        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
     } catch(e) {
