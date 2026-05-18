@@ -4402,7 +4402,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
     if (exists) {
       setSpesa(prev => prev.filter(s => s.ingId !== ing.id))
     } else {
-      setSpesa(prev => [...prev, { id: uid2(), ingId: ing.id, name: ing.name, unit: ing.unit, cat: ing.cat, done: false }])
+      setSpesa(prev => [...prev, { id: uid2(), ingId: ing.id, name: ing.name, unit: ing.unit, cat: ing.cat, cur: ing.cur || 0, done: false, qty: 1 }])
     }
   }
 
@@ -4423,7 +4423,7 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
   async function shareSpesa(cat) {
     const items = cat ? spesa.filter(s => s.cat === cat) : spesa
     const header = cat ? "Lista spesa  -  " + cat : "Lista della spesa"
-    const text = items.map(s => (s.done ? "- " : "--  ") + s.name + (s.unit ? " (" + s.unit + ")" : "")).join("\n")
+    const text = items.filter(s => !s.done).map(s => (s.qty || 1) + " " + (s.unit || "pz") + " " + s.name).join("\n")
     const full = header + "  -  " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
     if (navigator.share) {
       try { await navigator.share({ title: header, text: full }); return } catch(e) {}
@@ -4576,16 +4576,41 @@ function ListaSpesa({ spesa, setSpesa, ings, isMobile }) {
             <div key={cat} style={{ marginBottom: 16 }}>
               <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8, paddingBottom: 4, borderBottom: STYLE.bds }}>{cat}</div>
               {items.map(s => (
-                <div key={s.id} style={row({ justifyContent: "space-between", padding: "10px 12px", background: STYLE.surf, border: STYLE.bds, borderRadius: STYLE.r, marginBottom: 6 })}>
-                  <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
-                    <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
-                    <span style={{ fontSize: 14, color: STYLE.t1 }}>{s.name}</span>
+                <div key={s.id} style={{ ...card({ padding: "10px 12px", marginBottom: 6 }) }}>
+                  <div style={row({ justifyContent: "space-between", marginBottom: 6 })}>
+                    <div onClick={() => toggleDone(s.id)} style={row({ gap: 10, flex: 1, cursor: "pointer" })}>
+                      <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
+                      <span style={{ fontSize: 14, color: STYLE.t1, fontWeight: 600 }}>{s.name}</span>
+                    </div>
+                    <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                  <div style={row({ gap: 8, alignItems: "center" })}>
+                    <input type="number" min="0" step="0.1"
+                      value={s.qty || 1}
+                      onChange={e => setSpesa(prev => prev.map(x => x.id === s.id ? { ...x, qty: parseFloat(e.target.value) || 0 } : x))}
+                      style={{ width: 60, background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "3px 6px", textAlign: "center", fontFamily: "inherit" }} />
+                    <span style={{ fontSize: 12, color: STYLE.t3 }}>{s.unit || "pz"}</span>
+                    {s.cur > 0 && <>
+                      <span style={{ fontSize: 11, color: STYLE.t3, marginLeft: "auto" }}>{formatEuro(s.cur)}/{s.unit || "pz"}</span>
+                      <span style={{ fontSize: 12, color: STYLE.ac, fontWeight: 600 }}>{formatEuro(Math.round((s.qty || 1) * s.cur * 100) / 100)}</span>
+                    </>}
+                  </div>
                 </div>
               ))}
             </div>
           ))}
+
+          {/* Totale spesa */}
+          {spesa.filter(s => !s.done && s.cur > 0).length > 0 && (
+            <div style={{ ...card({ padding: "12px 16px", marginBottom: 16 }), borderColor: STYLE.acd }}>
+              <div style={row({ justifyContent: "space-between" })}>
+                <span style={{ fontSize: 13, color: STYLE.t2, fontWeight: 600 }}>Totale stimato</span>
+                <span style={{ fontSize: 16, color: STYLE.ac, fontWeight: 700 }}>
+                  {formatEuro(spesa.filter(s => !s.done).reduce((acc, s) => acc + Math.round((s.qty || 1) * (s.cur || 0) * 100) / 100, 0))}
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Completati */}
           {doneItems.length > 0 && (
