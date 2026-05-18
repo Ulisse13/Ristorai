@@ -1251,9 +1251,6 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
                   </div>
                 </div>
                 <div style={row({ gap: 8 })}>
-            {spesa.filter(s => !s.done).length > 0 && (
-              <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>📤 Invia ordine</button>
-            )}
                   <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
                     style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
                   <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
@@ -3491,6 +3488,9 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
                 </div>
               </div>
             </div>
+          )}
+          {spesa.filter(s => !s.done).length > 0 && (
+            <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>📤 Invia ordine</button>
           )}
           {spesa.length > 0 && (
             <button style={{ ...btn("g", { fontSize: 12 }), color: STYLE.red }}
