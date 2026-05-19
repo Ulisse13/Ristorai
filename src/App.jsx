@@ -3407,50 +3407,6 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
           {doneItems.length > 0 && (
             <button style={btn("g", { fontSize: 12 })} onClick={clearDone}>Rimuovi completati</button>
           )}
-          {sendModalOpen && (
-            <div onClick={() => setSendModalOpen(false)}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 9999, padding: 16 }}>
-              <div onClick={e => e.stopPropagation()}
-                style={{ background: STYLE.surf, borderRadius: STYLE.r, padding: 20, width: "100%", maxWidth: 480 }}>
-                <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1, marginBottom: 16 }}>Invia ordine</div>
-                <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Nome ristorante</label>
-                  <input value={ristoranteName} onChange={e => { setRistoranteName(e.target.value); localStorage.setItem("ristoranteName", e.target.value) }}
-                    placeholder="es. Ristorante Da Marco"
-                    style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Data consegna richiesta</label>
-                  <input autoFocus={false} type="text" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
-                    placeholder="es. Lunedì 20/05 o Sabato mattina"
-                    style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
-                </div>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 6 }}>Cosa inviare:</label>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                    {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Bevande","Scatolame","Detersivi"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
-                      <button key={cat} onClick={() => setSendCat(cat)}
-                        style={{ ...btn(sendCat === cat ? "p" : "g", { fontSize: 11, padding: "4px 10px" }) }}>{cat}</button>
-                    ))}
-                  </div>
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 8 }}>Seleziona fornitore:</div>
-                {(fornitori || []).length === 0 ? (
-                  <div style={{ fontSize: 13, color: STYLE.t3, textAlign: "center", padding: "20px 0" }}>Nessun fornitore salvato — aggiungili nella sezione Fatture</div>
-                ) : (
-                  (fornitori || []).map(f => (
-                    <div key={f.id} onClick={() => sendOrder(f)}
-                      style={{ ...card({ padding: "12px 14px", marginBottom: 8, cursor: "pointer" }) }}>
-                      <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{f.name}</div>
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{f.tel ? "📱 " + f.tel : f.email ? "✉️ " + f.email : "Nessun contatto"}</div>
-                    </div>
-                  ))
-                )}
-                <button onClick={() => setSendModalOpen(false)} style={{ ...btn("g", { width: "100%", marginTop: 8 }) }}>Annulla</button>
-              </div>
-            </div>
-          )}
-          {/* Bottom sheet condivisione */}
           {spesa.filter(s => !s.done).length > 0 && (
             <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>📤 Invia ordine</button>
           )}
@@ -3461,6 +3417,50 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
             </button>
           )}
         </div>
+
+        {sendModalOpen && (
+          <div onClick={() => setSendModalOpen(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 9999 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: STYLE.surf, borderRadius: "16px 16px 0 0", padding: 20, width: "100%", maxWidth: 480, maxHeight: "85vh", overflowY: "auto" }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1, marginBottom: 16 }}>📤 Invia ordine</div>
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Nome ristorante</label>
+                <input value={ristoranteName} onChange={e => { setRistoranteName(e.target.value); localStorage.setItem("ristoranteName", e.target.value) }}
+                  placeholder="es. Ristorante Da Marco"
+                  style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Data consegna richiesta</label>
+                <input type="text" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
+                  placeholder="es. Lunedì 20/05 o Sabato mattina"
+                  style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+              </div>
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 6 }}>Cosa inviare:</label>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                  {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Bevande","Scatolame","Detersivi"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
+                    <button key={cat} onClick={() => setSendCat(cat)}
+                      style={{ ...btn(sendCat === cat ? "p" : "g", { fontSize: 11, padding: "4px 10px" }) }}>{cat}</button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 8 }}>Seleziona fornitore:</div>
+              {(fornitori || []).length === 0 ? (
+                <div style={{ fontSize: 13, color: STYLE.t3, textAlign: "center", padding: "20px 0" }}>Nessun fornitore salvato — aggiungili nella sezione Fatture</div>
+              ) : (
+                (fornitori || []).map(f => (
+                  <div key={f.id} onClick={() => sendOrder(f)}
+                    style={{ ...card({ padding: "12px 14px", marginBottom: 8, cursor: "pointer" }) }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{f.name}</div>
+                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{f.tel ? "📱 " + f.tel : f.email ? "✉️ " + f.email : "Nessun contatto"}</div>
+                  </div>
+                ))
+              )}
+              <button onClick={() => setSendModalOpen(false)} style={{ ...btn("g", { width: "100%", marginTop: 8 }) }}>Annulla</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Categorie per aggiungere */}
