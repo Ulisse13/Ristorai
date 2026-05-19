@@ -3275,19 +3275,8 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
     setSpesa(prev => prev.filter(s => !s.done))
   }
 
-  const [shareMenuOpen, setShareMenuOpen] = useState(false)
 
-  async function shareSpesa(cat) {
-    const items = cat ? spesa.filter(s => s.cat === cat) : spesa
-    const header = cat ? "Lista spesa  -  " + cat : "Lista della spesa"
-    const text = items.filter(s => !s.done).map(s => (parseFloat(s.qty) || 1) + " " + (s.unitSpesa || s.unit || "pz") + " " + s.name).join("\n")
-    const full = header + "  -  " + new Date().toLocaleDateString("it-IT") + "\n\n" + text
-    if (navigator.share) {
-      try { await navigator.share({ title: header, text: full }); return } catch(e) {}
-    }
-    navigator.clipboard?.writeText(full)
-    alert("Lista copiata negli appunti!")
-  }
+
 
   const [sendModalOpen, setSendModalOpen] = useState(false)
   const [ristoranteName, setRistoranteName] = useState(localStorage.getItem("ristoranteName") || "")
@@ -3461,45 +3450,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
               </div>
             </div>
           )}
-          {spesa.length > 0 && (
-
-          )}
           {/* Bottom sheet condivisione */}
-          {shareMenuOpen && (
-            <div onClick={() => setShareMenuOpen(false)}
-              style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", zIndex: 500, display: "flex", alignItems: "flex-end" }}>
-              <div onClick={e => e.stopPropagation()}
-                style={{ width: "100%", background: STYLE.surf, borderRadius: "16px 16px 0 0", paddingBottom: 24 }}>
-                <div style={{ padding: "16px 20px 12px", borderBottom: STYLE.bds }}>
-                  <div style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1 }}>Condividi lista spesa</div>
-                </div>
-                {/* Tutta la lista */}
-                <div onClick={() => { shareSpesa(null); setShareMenuOpen(false) }}
-                  style={{ padding: "14px 20px", cursor: "pointer", borderBottom: STYLE.bds, display: "flex", alignItems: "center", gap: 12 }}>
-                  <span style={{ fontSize: 20 }}></span>
-                  <div>
-                    <div style={{ fontSize: 14, color: STYLE.t1, fontWeight: 600 }}>Tutta la lista</div>
-                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{spesa.filter(s => !s.done).length} prodotti</div>
-                  </div>
-                </div>
-                {/* Per categoria */}
-                {[...new Set(spesa.filter(s => !s.done).map(s => s.cat))].map(cat => (
-                  <div key={cat} onClick={() => { shareSpesa(cat); setShareMenuOpen(false) }}
-                    style={{ padding: "14px 20px", cursor: "pointer", borderBottom: STYLE.bds, display: "flex", alignItems: "center", gap: 12 }}>
-                    <span style={{ fontSize: 20 }}> </span>
-                    <div>
-                      <div style={{ fontSize: 14, color: STYLE.t1 }}>Solo {cat}</div>
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{spesa.filter(s => !s.done && s.cat === cat).length} prodotti</div>
-                    </div>
-                  </div>
-                ))}
-                <div onClick={() => setShareMenuOpen(false)}
-                  style={{ padding: "14px 20px", textAlign: "center", cursor: "pointer" }}>
-                  <span style={{ fontSize: 13, color: STYLE.t3 }}>Annulla</span>
-                </div>
-              </div>
-            </div>
-          )}
           {spesa.filter(s => !s.done).length > 0 && (
             <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>📤 Invia ordine</button>
           )}
