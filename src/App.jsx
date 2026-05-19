@@ -3292,9 +3292,10 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
   const [sendModalOpen, setSendModalOpen] = useState(false)
   const [ristoranteName, setRistoranteName] = useState(localStorage.getItem("ristoranteName") || "")
   const [consegnaDate, setConsegnaDate] = useState("")
+  const [sendCat, setSendCat] = useState("Tutto")
 
   function sendOrder(fornitore) {
-    const items = spesa.filter(s => !s.done)
+    const items = spesa.filter(s => !s.done && (sendCat === "Tutto" || s.cat === sendCat))
     if (!items.length) return
     const text = items.map(s => (parseFloat(s.qty) || 1) + " " + (s.unitSpesa || s.unit || "pz") + " " + s.name).join("\n")
     const now = new Date()
@@ -3324,7 +3325,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
   if (selCat !== null) {
     const catIngs = ings.filter(i => i.cat === selCat)
     const sotto1List = SOTTO1_ORDER[selCat] || []
-    const sotto1WithIngs = sotto1List.filter(s => catIngs.some(i => i.sotto1 === s))
+    const sotto1WithIngs = sotto1List // mostra tutte le sottocategorie fisse come nel Magazzino
     const ungrouped = catIngs.filter(i => !i.sotto1)
 
     // Livello 2: mostra card sottocategorie
@@ -3431,9 +3432,18 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Data consegna richiesta</label>
-                  <input type="text" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
+                  <input autoFocus={false} type="text" value={consegnaDate} onChange={e => setConsegnaDate(e.target.value)}
                     placeholder="es. Lunedì 20/05 o Sabato mattina"
                     style={{ width: "100%", background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, color: STYLE.t1, fontSize: 13, padding: "7px 10px", fontFamily: "inherit", boxSizing: "border-box" }} />
+                </div>
+                <div style={{ marginBottom: 16 }}>
+                  <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 6 }}>Cosa inviare:</label>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Bevande","Scatolame","Detersivi"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
+                      <button key={cat} onClick={() => setSendCat(cat)}
+                        style={{ ...btn(sendCat === cat ? "p" : "g", { fontSize: 11, padding: "4px 10px" }) }}>{cat}</button>
+                    ))}
+                  </div>
                 </div>
                 <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 8 }}>Seleziona fornitore:</div>
                 {(fornitori || []).length === 0 ? (
@@ -3452,7 +3462,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
             </div>
           )}
           {spesa.length > 0 && (
-            <button style={btn("s", { fontSize: 12 })} onClick={() => setShareMenuOpen(true)}>Condividi</button>
+
           )}
           {/* Bottom sheet condivisione */}
           {shareMenuOpen && (
