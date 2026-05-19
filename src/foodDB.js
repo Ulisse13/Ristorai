@@ -8,20 +8,16 @@ import { PESCE_DB }        from "./foodDB_pesce"
 import { FRUTTAVERDURA_DB } from "./foodDB_fruttaverdura"
 import { FRESCHI_DB }      from "./foodDB_freschi"
 import { SURGELATI_DB }    from "./foodDB_surgelati"
-import { SCATOLAME_DB }    from "./foodDB_scatolame"
-import { BEVANDE_DB }      from "./foodDB_bevande"
-import { DETERSIVI_DB }    from "./foodDB_detersivi"
+import { DISPENSA_DB }     from "./foodDB_dispensa"
 
 // ── Mappa categoria → DB ────────────────────────────────────────────────────
 const ALL_DB = [
-  { cat: "Carni",           db: CARNI_DB },
-  { cat: "Pesce",           db: PESCE_DB },
+  { cat: "Carni",            db: CARNI_DB },
+  { cat: "Pesce",            db: PESCE_DB },
   { cat: "Frutta e Verdura", db: FRUTTAVERDURA_DB },
-  { cat: "Freschi",         db: FRESCHI_DB },
-  { cat: "Surgelati",       db: SURGELATI_DB },
-  { cat: "Scatolame",       db: SCATOLAME_DB },
-  { cat: "Bevande",         db: BEVANDE_DB },
-  { cat: "Detersivi",       db: DETERSIVI_DB },
+  { cat: "Freschi",          db: FRESCHI_DB },
+  { cat: "Surgelati",        db: SURGELATI_DB },
+  { cat: "Dispensa",         db: DISPENSA_DB },
 ]
 
 // ── Indice piatto keyword → { cat, sotto1, sotto2 } ─────────────────────────
@@ -83,11 +79,6 @@ export function lookupFood(nome) {
   return null
 }
 
-/**
- * Restituisce tutte le sotto1 uniche per una categoria
- * @param {string} cat
- * @returns {string[]}
- */
 export function getSotto1ByCat(cat) {
   const { db } = ALL_DB.find(d => d.cat === cat) || {}
   if (!db) return []
@@ -95,12 +86,6 @@ export function getSotto1ByCat(cat) {
   return [...set]
 }
 
-/**
- * Restituisce tutte le sotto2 uniche per una categoria e sotto1
- * @param {string} cat
- * @param {string} sotto1
- * @returns {string[]}
- */
 export function getSotto2ByCat(cat, sotto1) {
   const { db } = ALL_DB.find(d => d.cat === cat) || {}
   if (!db) return []

@@ -1,7 +1,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // foodDB_surgelati.js — Database SURGELATI per Ristorai
 // cat: "Surgelati"
-// sotto1: "Carni" | "Pesce" | "Verdure" | "Piatti Pronti" | "Altro"
+// sotto1: "Carni" | "Pesce" | "Verdure" | "Gelati e Dolci" | "Preparati"
 // sotto2: prodotto specifico
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -68,27 +68,27 @@ export const SURGELATI_DB = [
   // PIATTI PRONTI SURGELATI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["pizza surgelata", "pizza congelata"], sotto1: "Piatti Pronti", sotto2: "Pizza" },
-  { keywords: ["lasagne surgelate", "lasagna surgelata", "lasagne al forno surgelate"], sotto1: "Piatti Pronti", sotto2: "Lasagne" },
-  { keywords: ["cannelloni surgelati", "cannellone surgelato"], sotto1: "Piatti Pronti", sotto2: "Cannelloni" },
-  { keywords: ["arancini surgelati", "arancino surgelato", "supplì surgelato"], sotto1: "Piatti Pronti", sotto2: "Arancini" },
-  { keywords: ["crocchette surgelate", "crocchetta surgelata", "crocchette di patate surgelate"], sotto1: "Piatti Pronti", sotto2: "Crocchette" },
-  { keywords: ["frittura mista surgelata", "misto fritto surgelato"], sotto1: "Piatti Pronti", sotto2: "Frittura Mista" },
-  { keywords: ["cotoletta surgelata", "cotolette surgelate", "cotoletta impanata surgelata"], sotto1: "Piatti Pronti", sotto2: "Cotolette" },
-  { keywords: ["minestra surgelata", "zuppa surgelata", "vellutata surgelata"], sotto1: "Piatti Pronti", sotto2: "Zuppe" },
-  { keywords: ["gnocchi surgelati", "gnocco surgelato", "gnocchi di patate surgelati"], sotto1: "Piatti Pronti", sotto2: "Gnocchi" },
-  { keywords: ["ravioli surgelati", "tortellini surgelati", "pasta ripiena surgelata"], sotto1: "Piatti Pronti", sotto2: "Pasta Ripiena" },
+  { keywords: ["pizza surgelata", "pizza congelata"], sotto1: "Preparati", sotto2: "Pizza" },
+  { keywords: ["lasagne surgelate", "lasagna surgelata", "lasagne al forno surgelate"], sotto1: "Preparati", sotto2: "Lasagne" },
+  { keywords: ["cannelloni surgelati", "cannellone surgelato"], sotto1: "Preparati", sotto2: "Cannelloni" },
+  { keywords: ["arancini surgelati", "arancino surgelato", "supplì surgelato"], sotto1: "Preparati", sotto2: "Arancini" },
+  { keywords: ["crocchette surgelate", "crocchetta surgelata", "crocchette di patate surgelate"], sotto1: "Preparati", sotto2: "Crocchette" },
+  { keywords: ["frittura mista surgelata", "misto fritto surgelato"], sotto1: "Preparati", sotto2: "Frittura Mista" },
+  { keywords: ["cotoletta surgelata", "cotolette surgelate", "cotoletta impanata surgelata"], sotto1: "Preparati", sotto2: "Cotolette" },
+  { keywords: ["minestra surgelata", "zuppa surgelata", "vellutata surgelata"], sotto1: "Preparati", sotto2: "Zuppe" },
+  { keywords: ["gnocchi surgelati", "gnocco surgelato", "gnocchi di patate surgelati"], sotto1: "Preparati", sotto2: "Gnocchi" },
+  { keywords: ["ravioli surgelati", "tortellini surgelati", "pasta ripiena surgelata"], sotto1: "Preparati", sotto2: "Pasta Ripiena" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // ALTRO SURGELATO
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["pane surgelato", "pane congelato", "baguette surgelata", "panini surgelati", "croissant surgelato"], sotto1: "Altro", sotto2: "Pane e Lievitati" },
-  { keywords: ["pasta fresca surgelata", "pasta surgelata"], sotto1: "Altro", sotto2: "Pasta Fresca" },
-  { keywords: ["gelato", "sorbetto", "semifreddo surgelato"], sotto1: "Altro", sotto2: "Gelati" },
-  { keywords: ["frutta surgelata", "frutti di bosco surgelati", "fragole surgelate", "mirtilli surgelati"], sotto1: "Altro", sotto2: "Frutta" },
-  { keywords: ["erbe surgelate", "basilico surgelato", "prezzemolo surgelato", "erbe aromatiche surgelate"], sotto1: "Altro", sotto2: "Erbe Aromatiche" },
-  { keywords: ["brodo surgelato", "brodo congelato", "fondo surgelato"], sotto1: "Altro", sotto2: "Brodi e Fondi" },
-  { keywords: ["impasto surgelato", "pasta sfoglia surgelata", "pasta brisee surgelata"], sotto1: "Altro", sotto2: "Impasti" },
-  { keywords: ["uova surgelate", "albume surgelato", "tuorlo surgelato"], sotto1: "Altro", sotto2: "Uova" },
+  { keywords: ["pane surgelato", "pane congelato", "baguette surgelata", "panini surgelati", "croissant surgelato"], sotto1: "Preparati", sotto2: "Pane e Lievitati" },
+  { keywords: ["pasta fresca surgelata", "pasta surgelata"], sotto1: "Preparati", sotto2: "Pasta Fresca" },
+  { keywords: ["gelato", "sorbetto", "semifreddo surgelato"], sotto1: "Gelati e Dolci", sotto2: "Gelati" },
+  { keywords: ["frutta surgelata", "frutti di bosco surgelati", "fragole surgelate", "mirtilli surgelati"], sotto1: "Preparati", sotto2: "Frutta" },
+  { keywords: ["erbe surgelate", "basilico surgelato", "prezzemolo surgelato", "erbe aromatiche surgelate"], sotto1: "Preparati", sotto2: "Erbe Aromatiche" },
+  { keywords: ["brodo surgelato", "brodo congelato", "fondo surgelato"], sotto1: "Preparati", sotto2: "Brodi e Fondi" },
+  { keywords: ["impasto surgelato", "pasta sfoglia surgelata", "pasta brisee surgelata"], sotto1: "Preparati", sotto2: "Impasti" },
+  { keywords: ["uova surgelate", "albume surgelato", "tuorlo surgelato"], sotto1: "Preparati", sotto2: "Uova" },
 ]
