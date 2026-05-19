@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // foodDB_fruttaverdura.js — Database FRUTTA E VERDURA per Ristorai
-// sotto1: "Frutta" o "Verdura" | sotto2: ""
+// sotto1: "Frutta" | "Verdure" | "Erbe aromatiche" | sotto2: ""
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const FRUTTAVERDURA_DB = [
@@ -63,94 +63,106 @@ export const FRUTTAVERDURA_DB = [
   // ══════════════════════════════════════════════════════════════════════════
 
   // Pomodori
-  { keywords: ["pomodoro", "pomodori", "pomodoro san marzano", "pomodoro ciliegino", "pomodoro cherry", "pomodoro datterino", "pomodoro cuore di bue", "pomodoro costoluto", "pomodoro pachino", "pomodoro piccadilly", "pomodorino"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["pomodoro", "pomodori", "pomodoro san marzano", "pomodoro ciliegino", "pomodoro cherry", "pomodoro datterino", "pomodoro cuore di bue", "pomodoro costoluto", "pomodoro pachino", "pomodoro piccadilly", "pomodorino"], sotto1: "Verdure", sotto2: "" },
 
   // Insalate e foglie
-  { keywords: ["insalata", "lattuga", "lattuga iceberg", "lattuga romana", "lattuga gentile", "lattuga canasta"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["radicchio", "radicchio rosso", "radicchio di treviso", "radicchio di chioggia", "radicchio variegato"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["rucola", "rucola selvatica", "rucola coltivata"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["spinaci", "spinacio", "spinaci baby"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["bietola", "bietole", "bietola da coste", "bietola da foglia", "coste"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["cicoria", "cicoria catalogna", "cicoria puntarelle", "puntarelle"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["indivia", "indivia belga", "indivia riccia", "scarola"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["cavolo cappuccio", "cavolo bianco", "cavolo rosso", "cavolo verde", "cappuccio"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["cavolo nero", "cavolo toscano"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["verza", "cavolo verza", "savoy"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["pak choi", "pak choy", "bok choy"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["catalogna", "catalogna frastagliata"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["valerianella", "songino", "soncino"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["basilico", "basilico genovese", "basilico napoletano"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["prezzemolo", "prezzemolo riccio", "prezzemolo piatto"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["menta", "menta piperita", "menta romana"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["salvia", "rosmarino", "timo", "origano fresco", "maggiorana"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["erba cipollina", "erbe aromatiche", "erbe miste"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["insalata", "lattuga", "lattuga iceberg", "lattuga romana", "lattuga gentile", "lattuga canasta"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["radicchio", "radicchio rosso", "radicchio di treviso", "radicchio di chioggia", "radicchio variegato"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["rucola", "rucola selvatica", "rucola coltivata"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["spinaci", "spinacio", "spinaci baby"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["bietola", "bietole", "bietola da coste", "bietola da foglia", "coste"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["cicoria", "cicoria catalogna", "cicoria puntarelle", "puntarelle"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["indivia", "indivia belga", "indivia riccia", "scarola"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["cavolo cappuccio", "cavolo bianco", "cavolo rosso", "cavolo verde", "cappuccio"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["cavolo nero", "cavolo toscano"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["verza", "cavolo verza", "savoy"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["pak choi", "pak choy", "bok choy"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["catalogna", "catalogna frastagliata"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["valerianella", "songino", "soncino"], sotto1: "Verdure", sotto2: "" },
 
   // Crucifere
-  { keywords: ["broccolo", "broccoli", "broccoletto", "broccolo romanesco", "cime di rapa"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["cavolfiore", "cavolfiori", "cavolfiore bianco", "cavolfiore viola", "cavolfiore romanesco"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["cavoletto di bruxelles", "cavoletti di bruxelles"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["kohlrabi", "cavolo rapa"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["broccolo", "broccoli", "broccoletto", "broccolo romanesco", "cime di rapa"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["cavolfiore", "cavolfiori", "cavolfiore bianco", "cavolfiore viola", "cavolfiore romanesco"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["cavoletto di bruxelles", "cavoletti di bruxelles"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["kohlrabi", "cavolo rapa"], sotto1: "Verdure", sotto2: "" },
 
   // Zucchine e melanzane
-  { keywords: ["zucchina", "zucchine", "zucchino", "zucchina verde", "zucchina gialla", "zucchina romana", "zucchina tonda"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["fiore di zucca", "fiori di zucca", "fiori di zucchina"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["melanzana", "melanzane", "melanzana tonda", "melanzana lunga", "melanzana striata"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["zucchina", "zucchine", "zucchino", "zucchina verde", "zucchina gialla", "zucchina romana", "zucchina tonda"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["fiore di zucca", "fiori di zucca", "fiori di zucchina"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["melanzana", "melanzane", "melanzana tonda", "melanzana lunga", "melanzana striata"], sotto1: "Verdure", sotto2: "" },
 
   // Peperoni e peperoncini
-  { keywords: ["peperone", "peperoni", "peperone rosso", "peperone giallo", "peperone verde", "peperone friggitello"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["peperoncino", "peperoncini", "peperoncino piccante", "peperoncino dolce", "friggitelli"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["peperone", "peperoni", "peperone rosso", "peperone giallo", "peperone verde", "peperone friggitello"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["peperoncino", "peperoncini", "peperoncino piccante", "peperoncino dolce", "friggitelli"], sotto1: "Verdure", sotto2: "" },
 
   // Cipolle e affini
-  { keywords: ["cipolla", "cipolle", "cipolla bianca", "cipolla rossa", "cipolla dorata", "cipolla borettana", "cipollotto", "scalogno"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["aglio", "aglio bianco", "aglio rosa", "aglio nero", "aglio di sulmona"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["porro", "porri", "porro gigante"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["cipolla", "cipolle", "cipolla bianca", "cipolla rossa", "cipolla dorata", "cipolla borettana", "cipollotto", "scalogno"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["aglio", "aglio bianco", "aglio rosa", "aglio nero", "aglio di sulmona"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["porro", "porri", "porro gigante"], sotto1: "Verdure", sotto2: "" },
 
   // Tuberi e radici
-  { keywords: ["patata", "patate", "patata novella", "patata rossa", "patata gialla", "patata viola", "patata dolce", "batata"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["carota", "carote", "carota novella", "carota arancio", "carota viola", "carota gialla"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["rapa", "rape", "rapa bianca", "rapa rossa", "barbabietola", "barbabietole"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["sedano rapa", "sedano di verona", "celeriac"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["pastinaca", "topinambur", "scorzonera", "radice di prezzemolo"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["zenzero fresco", "curcuma fresca"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["daikon", "ravanello", "ravanelli", "ravanello rosso", "ravanello bianco"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["patata", "patate", "patata novella", "patata rossa", "patata gialla", "patata viola", "patata dolce", "batata"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["carota", "carote", "carota novella", "carota arancio", "carota viola", "carota gialla"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["rapa", "rape", "rapa bianca", "rapa rossa", "barbabietola", "barbabietole"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["sedano rapa", "sedano di verona", "celeriac"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["pastinaca", "topinambur", "scorzonera", "radice di prezzemolo"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["zenzero fresco", "curcuma fresca"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["daikon", "ravanello", "ravanelli", "ravanello rosso", "ravanello bianco"], sotto1: "Verdure", sotto2: "" },
 
   // Sedano e finocchio
-  { keywords: ["sedano", "sedano verde", "sedano bianco"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["finocchio", "finocchi", "finocchio selvatico"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["sedano", "sedano verde", "sedano bianco"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["finocchio", "finocchi", "finocchio selvatico"], sotto1: "Verdure", sotto2: "" },
 
   // Asparagi
-  { keywords: ["asparago", "asparagi", "asparago verde", "asparago bianco", "asparago viola", "asparago selvatico"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["asparago", "asparagi", "asparago verde", "asparago bianco", "asparago viola", "asparago selvatico"], sotto1: "Verdure", sotto2: "" },
 
   // Carciofi
-  { keywords: ["carciofo", "carciofi", "carciofo romanesco", "carciofo spinoso", "carciofo violetto", "carciofo sardo"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["carciofo", "carciofi", "carciofo romanesco", "carciofo spinoso", "carciofo violetto", "carciofo sardo"], sotto1: "Verdure", sotto2: "" },
 
   // Legumi freschi
-  { keywords: ["piselli freschi", "pisello fresco", "piselli sgranati"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["fagiolino", "fagiolini", "fagiolo verde", "fagioli verdi", "cornetto", "cornetti"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["fava fresca", "fave fresche", "fave sgranate"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["edamame", "soia fresca"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["piselli freschi", "pisello fresco", "piselli sgranati"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["fagiolino", "fagiolini", "fagiolo verde", "fagioli verdi", "cornetto", "cornetti"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["fava fresca", "fave fresche", "fave sgranate"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["edamame", "soia fresca"], sotto1: "Verdure", sotto2: "" },
 
   // Funghi
-  { keywords: ["fungo", "funghi", "funghi misti", "fungo champignon", "champignon", "funghi porcini freschi", "porcino fresco", "finferlo", "finferli", "cantarello", "gallinaccio"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["fungo shiitake", "shiitake", "pleurotus", "fungo ostrica", "pioppino", "pioppini", "chiodino", "chiodini"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["tartufo fresco", "tartufo nero", "tartufo bianco", "scorzone"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["fungo", "funghi", "funghi misti", "fungo champignon", "champignon", "funghi porcini freschi", "porcino fresco", "finferlo", "finferli", "cantarello", "gallinaccio"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["fungo shiitake", "shiitake", "pleurotus", "fungo ostrica", "pioppino", "pioppini", "chiodino", "chiodini"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["tartufo fresco", "tartufo nero", "tartufo bianco", "scorzone"], sotto1: "Verdure", sotto2: "" },
 
   // Zucca
-  { keywords: ["zucca", "zucca butternut", "zucca delica", "zucca mantovana", "zucca hokkaido", "zucca violina"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["zucca", "zucca butternut", "zucca delica", "zucca mantovana", "zucca hokkaido", "zucca violina"], sotto1: "Verdure", sotto2: "" },
 
   // Mais
-  { keywords: ["mais fresco", "granturco fresco", "spiga di mais"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["mais fresco", "granturco fresco", "spiga di mais"], sotto1: "Verdure", sotto2: "" },
 
   // Cetrioli
-  { keywords: ["cetriolo", "cetrioli", "cetriolo mini", "cetriolo giapponese"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["cetriolo", "cetrioli", "cetriolo mini", "cetriolo giapponese"], sotto1: "Verdure", sotto2: "" },
 
   // Olive fresche
-  { keywords: ["oliva fresca", "olive fresche", "olive verdi fresche", "olive nere fresche"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["oliva fresca", "olive fresche", "olive verdi fresche", "olive nere fresche"], sotto1: "Verdure", sotto2: "" },
 
   // Germogli e misticanze
-  { keywords: ["germogli", "germogli di soia", "germogli di ravanello", "microgreens", "misticanza", "mix insalate", "insalatina"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["germogli", "germogli di soia", "germogli di ravanello", "microgreens", "misticanza", "mix insalate", "insalatina"], sotto1: "Verdure", sotto2: "" },
 
   // Altro
-  { keywords: ["mais dolce", "granoturco", "cima di rapa"], sotto1: "Verdura", sotto2: "" },
-  { keywords: ["rafano", "wasabi fresco", "cappero fresco"], sotto1: "Verdura", sotto2: "" },
+  { keywords: ["mais dolce", "granoturco", "cima di rapa"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["rafano", "wasabi fresco", "cappero fresco"], sotto1: "Verdure", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // ERBE AROMATICHE
+  // ══════════════════════════════════════════════════════════════════════════
+
+  { keywords: ["basilico", "basilico genovese", "basilico napoletano", "basilico fresco"], sotto1: "Erbe aromatiche", sotto2: "Basilico" },
+  { keywords: ["prezzemolo", "prezzemolo riccio", "prezzemolo piatto", "prezzemolo fresco"], sotto1: "Erbe aromatiche", sotto2: "Prezzemolo" },
+  { keywords: ["rosmarino", "rosmarino fresco"], sotto1: "Erbe aromatiche", sotto2: "Rosmarino" },
+  { keywords: ["timo", "timo fresco"], sotto1: "Erbe aromatiche", sotto2: "Timo" },
+  { keywords: ["salvia", "salvia fresca"], sotto1: "Erbe aromatiche", sotto2: "Salvia" },
+  { keywords: ["menta", "menta piperita", "menta romana", "menta fresca"], sotto1: "Erbe aromatiche", sotto2: "Menta" },
+  { keywords: ["origano fresco", "origano"], sotto1: "Erbe aromatiche", sotto2: "Origano" },
+  { keywords: ["erba cipollina", "erba cipollina fresca"], sotto1: "Erbe aromatiche", sotto2: "Erba cipollina" },
+  { keywords: ["maggiorana", "maggiorana fresca"], sotto1: "Erbe aromatiche", sotto2: "Maggiorana" },
+  { keywords: ["dragoncello", "estragone"], sotto1: "Erbe aromatiche", sotto2: "Dragoncello" },
+  { keywords: ["aneto", "aneto fresco"], sotto1: "Erbe aromatiche", sotto2: "Aneto" },
+  { keywords: ["cerfoglio"], sotto1: "Erbe aromatiche", sotto2: "Cerfoglio" },
+  { keywords: ["erbe aromatiche", "mix erbe", "bouquet garni", "erbe miste"], sotto1: "Erbe aromatiche", sotto2: "" },
 ]

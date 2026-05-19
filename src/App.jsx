@@ -123,8 +123,9 @@ const SOTTO1_ORDER = {
   "Carni":            ["Bovino", "Maiale", "Agnello", "Pollo", "Tacchino", "Anatra", "Coniglio", "Selvaggina"],
   "Pesce":            ["Orata", "Branzino", "Salmone", "Pesce Spada", "Tonno", "Ricciola", "Dentice", "Cernia", "Ombrina", "Alghe", "Crostacei", "Molluschi", "Altri Pesci"],
   "Freschi":          ["Formaggi Nobili", "Latticini", "Salumi", "Altri Freschi"],
-  "Frutta e Verdura": ["Frutta", "Verdura"],
-  "Bevande":          ["Analcolici", "Alcolici"],
+  "Frutta e Verdura": ["Frutta", "Verdure", "Erbe aromatiche"],
+  "Surgelati":        ["Carni", "Pesce", "Verdure", "Gelati e Dolci", "Preparati"],
+  "Dispensa":         ["Conserve", "Condimenti", "Secchi", "Bevande analcoliche", "Bevande alcoliche", "Superalcolici", "Detersivi"],
 }
 
 function Dashboard({ ings, dishes, isMobile }) {
@@ -353,7 +354,7 @@ function Dashboard({ ings, dishes, isMobile }) {
 }
 
 function Ingredients({ ings, setIngs, invs, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Scatolame", "Surgelati", "Bevande", "Vini", "Detersivi"]
+  const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Surgelati", "Dispensa", "Vini"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
     Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
@@ -399,9 +400,9 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
 
   // Categorie con navigazione a livelli (sotto1 cards)
-  const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Bevande"]
+  const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati"]
   // Categorie con lista piatta (no sotto1)
-  const CATS_FLAT = ["Scatolame", "Surgelati", "Detersivi"]
+  const CATS_FLAT = ["Dispensa"]
 
   function openAdd() {
     setEdit(null)
@@ -1067,7 +1068,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
     if (cat === "Speciali")  return c === "speciale" || c === "speciali"
     if (cat === "Vini")      return c === "vino"     || c === "vini"
     if (cat === "Cocktail")  return c === "cocktail"
-    if (cat === "Bevande")   return c === "bevanda" || c === "bevande"
+    if (cat === "Dispensa")   return c === "dispensa" || c === "scatolame" || c === "bevande" || c === "detersivi"
     return false
   }
 
@@ -1304,7 +1305,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
   const [selFornitore, setSelFornitore] = useState(null)
@@ -1692,17 +1693,17 @@ PRODOTTI:
 
       // Fallback regex
       const n = nome.toLowerCase()
-      if (/detersiv|sapone|candegg|disinfett|multiuso|sgrassator|lavastoviglie|spugna|strofinaccio|carta igien|scottex|sacchetti|brillantante|wc gel|disincrost|panno|bobina|guanti nitr|tovaglioli|piastrelle|paviment/.test(n)) return "Detersivi"
+      if (/detersiv|sapone|candegg|disinfett|multiuso|sgrassator|lavastoviglie|spugna|strofinaccio|carta igien|scottex|sacchetti|brillantante|wc gel|disincrost|panno|bobina|guanti nitr|tovaglioli|piastrelle|paviment/.test(n)) return "Dispensa"
       if (/surgelat|gelo|frozen/.test(n)) return "Surgelati"
-      if (/pelati|passata|conserva|tonno scatol|sardine scatol|fagioli scatol|ceci scatol|lenticchie|acciughe scatol|sugo pronto|legumi in/.test(n)) return "Scatolame"
-      if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|moretti|acqua mineral|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin |vodka|rum |whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|tequila|mezcal|lipton|baileys/.test(n)) return "Bevande"
+      if (/pelati|passata|conserva|tonno scatol|sardine scatol|fagioli scatol|ceci scatol|lenticchie|acciughe scatol|sugo pronto|legumi in/.test(n)) return "Dispensa"
+      if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|moretti|acqua mineral|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin |vodka|rum |whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|tequila|mezcal|lipton|baileys/.test(n)) return "Dispensa"
       if (/barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|chablis|bollicine|spumante|cava|docg|doc |igt |cantina|tenuta|donnafugata|antinori|gaja|sassicaia|conterno|giacosa|ceretto/.test(n)) return "Vini"
       if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|cinghiale|anatra|piccione|quaglia|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato/.test(n)) return "Carni"
       if (/prosciutto|salame|mortadella|bresaola|coppa|speck|affettat|salumi|uova|uovo|pastorizzat|tuorlo|albume|wurstel|strutto/.test(n)) return "Freschi"
       if (/pesce|merluzzo|salmone|tonno fresc|branzino|orata|sogliola|baccala|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|dentice|spigola/.test(n)) return "Pesce"
       if (/mela|pera|pesca|albicocca|ciliegia|arancia|limone|kiwi|ananas|banana|fragola|mango|melone|cocomero|fico|frutta|pomodor|insalata|lattuga|zucchine|melanzane|peperone|cipolla|aglio|carota|sedano|finocchio|broccoli|cavolfiore|asparagi|funghi|radicchio|rucola|spinaci|patate|bietola|carciofo|piselli|fagiolini|mais |zucca|porri|cetrioli|verdura|fave|peperoni/.test(n)) return "Frutta e Verdura"
       if (/parmigiano|mozzarella|grana |burro|latte |panna|yogurt|ricotta|fontina|asiago|brie|gorgonzola|provolone|scamorza|mascarpone|formaggio|toma |pecorino|castelmagno|taleggio|stracchino/.test(n)) return "Freschi"
-      return "Scatolame"
+      return "Dispensa"
     }
 
     // Pulisce il nome del vino rimuovendo codici articolo, quantità, annate, formati
@@ -1861,9 +1862,9 @@ PRODOTTI:
     if (c.includes("fresco") || c.includes("freschi")) return "Freschi"
     if (c.includes("surgel")) return "Surgelati"
     if (c.includes("vino") || c.includes("vini")) return "Vini"
-    if (c.includes("bevand")) return "Bevande"
-    if (c.includes("scatol")) return "Scatolame"
-    if (c.includes("detersiv")) return "Detersivi"
+    if (c.includes("bevand")) return "Dispensa"
+    if (c.includes("scatol")) return "Dispensa"
+    if (c.includes("detersiv")) return "Dispensa"
     return null
   }
 
@@ -2688,7 +2689,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
   const [dSaved, setDSaved] = useState(false)
 
   const viniIng = ings.filter(i => i.cat === "Vini")
-  const bevIng  = ings.filter(i => i.cat === "Bevande")
+  const bevIng  = ings.filter(i => i.cat === "Dispensa")
 
   // When an ingredient vino is selected, auto-fill price, tipo, regione
   function onSelIngVino(ingId) {
@@ -2866,7 +2867,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                           </div>
                           <div style={{ overflowY: "auto", flex: 1 }}>
                             {!row._cat ? (
-                              ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Vini","Bevande","Scatolame","Detersivi"]
+                              ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa","Vini"]
                                 .filter(c => ings.some(i => i.cat === c))
                                 .map(c => (
                                   <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, _sotto1: null })}
@@ -2875,7 +2876,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                     <span style={{ color: STYLE.t3 }}> </span>
                                   </div>
                                 ))
-                            ) : row._cat && !row._sotto1 && ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Bevande"].includes(row._cat) ? (
+                            ) : row._cat && !row._sotto1 && ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati"].includes(row._cat) ? (
                               <>
                                 <div onClick={() => fUpdateRow(row.id, { _cat: null })}
                                   style={{ padding: "10px 18px", borderBottom: STYLE.bds, cursor: "pointer", fontSize: 12, color: STYLE.ac }}> Categorie</div>
@@ -3249,7 +3250,7 @@ function LoginPage() {
 
 
 function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
-  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Vini", "Bevande", "Scatolame", "Detersivi"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
   const uid2 = () => Math.random().toString(36).slice(2, 7)
@@ -3439,7 +3440,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
               <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 6 }}>Cosa inviare:</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Bevande","Scatolame","Detersivi"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
+                  {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa","Vini"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
                     <button key={cat} onClick={() => setSendCat(cat)}
                       style={{ ...btn(sendCat === cat ? "p" : "g", { fontSize: 11, padding: "4px 10px" }) }}>{cat}</button>
                   ))}
