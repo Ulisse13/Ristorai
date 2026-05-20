@@ -3660,6 +3660,7 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(false)
   useEffect(() => { sessionStorage.setItem("ristorai_page", page) }, [page])
   const [ready, setReady] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const [user, setUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1024)
@@ -3686,9 +3687,8 @@ export default function App() {
 
   // Load data per user
   useEffect(() => {
-    if (!user) { setLoaded(false); return }
+    if (!user) return
     async function load() {
-      setLoaded(false)
       setReady(false)
       try {
         const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
