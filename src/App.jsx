@@ -3690,6 +3690,13 @@ export default function App() {
     if (!user) return
     async function load() {
       setReady(false)
+      // Reset stato prima di caricare nuovo utente
+      setIngs([])
+      setInvs([])
+      setDishes([])
+      setFornitori([])
+      setSpesa([])
+      setLearned(null)
       try {
         const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
         if (snap.exists()) {
@@ -3706,8 +3713,8 @@ export default function App() {
           // Nuovo utente  -  mostra onboarding
           setOnboarded(false)
         }
-        setLoaded(true)
-      } catch (e) { console.log("Load error:", e); setLoaded(true) }
+        setLastLoadedUid(user.uid)
+      } catch (e) { console.log("Load error:", e); setLastLoadedUid(user.uid) }
       setReady(true)
     }
     load()
@@ -3715,7 +3722,7 @@ export default function App() {
 
   // Save data per user
   useEffect(() => {
-    if (!ready || !user || !loaded) return
+    if (!ready || !user || user.uid !== lastLoadedUid) return
     // Rimuove valori undefined che Firebase non accetta
     const clean = obj => {
       if (Array.isArray(obj)) return obj.map(clean)
