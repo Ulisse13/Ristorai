@@ -3968,7 +3968,14 @@ export default function App() {
       <div style={{ height: 52, background: STYLE.surf, borderBottom: STYLE.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>FoodMargin</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => setSettingsOpen(true)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: STYLE.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}></button>
+          <button onClick={() => setSettingsOpen(true)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+            {user?.photoURL
+              ? <img src={user.photoURL} style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} />
+              : <div style={{ width: 34, height: 34, borderRadius: "50%", background: STYLE.ac, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                  {(user?.displayName || user?.email || "?")[0].toUpperCase()}
+                </div>
+            }
+          </button>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
@@ -4047,7 +4054,14 @@ export default function App() {
               <div style={{ width: 22, height: 22, borderRadius: 5, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 11, color: STYLE.ac }}>{user?.email?.[0]?.toUpperCase() || "U"}</div>
               <span style={{ fontSize: 12, fontWeight: 500, color: STYLE.t1 }}>{user?.email?.split("@")[0] || "User"}</span>
             </div>
-            <button onClick={() => setSettingsOpen(true)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: STYLE.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }} title="Impostazioni"></button>
+            <button onClick={() => setSettingsOpen(true)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
+              {user?.photoURL
+                ? <img src={user.photoURL} style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} />
+                : <div style={{ width: 34, height: 34, borderRadius: "50%", background: STYLE.ac, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff" }}>
+                    {(user?.displayName || user?.email || "?")[0].toUpperCase()}
+                  </div>
+              }
+            </button>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 48px" }}>
