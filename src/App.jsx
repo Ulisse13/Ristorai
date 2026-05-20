@@ -400,9 +400,9 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
 
   // Categorie con navigazione a livelli (sotto1 cards)
-  const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati"]
+  const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
   // Categorie con lista piatta (no sotto1)
-  const CATS_FLAT = ["Dispensa"]
+  const CATS_FLAT = []
 
   function openAdd() {
     setEdit(null)
@@ -1872,15 +1872,24 @@ PRODOTTI:
   function save() {
     const e = {}
     if (!fattura.sup.trim()) e.sup = "Obbligatorio"
-    if (!fattura.num.trim()) e.num = "Obbligatorio"
     if (!fattura.date)       e.date = "Obbligatoria"
     if (!fattura.total || +fattura.total <= 0) e.total = "Totale > 0"
     if (Object.keys(e).length) { setFattErr(e); return }
 
     const toProcess = found.filter(p => p.include && p.prezzoUnitario > 0)
 
-    // Aggiorna prezzi ingredienti esistenti
-    const toUpdate = toProcess.filter(p => p.tipo === "update")
+    // Aggiorna prezzi ingredienti esistenti — solo se categoria coincide
+    const toUpdate = toProcess.filter(p => {
+      if (p.tipo !== "update") return false
+      const existingIng = ings.find(i => i.id === p.ingId)
+      return existingIng && existingIng.cat === p.cat
+    })
+    // Aggiungi come nuovi: tipo="new" + tipo="update" con categoria cambiata
+    const catMismatch = toProcess.filter(p => {
+      if (p.tipo !== "update") return false
+      const existingIng = ings.find(i => i.id === p.ingId)
+      return !existingIng || existingIng.cat !== p.cat
+    })
     if (toUpdate.length > 0) {
       setIngs(prev => prev.map(ing => {
         const match = toUpdate.find(p => p.ingId === ing.id)
@@ -1898,8 +1907,8 @@ PRODOTTI:
       }))
     }
 
-    // Aggiungi nuovi ingredienti
-    const toAdd = toProcess.filter(p => p.tipo === "new")
+    // Aggiungi nuovi ingredienti (+ quelli con categoria cambiata)
+    const toAdd = [...toProcess.filter(p => p.tipo === "new"), ...catMismatch]
     if (toAdd.length > 0) {
       const newIngs = toAdd.map(p => ({
         id: "i" + uid(),
@@ -1932,7 +1941,7 @@ PRODOTTI:
     // Salva fattura
     const v = +fattura.vat || 0
     const newInv = {
-      id: "v" + uid(), sup: fattura.sup, num: fattura.num,
+      id: "v" + uid(), sup: fattura.sup, num: fattura.date + "-" + uid().slice(0,4),
       date: fattura.date, total: +fattura.total,
       vat: v, net: +fattura.total - v, ok: true,
       prodotti: found.filter(p => p.include).map(p => ({
@@ -2212,10 +2221,7 @@ PRODOTTI:
                   {fattErr.sup && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.sup}</span>}
                 </Fld>
               </div>
-              <Fld label="N   Fattura *">
-                <input style={inp()} value={fattura.num} onChange={e => setFattura(f => ({ ...f, num: e.target.value }))} placeholder="2024/001" />
-                {fattErr.num && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.num}</span>}
-              </Fld>
+
               <Fld label="Data *">
                 <input style={inp()} type="date" value={fattura.date} onChange={e => setFattura(f => ({ ...f, date: e.target.value }))} />
                 {fattErr.date && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.date}</span>}
@@ -2253,9 +2259,7 @@ PRODOTTI:
                         onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, nomeEdit: e.target.value } : x))}
                         placeholder="Nome ingrediente"
                       />
-                      {p.tipo === "update" && (
-                        <div style={{ fontSize: 11, color: STYLE.green }}>' aggiorna: {p.ingName}</div>
-                      )}
+
                     </div>
                     <input type="checkbox" checked={p.include}
                       onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, include: e.target.checked } : x))}
@@ -3682,8 +3686,9 @@ export default function App() {
 
   // Load data per user
   useEffect(() => {
-    if (!user) return
+    if (!user) { setLoaded(false); return }
     async function load() {
+      setLoaded(false)
       setReady(false)
       try {
         const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
@@ -3701,7 +3706,8 @@ export default function App() {
           // Nuovo utente  -  mostra onboarding
           setOnboarded(false)
         }
-      } catch (e) { console.log("Load error:", e) }
+        setLoaded(true)
+      } catch (e) { console.log("Load error:", e); setLoaded(true) }
       setReady(true)
     }
     load()
@@ -3709,7 +3715,7 @@ export default function App() {
 
   // Save data per user
   useEffect(() => {
-    if (!ready || !user) return
+    if (!ready || !user || !loaded) return
     // Rimuove valori undefined che Firebase non accetta
     const clean = obj => {
       if (Array.isArray(obj)) return obj.map(clean)
