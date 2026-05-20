@@ -3713,8 +3713,8 @@ export default function App() {
           // Nuovo utente  -  mostra onboarding
           setOnboarded(false)
         }
-        setLastLoadedUid(user.uid)
-      } catch (e) { console.log("Load error:", e); setLastLoadedUid(user.uid) }
+        setLoaded(true)
+      } catch (e) { console.log("Load error:", e); setLoaded(true) }
       setReady(true)
     }
     load()
@@ -3722,7 +3722,7 @@ export default function App() {
 
   // Save data per user
   useEffect(() => {
-    if (!ready || !user || user.uid !== lastLoadedUid) return
+    if (!ready || !user || !loaded) return
     // Rimuove valori undefined che Firebase non accetta
     const clean = obj => {
       if (Array.isArray(obj)) return obj.map(clean)
