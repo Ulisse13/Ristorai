@@ -381,22 +381,35 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   // Trova prezzi per fornitore per un ingrediente
   function prezziPerFornitore(ing) {
     const result = []
-    const nameLow = ing.name.toLowerCase()
-    const seen = new Set()
+    const normN = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
+    const ingNorm = normN(ing.name)
+    const seen = new Map() // normSup → {price, date} - keep lowest price per supplier
     for (const inv of invs) {
       if (!inv.prodotti) continue
       for (const p of inv.prodotti) {
         if (!p.nome || !p.prezzoUnitario) continue
-        const pLow = p.nome.toLowerCase()
-        if (pLow.includes(nameLow.split(" ")[0]) || nameLow.includes(pLow.split(" ")[0])) {
-          if (!seen.has(inv.sup)) {
-            seen.add(inv.sup)
-            result.push({ sup: inv.sup, price: p.prezzoUnitario, date: inv.date })
-          }
+        // Filtra per categoria se disponibile
+        if (p.categoria && ing.cat && p.categoria !== ing.cat) continue
+        // Jaccard matching con soglia 0.7
+        const pNorm = normN(p.nome)
+        if (pNorm === ingNorm) {
+          // match esatto
+        } else {
+          const aWords = ingNorm.split(/\s+/).filter(w => w.length >= 4)
+          const bWords = pNorm.split(/\s+/).filter(w => w.length >= 4)
+          if (!aWords.length || !bWords.length) continue
+          const common = aWords.filter(w => bWords.includes(w))
+          const union = new Set([...aWords, ...bWords]).size
+          if (common.length / union < 0.7 || common.length < 2) continue
+        }
+        const normSup = normFornitore(inv.sup) || inv.sup
+        const existing = seen.get(normSup)
+        if (!existing || p.prezzoUnitario < existing.price) {
+          seen.set(normSup, { sup: normSup, price: p.prezzoUnitario, date: inv.date })
         }
       }
     }
-    return result.sort((a, b) => a.price - b.price)
+    return [...seen.values()].sort((a, b) => a.price - b.price)
   }
 
   const [selCat, setSelCat]     = useState(null) // null = category view
@@ -1399,7 +1412,17 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
       let extractedText = ""
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE NOME: massimo 5 parole, solo il prodotto (es: "Maionese Calve", "Petto Barberie", "Granella di Nocciole", "Peperoni Rossi al Naturale"). NO pesi, NO volumi, NO codici, NO varianti.
+REGOLE NOME: massimo 5 parole, solo il prodotto. NO pesi, NO volumi, NO codici articolo.
+PRESERVARE SEMPRE nel nome queste specificazioni se presenti:
+- Conservazione: al naturale, sott'aceto, sott'olio, affumicato, salmistrato, marinato, fermentato
+- Stato: fresco, precotto, cotto, crudo, abbattuto, decongelato, dec
+- Surgelazione: surgelato, gelo, IQF
+- Tagli: intero, metà, filetti, pulito, sporco, piccolo, medio, grande
+- Calibri gamberi: 1°, 2°, 3°, 4°
+- Calibri polpo: T1 T2 T3 T4 T5 T6 T7
+- Calibri calamari: U5 U10 2P 3P 4P
+- Abbreviazioni: B.A. (bovino adulto), C/O (con osso), S/V (sottovuoto)
+Esempi: "Gambero Rosso 2°", "Polpo Pulito T2", "Calamaro IQF U5", "Salmone Affumicato", "Fesa B.A.", "Petto Barberie", "Peperoni Rossi al Naturale"
 REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti.
 CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 VINI - OBBLIGATORIO compilare SEMPRE sotto1 E sotto2:
@@ -1963,12 +1986,13 @@ PRODOTTI:
     }
     setInvs(prev => [newInv, ...prev])
 
-    // Auto-crea o aggiorna fornitore
+    // Auto-crea o aggiorna fornitore (normalizzato)
     const supName = fattura.sup.trim()
     if (supName) {
+      const supNorm = normFornitore(supName)
       setFornitori(prev => {
-        const exists = prev.find(f => f.name.toLowerCase() === supName.toLowerCase())
-        if (exists) return prev // gi   presente
+        const exists = prev.find(f => normFornitore(f.name) === supNorm)
+        if (exists) return prev // già presente
         return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
       })
     }
@@ -2021,7 +2045,7 @@ PRODOTTI:
           {selFornitore && (() => {
             const f = fornitori.find(x => x.id === selFornitore)
             if (!f) return null
-            const fInvs = invs.filter(i => i.sup.toLowerCase() === f.name.toLowerCase())
+            const fInvs = invs.filter(i => (normFornitore(i.sup) || i.sup.toLowerCase()) === (normFornitore(f.name) || f.name.toLowerCase()))
             const meseAtt = new Date().toISOString().slice(0,7)
             const totMese = fInvs.filter(i => i.date.startsWith(meseAtt)).reduce((s,i) => s + i.total, 0)
             const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
@@ -2109,7 +2133,8 @@ PRODOTTI:
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {fornitori.map(f => {
-                  const fInvs = invs.filter(i => i.sup.toLowerCase() === f.name.toLowerCase())
+                  const fNorm = normFornitore(f.name)
+                  const fInvs = invs.filter(i => normFornitore(i.sup) === fNorm || (i.sup||"").toLowerCase() === (f.name||"").toLowerCase())
                   const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
                   return (
                     <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => setSelFornitore(f.id)}>
