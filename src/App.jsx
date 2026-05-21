@@ -22,11 +22,23 @@ function isLikelyWine(name) {
 
 function normFornitore(s) {
   if (!s) return ""
-  return s.toLowerCase()
-    .replace(/(s\.r\.l\.s?|srls?|s\.n\.c\.|snc|s\.p\.a\.|spa|s\.a\.s\.|sas|s\.s\.|ss|ltd|gmbh|inc|corp|soc\. coop|coop|societa|società)/g, "")
-    .replace(/[.\-_]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
+  let r = s.toLowerCase()
+  r = r.replace(/s\.r\.l\.s\.|s\.r\.l\.|s\.n\.c\.|s\.p\.a\.|s\.a\.s\.|s\.s\./g, "")
+  r = r.replace(/\bsrls\b|\bsrl\b|\bsnc\b|\bspa\b|\bsas\b|\bltd\b|\bgmbh\b|\binc\b|\bcorp\b|\bcoop\b/g, "")
+  r = r.replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim()
+  return r
+}
+
+function simFornitore(a, b) {
+  const na = normFornitore(a)
+  const nb = normFornitore(b)
+  if (na === nb) return 1
+  const wa = na.split(" ").filter(w => w.length >= 3)
+  const wb = nb.split(" ").filter(w => w.length >= 3)
+  if (!wa.length || !wb.length) return 0
+  const common = wa.filter(w => wb.includes(w))
+  const union = new Set([...wa, ...wb]).size
+  return common.length / union
 }
 
 function cleanJSON(str) {
@@ -1991,7 +2003,7 @@ PRODOTTI:
     if (supName) {
       const supNorm = normFornitore(supName)
       setFornitori(prev => {
-        const exists = prev.find(f => normFornitore(f.name) === supNorm)
+        const exists = prev.find(f => simFornitore(f.name, supName) >= 0.85)
         if (exists) return prev // già presente
         return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
       })
