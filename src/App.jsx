@@ -1399,7 +1399,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
       let extractedText = ""
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE NOME: massimo 3 parole, solo il prodotto (es: "Maionese Calve", "Petto Barberie", "Triglia Scoglio"). NO pesi, NO volumi, NO codici, NO varianti.
+REGOLE NOME: massimo 5 parole, solo il prodotto (es: "Maionese Calve", "Petto Barberie", "Granella di Nocciole", "Peperoni Rossi al Naturale"). NO pesi, NO volumi, NO codici, NO varianti.
 REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti.
 CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 VINI - OBBLIGATORIO compilare SEMPRE sotto1 E sotto2:
@@ -1815,7 +1815,7 @@ PRODOTTI:
         const common = aWords.filter(w => bWords.includes(w))
         const union = new Set([...aWords, ...bWords]).size
         const jaccard = common.length / union
-        return jaccard >= 0.5 && common.length >= 2
+        return jaccard >= 0.7 && common.length >= 2
       })
 
       // Prezzo: usa prezzoUnitario dell'AI (già calcolato dal prompt Firebase)
