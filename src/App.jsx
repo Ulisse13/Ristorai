@@ -20,6 +20,15 @@ function isLikelyWine(name) {
   return false
 }
 
+function normFornitore(s) {
+  if (!s) return ""
+  return s.toLowerCase()
+    .replace(/(s\.r\.l\.s?|srls?|s\.n\.c\.|snc|s\.p\.a\.|spa|s\.a\.s\.|sas|s\.s\.|ss|ltd|gmbh|inc|corp|soc\. coop|coop|societa|società)/g, "")
+    .replace(/[.\-_]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 function cleanJSON(str) {
   let s = str.trim()
   // Trova il JSON completo contando le parentesi
@@ -1793,15 +1802,19 @@ PRODOTTI:
       const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
-      const nameLower = p.nome.toLowerCase()
+      const normName = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
+      const nameLower = normName(p.nome)
+      const normSup = s => normFornitore(s)
       const existing = ings.find(i => {
-        const aWords = i.name.toLowerCase().split(/\s+/).filter(w => w.length >= 4)
+        const aNorm = normName(i.name)
+        // Match esatto normalizzato
+        if (aNorm === nameLower) return true
+        const aWords = aNorm.split(/\s+/).filter(w => w.length >= 4)
         const bWords = nameLower.split(/\s+/).filter(w => w.length >= 4)
         if (!aWords.length || !bWords.length) return false
         const common = aWords.filter(w => bWords.includes(w))
         const union = new Set([...aWords, ...bWords]).size
         const jaccard = common.length / union
-        // Jaccard >= 0.5 E almeno 2 parole in comune
         return jaccard >= 0.5 && common.length >= 2
       })
 
@@ -1834,9 +1847,9 @@ PRODOTTI:
         sconto: p.sconto || "",
         sotto1: sotto1Final, sotto2: sotto2Final,
         catOriginal: cat, catChanged: false,
-        tipo: existing ? "update" : "new",
-        ingId: existing ? existing.id : null,
-        ingName: existing ? existing.name : null,
+        tipo: existing && existing.cat === cat ? "update" : "new",
+        ingId: existing && existing.cat === cat ? existing.id : null,
+        ingName: existing && existing.cat === cat ? existing.name : null,
         cat, include: true,
         ...(cat === "Vini" ? {
           tipoVino: normTipoVino(p.sotto1) || guessTipoVino(p.nome),
@@ -1941,7 +1954,7 @@ PRODOTTI:
     // Salva fattura
     const v = +fattura.vat || 0
     const newInv = {
-      id: "v" + uid(), sup: fattura.sup, num: fattura.date + "-" + uid().slice(0,4),
+      id: "v" + uid(), sup: normFornitore(fattura.sup) || fattura.sup, num: fattura.date + "-" + uid().slice(0,4),
       date: fattura.date, total: +fattura.total,
       vat: v, net: +fattura.total - v, ok: true,
       prodotti: found.filter(p => p.include).map(p => ({
@@ -3742,6 +3755,9 @@ export default function App() {
       await deleteDoc(doc(db, "users", user.uid, "data", "main"))
       await deleteUser(user)
       await signOut(auth)
+      setUser(null)
+      setOnboarded(false)
+      setSettingsOpen(false)
     }
 
     try {
@@ -3846,7 +3862,7 @@ export default function App() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0", flexShrink: 0 }}>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Impostazioni</div>
-          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18 }}> </button>
+          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18, lineHeight: 1 }}>✕</button>
         </div>
 
         {/* Avatar + email */}
