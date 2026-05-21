@@ -20,27 +20,6 @@ function isLikelyWine(name) {
   return false
 }
 
-function normFornitore(s) {
-  if (!s) return ""
-  let r = s.toLowerCase()
-  r = r.replace(/s\.r\.l\.s\.|s\.r\.l\.|s\.n\.c\.|s\.p\.a\.|s\.a\.s\.|s\.s\./g, "")
-  r = r.replace(/\bsrls\b|\bsrl\b|\bsnc\b|\bspa\b|\bsas\b|\bltd\b|\bgmbh\b|\binc\b|\bcorp\b|\bcoop\b/g, "")
-  r = r.replace(/[.\-_]/g, " ").replace(/\s+/g, " ").trim()
-  return r
-}
-
-function simFornitore(a, b) {
-  const na = normFornitore(a)
-  const nb = normFornitore(b)
-  if (na === nb) return 1
-  const wa = na.split(" ").filter(w => w.length >= 3)
-  const wb = nb.split(" ").filter(w => w.length >= 3)
-  if (!wa.length || !wb.length) return 0
-  const common = wa.filter(w => wb.includes(w))
-  const union = new Set([...wa, ...wb]).size
-  return common.length / union
-}
-
 function cleanJSON(str) {
   let s = str.trim()
   // Trova il JSON completo contando le parentesi
@@ -393,35 +372,22 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   // Trova prezzi per fornitore per un ingrediente
   function prezziPerFornitore(ing) {
     const result = []
-    const normN = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
-    const ingNorm = normN(ing.name)
-    const seen = new Map() // normSup → {price, date} - keep lowest price per supplier
+    const nameLow = ing.name.toLowerCase()
+    const seen = new Set()
     for (const inv of invs) {
       if (!inv.prodotti) continue
       for (const p of inv.prodotti) {
         if (!p.nome || !p.prezzoUnitario) continue
-        // Filtra per categoria se disponibile
-        if (p.categoria && ing.cat && p.categoria !== ing.cat) continue
-        // Jaccard matching con soglia 0.7
-        const pNorm = normN(p.nome)
-        if (pNorm === ingNorm) {
-          // match esatto
-        } else {
-          const aWords = ingNorm.split(/\s+/).filter(w => w.length >= 4)
-          const bWords = pNorm.split(/\s+/).filter(w => w.length >= 4)
-          if (!aWords.length || !bWords.length) continue
-          const common = aWords.filter(w => bWords.includes(w))
-          const union = new Set([...aWords, ...bWords]).size
-          if (common.length / union < 0.7 || common.length < 2) continue
-        }
-        const normSup = normFornitore(inv.sup) || inv.sup
-        const existing = seen.get(normSup)
-        if (!existing || p.prezzoUnitario < existing.price) {
-          seen.set(normSup, { sup: normSup, price: p.prezzoUnitario, date: inv.date })
+        const pLow = p.nome.toLowerCase()
+        if (pLow.includes(nameLow.split(" ")[0]) || nameLow.includes(pLow.split(" ")[0])) {
+          if (!seen.has(inv.sup)) {
+            seen.add(inv.sup)
+            result.push({ sup: inv.sup, price: p.prezzoUnitario, date: inv.date })
+          }
         }
       }
     }
-    return [...seen.values()].sort((a, b) => a.price - b.price)
+    return result.sort((a, b) => a.price - b.price)
   }
 
   const [selCat, setSelCat]     = useState(null) // null = category view
@@ -434,9 +400,9 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
 
   // Categorie con navigazione a livelli (sotto1 cards)
-  const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
+  const CATS_WITH_SOTTO1 = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati"]
   // Categorie con lista piatta (no sotto1)
-  const CATS_FLAT = []
+  const CATS_FLAT = ["Dispensa"]
 
   function openAdd() {
     setEdit(null)
@@ -1424,17 +1390,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
       let extractedText = ""
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE NOME: massimo 5 parole, solo il prodotto. NO pesi, NO volumi, NO codici articolo.
-PRESERVARE SEMPRE nel nome queste specificazioni se presenti:
-- Conservazione: al naturale, sott'aceto, sott'olio, affumicato, salmistrato, marinato, fermentato
-- Stato: fresco, precotto, cotto, crudo, abbattuto, decongelato, dec
-- Surgelazione: surgelato, gelo, IQF
-- Tagli: intero, metà, filetti, pulito, sporco, piccolo, medio, grande
-- Calibri gamberi: 1°, 2°, 3°, 4°
-- Calibri polpo: T1 T2 T3 T4 T5 T6 T7
-- Calibri calamari: U5 U10 2P 3P 4P
-- Abbreviazioni: B.A. (bovino adulto), C/O (con osso), S/V (sottovuoto)
-Esempi: "Gambero Rosso 2°", "Polpo Pulito T2", "Calamaro IQF U5", "Salmone Affumicato", "Fesa B.A.", "Petto Barberie", "Peperoni Rossi al Naturale"
+REGOLE NOME: massimo 3 parole, solo il prodotto (es: "Maionese Calve", "Petto Barberie", "Triglia Scoglio"). NO pesi, NO volumi, NO codici, NO varianti.
 REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti.
 CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
 VINI - OBBLIGATORIO compilare SEMPRE sotto1 E sotto2:
@@ -1837,20 +1793,16 @@ PRODOTTI:
       const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
-      const normName = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
-      const nameLower = normName(p.nome)
-      const normSup = s => normFornitore(s)
+      const nameLower = p.nome.toLowerCase()
       const existing = ings.find(i => {
-        const aNorm = normName(i.name)
-        // Match esatto normalizzato
-        if (aNorm === nameLower) return true
-        const aWords = aNorm.split(/\s+/).filter(w => w.length >= 4)
+        const aWords = i.name.toLowerCase().split(/\s+/).filter(w => w.length >= 4)
         const bWords = nameLower.split(/\s+/).filter(w => w.length >= 4)
         if (!aWords.length || !bWords.length) return false
         const common = aWords.filter(w => bWords.includes(w))
         const union = new Set([...aWords, ...bWords]).size
         const jaccard = common.length / union
-        return jaccard >= 0.7 && common.length >= 2
+        // Jaccard >= 0.5 E almeno 2 parole in comune
+        return jaccard >= 0.5 && common.length >= 2
       })
 
       // Prezzo: usa prezzoUnitario dell'AI (già calcolato dal prompt Firebase)
@@ -1882,9 +1834,9 @@ PRODOTTI:
         sconto: p.sconto || "",
         sotto1: sotto1Final, sotto2: sotto2Final,
         catOriginal: cat, catChanged: false,
-        tipo: existing && existing.cat === cat ? "update" : "new",
-        ingId: existing && existing.cat === cat ? existing.id : null,
-        ingName: existing && existing.cat === cat ? existing.name : null,
+        tipo: existing ? "update" : "new",
+        ingId: existing ? existing.id : null,
+        ingName: existing ? existing.name : null,
         cat, include: true,
         ...(cat === "Vini" ? {
           tipoVino: normTipoVino(p.sotto1) || guessTipoVino(p.nome),
@@ -1920,43 +1872,46 @@ PRODOTTI:
   function save() {
     const e = {}
     if (!fattura.sup.trim()) e.sup = "Obbligatorio"
+    if (!fattura.num.trim()) e.num = "Obbligatorio"
     if (!fattura.date)       e.date = "Obbligatoria"
     if (!fattura.total || +fattura.total <= 0) e.total = "Totale > 0"
     if (Object.keys(e).length) { setFattErr(e); return }
 
     const toProcess = found.filter(p => p.include && p.prezzoUnitario > 0)
+    const normN2 = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
 
-    // Aggiorna prezzi ingredienti esistenti — solo se categoria coincide
-    const toUpdate = toProcess.filter(p => {
-      if (p.tipo !== "update") return false
-      const existingIng = ings.find(i => i.id === p.ingId)
-      return existingIng && existingIng.cat === p.cat
+    // Matching al salvataggio: nome+categoria, NON durante la revisione
+    const toUpdate = []
+    const toAddNew = []
+    toProcess.forEach(p => {
+      const pName = normN2((p.nomeEdit || p.nome).trim())
+      const pCat = p.cat
+      const existing = ings.find(i => {
+        if (i.cat !== pCat) return false
+        const iName = normN2(i.name)
+        if (iName === pName) return true
+        const aWords = iName.split(/\s+/).filter(w => w.length >= 4)
+        const bWords = pName.split(/\s+/).filter(w => w.length >= 4)
+        if (!aWords.length || !bWords.length) return false
+        const common = aWords.filter(w => bWords.includes(w))
+        const union = new Set([...aWords, ...bWords]).size
+        return common.length / union >= 0.7 && common.length >= 2
+      })
+      if (existing) toUpdate.push({ ...p, ingId: existing.id })
+      else toAddNew.push(p)
     })
-    // Aggiungi come nuovi: tipo="new" + tipo="update" con categoria cambiata
-    const catMismatch = toProcess.filter(p => {
-      if (p.tipo !== "update") return false
-      const existingIng = ings.find(i => i.id === p.ingId)
-      return !existingIng || existingIng.cat !== p.cat
-    })
+
+    // Alias per compatibilità con il codice sotto
+    const toAdd = toAddNew
     if (toUpdate.length > 0) {
       setIngs(prev => prev.map(ing => {
         const match = toUpdate.find(p => p.ingId === ing.id)
         if (!match) return ing
         const newCur = match.prezzoUnitario
         const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-        const vinoFields = ing.cat === "Vini" ? {
-          ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
-          ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
-          ...(match.produttore ? { produttore: match.produttore } : {}),
-        } : {}
-        // Aggiorna anche cat/sotto1/sotto2 se l'utente li ha modificati nella revisione
-        const catFields = match.cat && match.cat !== ing.cat ? { cat: match.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" } : {}
-        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg, ...vinoFields, ...catFields }
+        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg }
       }))
     }
-
-    // Aggiungi nuovi ingredienti (+ quelli con categoria cambiata)
-    const toAdd = [...toProcess.filter(p => p.tipo === "new"), ...catMismatch]
     if (toAdd.length > 0) {
       const newIngs = toAdd.map(p => ({
         id: "i" + uid(),
@@ -1989,7 +1944,7 @@ PRODOTTI:
     // Salva fattura
     const v = +fattura.vat || 0
     const newInv = {
-      id: "v" + uid(), sup: normFornitore(fattura.sup) || fattura.sup, num: fattura.date + "-" + uid().slice(0,4),
+      id: "v" + uid(), sup: fattura.sup, num: fattura.num,
       date: fattura.date, total: +fattura.total,
       vat: v, net: +fattura.total - v, ok: true,
       prodotti: found.filter(p => p.include).map(p => ({
@@ -1998,13 +1953,12 @@ PRODOTTI:
     }
     setInvs(prev => [newInv, ...prev])
 
-    // Auto-crea o aggiorna fornitore (normalizzato)
+    // Auto-crea o aggiorna fornitore
     const supName = fattura.sup.trim()
     if (supName) {
-      const supNorm = normFornitore(supName)
       setFornitori(prev => {
-        const exists = prev.find(f => simFornitore(f.name, supName) >= 0.85)
-        if (exists) return prev // già presente
+        const exists = prev.find(f => f.name.toLowerCase() === supName.toLowerCase())
+        if (exists) return prev // gi   presente
         return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
       })
     }
@@ -2057,9 +2011,17 @@ PRODOTTI:
           {selFornitore && (() => {
             const f = fornitori.find(x => x.id === selFornitore)
             if (!f) return null
-            const fInvs = invs.filter(i => (normFornitore(i.sup) || i.sup.toLowerCase()) === (normFornitore(f.name) || f.name.toLowerCase()))
+            const fInvs = invs.filter(i => simFornitore(i.sup, f.name) >= 0.85)
             const meseAtt = new Date().toISOString().slice(0,7)
-            const totMese = fInvs.filter(i => i.date.startsWith(meseAtt)).reduce((s,i) => s + i.total, 0)
+            const totMese = fInvs.filter(i => i.date && i.date.startsWith(meseAtt)).reduce((s,i) => s + (i.total||0), 0)
+            // Raggruppa per mese
+            const mesiMap = {}
+            fInvs.forEach(i => {
+              if (!i.date) return
+              const m = i.date.slice(0,7)
+              mesiMap[m] = (mesiMap[m] || 0) + (i.total || 0)
+            })
+            const mesiList = Object.entries(mesiMap).sort((a,b) => b[0].localeCompare(a[0]))
             const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
             return (
               <div>
@@ -2099,6 +2061,22 @@ PRODOTTI:
 
                 {/* Storico fatture */}
                 <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
+                  {mesiList.length > 1 && (
+                    <div style={{ marginTop: 10, marginBottom: 6 }}>
+                      <div style={{ fontSize: 11, color: STYLE.t3, marginBottom: 6, letterSpacing: 1 }}>STORICO MENSILE</div>
+                      {mesiList.map(([m, tot]) => {
+                        const [y, mo] = m.split("-")
+                        const label = new Date(parseInt(y), parseInt(mo)-1).toLocaleString("it-IT", { month: "long", year: "numeric" })
+                        const isCurrentMonth = m === meseAtt
+                        return (
+                          <div key={m} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0", borderBottom: "1px solid " + STYLE.bd }}>
+                            <span style={{ fontSize: 12, color: isCurrentMonth ? STYLE.ac : STYLE.t2, fontWeight: isCurrentMonth ? 600 : 400 }}>{label}</span>
+                            <span style={{ fontSize: 12, color: isCurrentMonth ? STYLE.ac : STYLE.t1, fontWeight: 600 }}>{formatEuro(tot)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
                   Fatture ({fInvs.length})
                 </div>
                 {fInvs.length === 0 ? (
@@ -2145,8 +2123,7 @@ PRODOTTI:
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {fornitori.map(f => {
-                  const fNorm = normFornitore(f.name)
-                  const fInvs = invs.filter(i => normFornitore(i.sup) === fNorm || (i.sup||"").toLowerCase() === (f.name||"").toLowerCase())
+                  const fInvs = invs.filter(i => simFornitore(i.sup, f.name) >= 0.85)
                   const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
                   return (
                     <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => setSelFornitore(f.id)}>
@@ -2189,12 +2166,7 @@ PRODOTTI:
                     if (forniEdit) {
                       setFornitori(prev => prev.map(f => f.id === forniEdit.id ? { ...f, ...forniForm, name: forniForm.name.trim() } : f))
                     } else {
-                      const newName = forniForm.name.trim()
-                      setFornitori(prev => {
-                        const dup = prev.find(f => simFornitore(f.name, newName) >= 0.85)
-                        if (dup) { alert("Fornitore già presente come: " + dup.name); return prev }
-                        return [...prev, { id: "f" + uid(), ...forniForm, name: newName }]
-                      })
+                      setFornitori(prev => [...prev, { id: "f" + uid(), ...forniForm, name: forniForm.name.trim() }])
                     }
                     setForniOpen(false)
                   }}>Salva</button>
@@ -2276,7 +2248,10 @@ PRODOTTI:
                   {fattErr.sup && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.sup}</span>}
                 </Fld>
               </div>
-
+              <Fld label="N   Fattura *">
+                <input style={inp()} value={fattura.num} onChange={e => setFattura(f => ({ ...f, num: e.target.value }))} placeholder="2024/001" />
+                {fattErr.num && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.num}</span>}
+              </Fld>
               <Fld label="Data *">
                 <input style={inp()} type="date" value={fattura.date} onChange={e => setFattura(f => ({ ...f, date: e.target.value }))} />
                 {fattErr.date && <span style={{ fontSize: 11, color: STYLE.red }}>{fattErr.date}</span>}
@@ -2302,9 +2277,7 @@ PRODOTTI:
                   <div style={row({ justifyContent: "space-between", marginBottom: 8, alignItems: "flex-start" })}>
                     <div style={{ flex: 1 }}>
                       <div style={row({ gap: 6, marginBottom: 6 })}>
-                        <span style={badge(p.tipo === "update" ? "g" : "a")}>
-                          {p.tipo === "update" ? "' Aggiorna" : "+ Nuovo"}
-                        </span>
+
                         <span style={{ fontSize: 11, color: STYLE.t3 }}>{p.quantita} {p.unita}</span>
                       </div>
                       {/* Nome modificabile */}
@@ -3715,7 +3688,6 @@ export default function App() {
   const [collapsed, setCollapsed] = useState(false)
   useEffect(() => { sessionStorage.setItem("ristorai_page", page) }, [page])
   const [ready, setReady] = useState(false)
-  const [loaded, setLoaded] = useState(false)
   const [user, setUser] = useState(null)
   const [authReady, setAuthReady] = useState(false)
   const [w, setW] = useState(typeof window !== "undefined" ? window.innerWidth : 1024)
@@ -3745,13 +3717,6 @@ export default function App() {
     if (!user) return
     async function load() {
       setReady(false)
-      // Reset stato prima di caricare nuovo utente
-      setIngs([])
-      setInvs([])
-      setDishes([])
-      setFornitori([])
-      setSpesa([])
-      setLearned(null)
       try {
         const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
         if (snap.exists()) {
@@ -3768,8 +3733,7 @@ export default function App() {
           // Nuovo utente  -  mostra onboarding
           setOnboarded(false)
         }
-        setLoaded(true)
-      } catch (e) { console.log("Load error:", e); setLoaded(true) }
+      } catch (e) { console.log("Load error:", e) }
       setReady(true)
     }
     load()
@@ -3777,7 +3741,7 @@ export default function App() {
 
   // Save data per user
   useEffect(() => {
-    if (!ready || !user || !loaded) return
+    if (!ready || !user) return
     // Rimuove valori undefined che Firebase non accetta
     const clean = obj => {
       if (Array.isArray(obj)) return obj.map(clean)
@@ -3797,9 +3761,6 @@ export default function App() {
       await deleteDoc(doc(db, "users", user.uid, "data", "main"))
       await deleteUser(user)
       await signOut(auth)
-      setUser(null)
-      setOnboarded(false)
-      setSettingsOpen(false)
     }
 
     try {
@@ -3904,7 +3865,7 @@ export default function App() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0", flexShrink: 0 }}>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Impostazioni</div>
-          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18, lineHeight: 1 }}>✕</button>
+          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18 }}> </button>
         </div>
 
         {/* Avatar + email */}
@@ -4026,14 +3987,7 @@ export default function App() {
       <div style={{ height: 52, background: STYLE.surf, borderBottom: STYLE.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>FoodMargin</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <button onClick={() => setSettingsOpen(true)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-            {user?.photoURL
-              ? <img src={user.photoURL} style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} />
-              : <div style={{ width: 34, height: 34, borderRadius: "50%", background: STYLE.ac, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff" }}>
-                  {(user?.displayName || user?.email || "?")[0].toUpperCase()}
-                </div>
-            }
-          </button>
+          <button onClick={() => setSettingsOpen(true)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: STYLE.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}></button>
         </div>
       </div>
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 14px 90px" }}>
@@ -4112,14 +4066,7 @@ export default function App() {
               <div style={{ width: 22, height: 22, borderRadius: 5, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Georgia',serif", fontSize: 11, color: STYLE.ac }}>{user?.email?.[0]?.toUpperCase() || "U"}</div>
               <span style={{ fontSize: 12, fontWeight: 500, color: STYLE.t1 }}>{user?.email?.split("@")[0] || "User"}</span>
             </div>
-            <button onClick={() => setSettingsOpen(true)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
-              {user?.photoURL
-                ? <img src={user.photoURL} style={{ width: 34, height: 34, borderRadius: "50%", objectFit: "cover" }} />
-                : <div style={{ width: 34, height: 34, borderRadius: "50%", background: STYLE.ac, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 700, color: "#fff" }}>
-                    {(user?.displayName || user?.email || "?")[0].toUpperCase()}
-                  </div>
-              }
-            </button>
+            <button onClick={() => setSettingsOpen(true)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 32, height: 32, cursor: "pointer", color: STYLE.t2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }} title="Impostazioni"></button>
           </div>
         </div>
         <div style={{ flex: 1, overflowY: "auto", padding: "22px 28px 48px" }}>
