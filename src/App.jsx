@@ -2189,7 +2189,12 @@ PRODOTTI:
                     if (forniEdit) {
                       setFornitori(prev => prev.map(f => f.id === forniEdit.id ? { ...f, ...forniForm, name: forniForm.name.trim() } : f))
                     } else {
-                      setFornitori(prev => [...prev, { id: "f" + uid(), ...forniForm, name: forniForm.name.trim() }])
+                      const newName = forniForm.name.trim()
+                      setFornitori(prev => {
+                        const dup = prev.find(f => simFornitore(f.name, newName) >= 0.85)
+                        if (dup) { alert("Fornitore già presente come: " + dup.name); return prev }
+                        return [...prev, { id: "f" + uid(), ...forniForm, name: newName }]
+                      })
                     }
                     setForniOpen(false)
                   }}>Salva</button>
