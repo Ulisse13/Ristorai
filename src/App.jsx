@@ -72,18 +72,6 @@ function normFornitore(s) {
     .trim()
 }
 
-function simFornitore(a, b) {
-  if (!a || !b) return 0
-  const nA = normFornitore(a)
-  const nB = normFornitore(b)
-  if (nA === nB) return 1
-  const wA = nA.split(/\s+/).filter(w => w.length >= 3)
-  const wB = nB.split(/\s+/).filter(w => w.length >= 3)
-  if (!wA.length || !wB.length) return 0
-  const common = wA.filter(w => wB.includes(w))
-  const union = new Set([...wA, ...wB]).size
-  return common.length / union
-}
 
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null } }
