@@ -20,6 +20,19 @@ function isLikelyWine(name) {
   return false
 }
 
+function simFornitore(a, b) {
+  const na = normFornitore(a)
+  const nb = normFornitore(b)
+  if (!na || !nb) return 0
+  if (na === nb) return 1
+  const aw = na.split(/\s+/).filter(w => w.length >= 3)
+  const bw = nb.split(/\s+/).filter(w => w.length >= 3)
+  if (!aw.length || !bw.length) return 0
+  const common = aw.filter(w => bw.includes(w))
+  const union = new Set([...aw, ...bw]).size
+  return common.length / union
+}
+
 function cleanJSON(str) {
   let s = str.trim()
   // Trova il JSON completo contando le parentesi
@@ -1978,10 +1991,9 @@ PRODOTTI:
     // Auto-crea o aggiorna fornitore (normalizzato)
     const supName = fattura.sup.trim()
     if (supName) {
-      const supNorm = normFornitore(supName)
       setFornitori(prev => {
-        const exists = prev.find(f => normFornitore(f.name) === supNorm)
-        if (exists) return prev
+        const similar = prev.find(f => simFornitore(f.name, supName) >= 0.85)
+        if (similar) return prev
         return [...prev, { id: "f" + uid(), name: supName, tel: "", email: "", cat: "" }]
       })
     }
@@ -2034,7 +2046,7 @@ PRODOTTI:
           {selFornitore && (() => {
             const f = fornitori.find(x => x.id === selFornitore)
             if (!f) return null
-            const fInvs = invs.filter(i => i.sup.toLowerCase() === f.name.toLowerCase())
+            const fInvs = invs.filter(i => simFornitore(i.sup, f.name) >= 0.75)
             const meseAtt = new Date().toISOString().slice(0,7)
             const totMese = fInvs.filter(i => i.date.startsWith(meseAtt)).reduce((s,i) => s + i.total, 0)
             const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
@@ -2122,7 +2134,7 @@ PRODOTTI:
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 {fornitori.map(f => {
-                  const fInvs = invs.filter(i => i.sup.toLowerCase() === f.name.toLowerCase())
+                  const fInvs = invs.filter(i => simFornitore(i.sup, f.name) >= 0.75)
                   const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
                   return (
                     <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => setSelFornitore(f.id)}>
