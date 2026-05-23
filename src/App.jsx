@@ -507,8 +507,43 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
       ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {}),
       ...(form.cat === "Vini" ? { tipoVino: form.tipoVino, regioneVino: form.regioneVino } : {})
     }
-    if (edit) setIngs(prev => prev.map(i => i.id === edit.id ? { ...i, ...d } : i))
-    else      setIngs(prev => [...prev, { ...d, id: "i" + uid() }])
+    if (edit) {
+      setIngs(prev => {
+        // Cerca duplicato: stesso nome + categoria + sottocategoria
+        const nameNorm = d.name.toLowerCase().trim()
+        const duplicate = prev.find(i =>
+          i.id !== edit.id &&
+          i.name.toLowerCase().trim() === nameNorm &&
+          i.cat === d.cat &&
+          (i.sotto1 || "") === (d.sotto1 || "")
+        )
+        if (duplicate) {
+          // Merge prezzi: unisci i due array, tieni il minimo per fornitore, max 5
+          const allPrezzi = [...(d.prezzi || []), ...(duplicate.prezzi || [])]
+          const supMap = new Map()
+          allPrezzi.forEach(p => {
+            const key = normFornitore(p.sup)
+            if (!supMap.has(key) || p.price < supMap.get(key).price) {
+              supMap.set(key, p)
+            }
+          })
+          const mergedPrezzi = [...supMap.values()].sort((a, b) => a.price - b.price).slice(0, 5)
+          const bestPrice = mergedPrezzi[0]?.price || duplicate.cur
+          return prev
+            .filter(i => i.id !== edit.id) // rimuovi il vecchio
+            .map(i => i.id === duplicate.id ? {
+              ...i, ...d,
+              id: duplicate.id,
+              prezzi: mergedPrezzi,
+              cur: bestPrice,
+              avg: Math.round(((duplicate.avg * 0.7) + (bestPrice * 0.3)) * 100) / 100
+            } : i)
+        }
+        return prev.map(i => i.id === edit.id ? { ...i, ...d } : i)
+      })
+    } else {
+      setIngs(prev => [...prev, { ...d, id: "i" + uid() }])
+    }
     setOpen(false)
   }
 
@@ -1994,7 +2029,10 @@ PRODOTTI:
           : [{ sup, price: ing.cur, date: fattura.date }]
         const idx = oldPrezzi.findIndex(p => normFornitore(p.sup) === normFornitore(sup))
         if (idx >= 0) {
-          oldPrezzi[idx] = { sup, price: newPrice, date: fattura.date }
+          // Aggiorna solo se il prezzo è cambiato
+          if (oldPrezzi[idx].price !== newPrice) {
+            oldPrezzi[idx] = { sup, price: newPrice, date: fattura.date }
+          }
         } else {
           oldPrezzi.push({ sup, price: newPrice, date: fattura.date })
         }
