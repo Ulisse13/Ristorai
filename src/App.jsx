@@ -822,12 +822,13 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     )
   }
 
-  // Lista prodotti  -  filtrata per sotto1 se selezionata
-  const list = selSotto1 === "__none__"
+  // Lista prodotti  -  filtrata per sotto1 se selezionata - ORDINATA ALFABETICAMENTE
+  const list = (selSotto1 === "__none__"
     ? catIngs.filter(i => !i.sotto1)
     : selSotto1
       ? catIngs.filter(i => i.sotto1 === selSotto1)
       : catIngs
+  ).sort((a, b) => a.name.localeCompare(b.name, "it"))
 
   return (
     <div>
@@ -3386,9 +3387,10 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
     }
 
     // Livello 3: lista ingredienti nella sottocategoria
-    const filteredIngs = selSotto1 === "__altri__"
+    const filteredIngs = (selSotto1 === "__altri__"
       ? ungrouped
       : selSotto1 ? catIngs.filter(i => i.sotto1 === selSotto1) : catIngs
+    ).sort((a, b) => a.name.localeCompare(b.name, "it"))
 
     return (
       <div>
