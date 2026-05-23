@@ -2000,11 +2000,11 @@ PRODOTTI:
       {/* Header */}
       <div style={row({ justifyContent: "space-between", marginBottom: 14, flexWrap: "wrap", alignItems: "flex-start" })}>
         <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Fatture</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Forniture</div>
           <div style={{ fontSize: 12, color: STYLE.t3 }}>{invs.length} fatture . {fornitori.length} fornitori</div>
         </div>
         <div style={row({ gap: 8 })}>
-          {step === "list" && invTab === "fatture" && <button style={btn("p")} onClick={() => setStep("upload")}>+ Carica fattura</button>}
+          {step === "list" && invTab === "fatture" && <button style={btn("p")} onClick={() => setStep("upload")}>+ Aggiorna prezzi</button>}
           {step === "list" && invTab === "fornitori" && <button style={btn("p")} onClick={() => { setForniEdit(null); setForniForm({ name: "", tel: "", email: "", cat: "" }); setForniOpen(true) }}>+ Fornitore</button>}
           {step !== "list" && <button style={btn("g")} onClick={reset}> Annulla</button>}
         </div>
@@ -3678,7 +3678,7 @@ function NavIcon({ id }) {
 }
 
 const NAV = [
-  { id: "inv",    label: "Fatture",   group: "Gestione" },
+  { id: "inv",    label: "Forniture", group: "Gestione" },
   { id: "ing",    label: "Magazzino", group: "Gestione" },
   { id: "fc",     label: "Ricette",   group: "Gestione" },
   { id: "dishes", label: "Piatti",    group: "Gestione" },
