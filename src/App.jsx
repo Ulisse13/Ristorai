@@ -379,7 +379,7 @@ function Dashboard({ ings, dishes, isMobile }) {
   )
 }
 
-function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }) {
+function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, pushHistory }) {
   const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Surgelati", "Dispensa", "Vini"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
@@ -530,7 +530,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }
           const count = ingsByCat(cat).length
           const spiked = ingsByCat(cat).filter(i => (i.cur - i.avg) / i.avg > 0.10).length
           return (
-            <div key={cat} onClick={() => setSelCat(cat)}
+            <div key={cat} onClick={() => { pushHistory?.(); setSelCat(cat) }}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
                 transition: "transform 0.1s", borderColor: spiked > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: spiked > 0 ? "linear-gradient(90deg," + STYLE.red + ",transparent)" : "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
@@ -645,7 +645,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }
           {VINO_TIPI.map(tipo => {
             const count = vini.filter(v => v.tipoVino === tipo).length
             return (
-              <div key={tipo} onClick={() => { setSelTipo(tipo); setSelRegione(null) }}
+              <div key={tipo} onClick={() => { pushHistory?.(); setSelTipo(tipo); setSelRegione(null) }}
                 style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
                 <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
                 <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{tipo}</div>
@@ -683,7 +683,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }
             {regioniOrdinate.map(reg => {
               const count = byTipo.filter(v => v.regioneVino === reg).length
               return (
-                <div key={reg} onClick={() => setSelRegione(reg)}
+                <div key={reg} onClick={() => { pushHistory?.(); setSelRegione(reg) }}
                   style={card({ padding: "16px 14px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.3 }} />
                   <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 4 }}>{reg}</div>
@@ -816,7 +816,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }
               const count = items.length
               const hasSpiked = items.some(i => i.avg > 0 && (i.cur - i.avg) / i.avg > 0.10)
               return (
-                <div key={s1} onClick={() => setSelSotto1(s1)}
+                <div key={s1} onClick={() => { pushHistory?.(); setSelSotto1(s1) }}
                   style={{ ...card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
                     borderColor: hasSpiked ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
@@ -1087,7 +1087,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }
   )
 }
 
-function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNavBack, clearNavBack }) {
+function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNavBack, clearNavBack, pushHistory }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
@@ -1155,7 +1155,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
           const isVini = cat === "Vini"
           const tipiCount = isVini ? ["Rossi","Bianchi","Rosé","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
           return (
-            <div key={cat} onClick={() => setSelCat(cat)}
+            <div key={cat} onClick={() => { pushHistory?.(); setSelCat(cat) }}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
                 borderColor: overTarget > 0 ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: overTarget > 0 ? "linear-gradient(90deg," + STYLE.red + ",transparent)" : "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
@@ -1358,7 +1358,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
 
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
-function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile, setNavBack, clearNavBack }) {
+function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile, setNavBack, clearNavBack, pushHistory }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
@@ -2036,7 +2036,7 @@ PRODOTTI:
           <div style={{ fontSize: 12, color: STYLE.t3 }}>{invs.length} fatture . {fornitori.length} fornitori</div>
         </div>
         <div style={row({ gap: 8 })}>
-          {step === "list" && invTab === "fatture" && <button style={btn("p")} onClick={() => setStep("upload")}>+ Aggiorna prezzi</button>}
+          {step === "list" && invTab === "fatture" && <button style={btn("p")} onClick={() => { pushHistory?.(); setStep("upload") }}>+ Aggiorna prezzi</button>}
           {step === "list" && invTab === "fornitori" && <button style={btn("p")} onClick={() => { setForniEdit(null); setForniForm({ name: "", tel: "", email: "", cat: "" }); setForniOpen(true) }}>+ Fornitore</button>}
           {step !== "list" && <button style={btn("g")} onClick={reset}> Annulla</button>}
         </div>
@@ -2158,7 +2158,7 @@ PRODOTTI:
                   const fInvs = invs.filter(i => simFornitore(i.sup, f.name) >= 0.75)
                   const totAnno = fInvs.filter(i => i.date.startsWith(new Date().getFullYear().toString())).reduce((s,i) => s + i.total, 0)
                   return (
-                    <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => setSelFornitore(f.id)}>
+                    <div key={f.id} style={{ ...card({ padding: "14px 16px", cursor: "pointer" }) }} onClick={() => { pushHistory?.(); setSelFornitore(f.id) }}>
                       <div style={row({ justifyContent: "space-between" })}>
                         <div>
                           <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2 }}>{f.name}</div>
@@ -2574,7 +2574,7 @@ PRODOTTI:
   )
 }
 
-function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, setNavBack, clearNavBack }) {
+function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, setNavBack, clearNavBack, pushHistory }) {
   const [sel, setSel] = useState(null) // null | "food" | "drink"
 
   // Back button: torna da food/drink a selezione ricette
@@ -2595,7 +2595,7 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, set
       <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 4 }}>Ricette</div>
       <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 24 }}>Gestisci food cost e drink cost</div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: 16 }}>
-        <div onClick={() => setSel("food")}
+        <div onClick={() => { pushHistory?.(); setSel("food") }}
           style={{ ...card({ padding: "28px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }) }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
           <div style={{ fontSize: 28, marginBottom: 12 }}></div>
@@ -2603,7 +2603,7 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, set
           <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 12 }}>Ricette cucina, costo piatti, margini</div>
           <div style={{ fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>{foodCount} piatt{foodCount !== 1 ? "i" : "o"}</div>
         </div>
-        <div onClick={() => setSel("drink")}
+        <div onClick={() => { pushHistory?.(); setSel("drink") }}
           style={{ ...card({ padding: "28px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }) }}>
           <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
           <div style={{ fontSize: 28, marginBottom: 12 }}></div>
@@ -3322,7 +3322,7 @@ function LoginPage() {
 
 
 
-function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, clearNavBack }) {
+function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, clearNavBack, pushHistory }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
@@ -3416,7 +3416,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
               const count = catIngs.filter(i => i.sotto1 === s1).length
               const inList = catIngs.filter(i => i.sotto1 === s1 && spesa.some(sp => sp.ingId === i.id)).length
               return (
-                <div key={s1} onClick={() => setSelSotto1(s1)}
+                <div key={s1} onClick={() => { pushHistory?.(); setSelSotto1(s1) }}
                   style={{ ...card({ padding: "14px 12px", cursor: "pointer" }), borderColor: inList > 0 ? STYLE.acd : "#1f1f25" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>{s1}</div>
                   <div style={{ fontSize: 11, color: STYLE.t3 }}>{count} ingredienti</div>
@@ -3558,7 +3558,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
           const count = ings.filter(i => i.cat === cat).length
           const inList = spesa.filter(s => s.cat === cat && !s.done).length
           return (
-            <div key={cat} onClick={() => setSelCat(cat)}
+            <div key={cat} onClick={() => { pushHistory?.(); setSelCat(cat) }}
               style={{ ...card({ padding: "12px 14px", cursor: "pointer" }),
                 borderColor: inList > 0 ? STYLE.acd : "#1f1f25" }}>
               <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>{cat}</div>
@@ -3754,10 +3754,10 @@ export default function App() {
   }
   const setNavBack = (fn) => { _navBackHandler = fn }
   const clearNavBack = () => { _navBackHandler = null }
+  const pushHistory = () => { window.history.pushState({ inApp: true }, "", "") }
   useEffect(() => {
-    window.history.pushState({ inApp: true }, "", "")
+    window.history.replaceState({ inApp: true }, "", "")
     const handlePop = () => {
-      window.history.pushState({ inApp: true }, "", "")
       if (_navBackHandler) {
         _navBackHandler()
       } else if (pageHistRef.current.length > 1) {
@@ -4056,7 +4056,7 @@ export default function App() {
     try {
       switch(page) {
         case "dash":   return <Dashboard ings={ings} dishes={dishes} isMobile={isMobile} />
-        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "fc":     return <Ricette dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
