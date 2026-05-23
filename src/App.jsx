@@ -450,6 +450,9 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
     setForm({
       name: ing.name, cat: ing.cat, sotto1: ing.sotto1 || "", sotto2: ing.sotto2 || "", unit: ing.unit,
       cur: String(ing.cur),
+      prezzi: ing.prezzi && ing.prezzi.length > 0
+        ? [...ing.prezzi]
+        : [{ sup: ing.fornitore || "Fornitore", price: ing.cur, date: new Date().toISOString().slice(0,10) }],
       confPrice: ing.confPrice ? String(ing.confPrice) : "",
       confWeight: ing.confWeight ? String(ing.confWeight) : ""
     })
@@ -482,13 +485,25 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
       else unitBase = form.unit
     }
 
-    const oldAvg = edit ? edit.avg : cur
-    const newAvg = edit ? Math.round(((oldAvg * 0.7) + (cur * 0.3)) * 100) / 100 : cur
+    // Calcola prezzi finali
+    let finalPrezzi, finalCur, finalAvg
+    if (edit && form.prezzi && form.prezzi.length > 0) {
+      // Modifica: usa array prezzi dal form
+      finalPrezzi = [...form.prezzi].sort((a, b) => a.price - b.price).slice(0, 5)
+      finalCur = finalPrezzi[0].price
+      finalAvg = Math.round(((edit.avg * 0.7) + (finalCur * 0.3)) * 100) / 100
+    } else {
+      // Nuovo: crea array con prezzo manuale
+      finalCur = cur
+      finalAvg = cur
+      finalPrezzi = cur > 0 ? [{ sup: "Manuale", price: cur, date: new Date().toISOString().slice(0,10) }] : []
+    }
     const d = {
       name: form.name.trim(), cat: form.cat,
       sotto1: form.sotto1 || "", sotto2: form.sotto2 || "",
-      unit: unitBase, cur, avg: newAvg,
-      prev: edit ? edit.cur : cur,
+      unit: unitBase, cur: finalCur, avg: finalAvg,
+      prev: edit ? edit.cur : finalCur,
+      prezzi: finalPrezzi,
       ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {}),
       ...(form.cat === "Vini" ? { tipoVino: form.tipoVino, regioneVino: form.regioneVino } : {})
     }
@@ -590,7 +605,33 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   </Fld>
                 </div>
               )}
-              {form.unit !== "confezione" ? (
+              {edit && form.prezzi && form.prezzi.length > 0 ? (
+                <div style={{ marginBottom: 12 }}>
+                  <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2, display: "block", marginBottom: 8 }}>Prezzi fornitori</label>
+                  {form.prezzi.map((p, i) => (
+                    <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
+                      <div style={{ flex: 1, fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</div>
+                      <input type="number" step="0.01" min="0"
+                        style={inp({ width: 100, padding: "5px 8px", fontSize: 12 })}
+                        value={p.price}
+                        onChange={e => {
+                          const newPrezzi = form.prezzi.map((x, j) => j === i ? { ...x, price: parseFloat(e.target.value) || 0 } : x)
+                          newPrezzi.sort((a, b) => a.price - b.price)
+                          setForm(f => ({ ...f, prezzi: newPrezzi }))
+                        }}
+                      />
+                      <span style={{ fontSize: 10, color: STYLE.t3 }}>/{form.unit}</span>
+                      {form.prezzi.length > 1 && (
+                        <button onClick={() => setForm(f => ({ ...f, prezzi: f.prezzi.filter((_, j) => j !== i) }))}
+                          style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 14, flexShrink: 0 }}>✕</button>
+                      )}
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 4 }}>
+                    Miglior prezzo: <strong style={{ color: STYLE.green }}>{form.prezzi.length > 0 ? formatEuro(form.prezzi[0].price) : "-"}/{form.unit}</strong>
+                  </div>
+                </div>
+              ) : form.unit !== "confezione" ? (
                 <Fld label={"Prezzo (v/" + form.unit + ") *"}>
                   <input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
                   {err.cur && <span style={{ fontSize: 11, color: STYLE.red }}>{err.cur}</span>}
@@ -985,21 +1026,17 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   <span style={{ fontSize: 12, color: STYLE.t3 }}>prec. {formatEuro(ing.prev || ing.avg || ing.cur || 0)}/{ing.unit}</span>
                 </div>
                 {ing.fornitore && <div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 2 }}>  {ing.fornitore}</div>}
-                {(() => {
-                  const prezzi = prezziPerFornitore(ing)
-                  if (prezzi.length < 2) return null
-                  return (
-                    <div style={{ background: STYLE.el, borderRadius: STYLE.r, padding: "6px 8px", marginTop: 4 }}>
-                      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, marginBottom: 4 }}>Prezzi fornitori</div>
-                      {prezzi.map((p, i) => (
-                        <div key={i} style={row({ justifyContent: "space-between", padding: "2px 0" })}>
-                          <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.t2 }}>{p.sup}</span>
-                          <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.t2 }}>{formatEuro(p.price)}/{ing.unit}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })()}
+                {ing.prezzi && ing.prezzi.length > 0 && (
+                  <div style={{ background: STYLE.el, borderRadius: STYLE.r, padding: "6px 8px", marginTop: 4 }}>
+                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, marginBottom: 4 }}>Prezzi fornitori</div>
+                    {ing.prezzi.map((p, i) => (
+                      <div key={i} style={row({ justifyContent: "space-between", padding: "2px 0" })}>
+                        <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400 }}>{p.sup}</span>
+                        <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.red }}>{formatEuro(p.price)}/{ing.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 {ing.confPrice && (
                   <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 4 }}>
                     Confezione: {formatEuro(ing.confPrice)} . {ing.confWeight}kg
@@ -1038,20 +1075,16 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                       {formatEuro(ing.cur)}/{ing.unit} {spiked ? "'" : ""}
                     </td>
                     <td style={{ padding: "11px 16px", color: STYLE.t2, borderBottom: STYLE.bds, fontVariantNumeric: "tabular-nums" }}>
-                      {(() => {
-                        const prezzi = prezziPerFornitore(ing)
-                        if (prezzi.length < 2) return <span>{formatEuro(ing.avg)}/{ing.unit}</span>
-                        return (
-                          <div>
-                            {prezzi.map((p, i) => (
-                              <div key={i} style={row({ gap: 6 })}>
-                                <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.t3 }}>{p.sup}</span>
-                                <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.t2 }}>{formatEuro(p.price)}</span>
-                              </div>
-                            ))}
-                          </div>
-                        )
-                      })()}
+                      {ing.prezzi && ing.prezzi.length > 0 ? (
+                        <div>
+                          {ing.prezzi.map((p, i) => (
+                            <div key={i} style={row({ gap: 6 })}>
+                              <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400 }}>{p.sup}</span>
+                              <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.red }}>{formatEuro(p.price)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : <span>{formatEuro(ing.avg || ing.cur)}/{ing.unit}</span>}
                     </td>
                     <td style={{ padding: "11px 16px", borderBottom: STYLE.bds, textAlign: "right" }}>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
@@ -1953,16 +1986,29 @@ PRODOTTI:
       setIngs(prev => prev.map(ing => {
         const match = toUpdate.find(p => p.ingId === ing.id)
         if (!match) return ing
-        const newCur = match.prezzoUnitario
-        const newAvg = Math.round(((ing.avg * 0.7) + (newCur * 0.3)) * 100) / 100
+        const newPrice = match.prezzoUnitario
+        const sup = fattura.sup.trim() || "Fornitore"
+        // Aggiorna array prezzi: max 5 fornitori, ordinati per prezzo crescente
+        const oldPrezzi = ing.prezzi && ing.prezzi.length > 0
+          ? [...ing.prezzi]
+          : [{ sup, price: ing.cur, date: fattura.date }]
+        const idx = oldPrezzi.findIndex(p => normFornitore(p.sup) === normFornitore(sup))
+        if (idx >= 0) {
+          oldPrezzi[idx] = { sup, price: newPrice, date: fattura.date }
+        } else {
+          oldPrezzi.push({ sup, price: newPrice, date: fattura.date })
+        }
+        oldPrezzi.sort((a, b) => a.price - b.price)
+        const newPrezzi = oldPrezzi.slice(0, 5)
+        const bestPrice = newPrezzi[0].price
+        const newAvg = Math.round(((ing.avg * 0.7) + (bestPrice * 0.3)) * 100) / 100
         const vinoFields = ing.cat === "Vini" ? {
           ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
           ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
           ...(match.produttore ? { produttore: match.produttore } : {}),
         } : {}
-        // Aggiorna anche cat/sotto1/sotto2 se l'utente li ha modificati nella revisione
         const catFields = match.cat && match.cat !== ing.cat ? { cat: match.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" } : {}
-        return { ...ing, prev: ing.cur, cur: newCur, avg: newAvg, ...vinoFields, ...catFields }
+        return { ...ing, prezzi: newPrezzi, prev: ing.cur, cur: bestPrice, avg: newAvg, ...vinoFields, ...catFields }
       }))
     }
 
@@ -1976,7 +2022,7 @@ PRODOTTI:
         unit: p.cat === "Vini" ? "bottiglia" : (p.unita || "kg"),
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
-        fornitore: fattura.sup.trim() || "",
+        prezzi: p.prezzoUnitario > 0 ? [{ sup: fattura.sup.trim() || "Fornitore", price: p.prezzoUnitario, date: fattura.date }] : [],
         sotto1: p.sotto1 || "",
         sotto2: p.sotto2 || "",
         ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
@@ -3807,7 +3853,18 @@ export default function App() {
         const snap = await getDoc(doc(db, "users", user.uid, "data", "main"))
         if (snap.exists()) {
           const d = snap.data()
-          if (d.ings)      setIngs(d.ings)
+          if (d.ings) {
+            // Migrazione automatica alla nuova struttura prezzi per fornitore
+            const migrated = d.ings.map(ing => {
+              if (ing.prezzi && ing.prezzi.length > 0) return ing
+              const price = ing.cur || 0
+              return {
+                ...ing,
+                prezzi: price > 0 ? [{ sup: ing.fornitore || "Fornitore", price, date: new Date().toISOString().slice(0,10) }] : []
+              }
+            })
+            setIngs(migrated)
+          }
           if (d.dishes)    setDishes(d.dishes)
           if (d.invs)      setInvs(d.invs)
           if (d.fornitori)  setFornitori(d.fornitori)
