@@ -102,6 +102,9 @@ const formatDate = s => new Date(s).toLocaleDateString("it-IT", { day: "2-digit"
 const FC_COLOR = (a, t) => a <= t ? "#4ade80" : a <= t * 1.1 ? "#e8a838" : "#f87171"
 const uid = () => Math.random().toString(36).slice(2, 7)
 
+// Navigazione back button mobile
+let _navBackHandler = null
+
 // Global error handler for mobile debug
 if (typeof window !== "undefined") {
   window.onerror = (msg, src, line, col, err) => {
@@ -376,7 +379,7 @@ function Dashboard({ ings, dishes, isMobile }) {
   )
 }
 
-function Ingredients({ ings, setIngs, invs, isMobile }) {
+function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack }) {
   const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Surgelati", "Dispensa", "Vini"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
   const VINO_REGIONI_ORDER = {
@@ -498,6 +501,18 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
     setIngs(prev => prev.filter(i => i.id !== delTarget.id))
     setDelTarget(null)
   }
+
+  // Back button: naviga tra i livelli magazzino
+  useEffect(() => {
+    if (!selCat && !selTipo) { clearNavBack?.(); return }
+    setNavBack?.(() => {
+      if (selSotto1) setSelSotto1(null)
+      else if (selRegione) setSelRegione(null)
+      else if (selTipo) setSelTipo(null)
+      else setSelCat(null)
+    })
+    return () => { clearNavBack?.() }
+  }, [selCat, selSotto1, selTipo, selRegione])
 
   //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
@@ -1072,7 +1087,7 @@ function Ingredients({ ings, setIngs, invs, isMobile }) {
   )
 }
 
-function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
+function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNavBack, clearNavBack }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
   const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
@@ -1117,6 +1132,13 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
     setDelTarget(null)
     setDetail(null)
   }
+
+  // Back button: torna alla lista categorie piatti
+  useEffect(() => {
+    if (!selCat) { clearNavBack?.(); return }
+    setNavBack?.(() => { setSelCat(null) })
+    return () => { clearNavBack?.() }
+  }, [selCat])
 
 
   //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
@@ -1336,7 +1358,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish }) {
 
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
-function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile }) {
+function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile, setNavBack, clearNavBack }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
@@ -1361,6 +1383,16 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
   // ingredienti trovati in fattura
   // tipo: { nome, quantita, unita, prezzoUnitario, tipo: "update"|"new", ingId, ingName, cat, include }
   const [found, setFound] = useState([])
+
+  // Back button: annulla step corrente o chiudi fornitore
+  useEffect(() => {
+    if (step === "list" && !selFornitore) { clearNavBack?.(); return }
+    setNavBack?.(() => {
+      if (step !== "list") reset()
+      else if (selFornitore) setSelFornitore(null)
+    })
+    return () => { clearNavBack?.() }
+  }, [step, selFornitore])
 
   function reset() {
     setStep("list"); setProg(0); setProgLabel(""); setOcrError(null)
@@ -2542,8 +2574,15 @@ PRODOTTI:
   )
 }
 
-function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish }) {
+function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, setNavBack, clearNavBack }) {
   const [sel, setSel] = useState(null) // null | "food" | "drink"
+
+  // Back button: torna da food/drink a selezione ricette
+  useEffect(() => {
+    if (!sel) { clearNavBack?.(); return }
+    setNavBack?.(() => setSel(null))
+    return () => { clearNavBack?.() }
+  }, [sel])
 
   if (sel === "food") return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} defaultTab="food" onBack={() => setSel(null)} />
   if (sel === "drink") return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} defaultTab="drink" onBack={() => setSel(null)} />
@@ -3283,7 +3322,7 @@ function LoginPage() {
 
 
 
-function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
+function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, clearNavBack }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
@@ -3343,8 +3382,19 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile }) {
 
   const doneItems = spesa.filter(s => s.done)
 
-  //  -  -  SELEZIONE INGREDIENTI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [selSotto1, setSelSotto1] = useState(null)
+
+  // Back button: naviga tra i livelli lista spesa
+  useEffect(() => {
+    if (selCat === null) { clearNavBack?.(); return }
+    setNavBack?.(() => {
+      if (selSotto1 !== null) setSelSotto1(null)
+      else setSelCat(null)
+    })
+    return () => { clearNavBack?.() }
+  }, [selCat, selSotto1])
+
+  //  -  -  SELEZIONE INGREDIENTI  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
 
   if (selCat !== null) {
     const catIngs = ings.filter(i => i.cat === selCat)
@@ -3690,6 +3740,36 @@ export default function App() {
   const [page, setPage] = useState(() => sessionStorage.getItem("ristorai_page") || "inv")
   const [collapsed, setCollapsed] = useState(false)
   useEffect(() => { sessionStorage.setItem("ristorai_page", page) }, [page])
+
+  // Back button nativo mobile
+  const pageHistRef = useRef([sessionStorage.getItem("ristorai_page") || "inv"])
+  const navTo = (newPage) => {
+    _navBackHandler = null
+    if (pageHistRef.current[pageHistRef.current.length - 1] !== newPage) {
+      pageHistRef.current = [...pageHistRef.current, newPage]
+    }
+    window.history.pushState({ inApp: true }, "", "")
+    setPage(newPage)
+    sessionStorage.setItem("ristorai_page", newPage)
+  }
+  const setNavBack = (fn) => { _navBackHandler = fn }
+  const clearNavBack = () => { _navBackHandler = null }
+  useEffect(() => {
+    window.history.pushState({ inApp: true }, "", "")
+    const handlePop = () => {
+      window.history.pushState({ inApp: true }, "", "")
+      if (_navBackHandler) {
+        _navBackHandler()
+      } else if (pageHistRef.current.length > 1) {
+        pageHistRef.current = pageHistRef.current.slice(0, -1)
+        const prev = pageHistRef.current[pageHistRef.current.length - 1]
+        setPage(prev)
+        sessionStorage.setItem("ristorai_page", prev)
+      }
+    }
+    window.addEventListener("popstate", handlePop)
+    return () => window.removeEventListener("popstate", handlePop)
+  }, [])
   const [ready, setReady] = useState(false)
   const [loaded, setLoaded] = useState(false)
   const [user, setUser] = useState(null)
@@ -3976,11 +4056,11 @@ export default function App() {
     try {
       switch(page) {
         case "dash":   return <Dashboard ings={ings} dishes={dishes} isMobile={isMobile} />
-        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} />
-        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={setPage} setEditDish={setEditDish} />
-        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} />
-        case "fc":     return <Ricette dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} />
-        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} />
+        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "fc":     return <Ricette dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
     } catch(e) {
@@ -4009,7 +4089,7 @@ export default function App() {
       {settingsOpen && <SettingsPanel />}
       <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: STYLE.surf, borderTop: STYLE.bds, display: "flex", zIndex: 100, padding: "6px 4px 16px" }}>
         {NAV.map(n => (
-          <button key={n.id} onClick={() => setPage(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", background: page === n.id ? "rgba(90,89,99,0.25)" : "none", border: "none", borderRadius: 10, cursor: "pointer", color: page === n.id ? STYLE.t3 : STYLE.ac }}>
+          <button key={n.id} onClick={() => navTo(n.id)} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "6px 2px", background: page === n.id ? "rgba(90,89,99,0.25)" : "none", border: "none", borderRadius: 10, cursor: "pointer", color: page === n.id ? STYLE.t3 : STYLE.ac }}>
             <NavIcon id={n.id} />
             <span style={{ fontSize: 9, fontWeight: 600 }}>{n.label}</span>
           </button>
@@ -4047,7 +4127,7 @@ export default function App() {
             <div key={g} style={{ padding: "2px 0 6px" }}>
               {!collapsed && <span style={{ display: "block", padding: "7px 14px 3px", fontSize: 9, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: STYLE.t3 }}>{g}</span>}
               {NAV.filter(n => n.group === g).map(n => (
-                <button key={n.id} onClick={() => setPage(n.id)} title={collapsed ? n.label : undefined}
+                <button key={n.id} onClick={() => navTo(n.id)} title={collapsed ? n.label : undefined}
                   style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "flex-start", gap: 8, padding: collapsed ? "9px 0" : "7px 10px 7px 14px", background: page === n.id ? STYLE.acg : "none", border: "none", cursor: "pointer", color: page === n.id ? STYLE.ac : STYLE.t2, fontFamily: "inherit", fontSize: 13, textAlign: "left", position: "relative" }}>
                   {page === n.id && <div style={{ position: "absolute", left: 0, top: 4, bottom: 4, width: 2, background: STYLE.ac, borderRadius: "0 2px 2px 0" }} />}
                   <NavIcon id={n.id} />
