@@ -1065,10 +1065,10 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   <div style={{ background: STYLE.el, borderRadius: STYLE.r, padding: "6px 8px", marginTop: 4 }}>
                     {/* Intestazione colonne */}
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 52px 16px 56px", gap: 4, marginBottom: 5 }}>
-                      <span style={{ fontSize: 9, color: STYLE.t3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
-                      <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Prec.</span>
+                      <span style={{ fontSize: 9, color: STYLE.ac, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
+                      <span style={{ fontSize: 9, color: STYLE.ac, textAlign: "right" }}>Prec.</span>
                       <span></span>
-                      <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Attuale</span>
+                      <span style={{ fontSize: 9, color: STYLE.ac, textAlign: "right" }}>Attuale</span>
                     </div>
                     {ing.prezzi.map((p, i) => {
                       const arrow = !p.prevPrice ? "" : p.price < p.prevPrice ? "↓" : p.price > p.prevPrice ? "↑" : "→"
@@ -1126,10 +1126,10 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                         <div>
                           {/* Intestazione */}
                           <div style={{ display: "grid", gridTemplateColumns: "100px 58px 16px 58px", gap: 4, marginBottom: 4 }}>
-                            <span style={{ fontSize: 9, color: STYLE.t3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
-                            <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Prec.</span>
+                            <span style={{ fontSize: 9, color: STYLE.ac, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
+                            <span style={{ fontSize: 9, color: STYLE.ac, textAlign: "right" }}>Prec.</span>
                             <span></span>
-                            <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Attuale</span>
+                            <span style={{ fontSize: 9, color: STYLE.ac, textAlign: "right" }}>Attuale</span>
                           </div>
                           {ing.prezzi.map((p, i) => {
                             const arrow = !p.prevPrice ? "" : p.price < p.prevPrice ? "↓" : p.price > p.prevPrice ? "↑" : "→"
