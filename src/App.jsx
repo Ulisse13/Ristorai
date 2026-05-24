@@ -263,7 +263,7 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
         {[
           { l: "Ingredienti", v: ings.length, sub: "in magazzino", c: STYLE.ac },
-          { l: "Food cost medio", v: avgFC > 0 ? avgFC + "%" : "—", sub: avgFC > 35 ? "⚠ alto" : avgFC > 0 ? "✓ nella norma" : "nessun piatto", c: avgFC > 35 ? STYLE.red : avgFC > 0 ? STYLE.green : STYLE.t2 },
+          { l: "Food cost medio", v: avgFC > 0 ? avgFC + "%" : "—", sub: avgFC > 35 ? " alto" : avgFC > 0 ? " nella norma" : "nessun piatto", c: avgFC > 35 ? STYLE.red : avgFC > 0 ? STYLE.green : STYLE.t2 },
           { l: "Piatti da rivedere", v: overTarget.length, sub: "sopra food cost target", c: overTarget.length > 0 ? STYLE.red : STYLE.green },
           { l: "Prezzi aumentati", v: ingsConAumento.length, sub: "dalla scorsa fattura", c: ingsConAumento.length > 0 ? STYLE.red : STYLE.green },
         ].map((k, i) => (
@@ -278,7 +278,7 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
       {/* Alert piatti da rivedere */}
       {overTarget.length > 0 && (
         <>
-          <SectionTitle label="⚠ Piatti da rivedere" sub="Food cost sopra target — rivedi prezzo di vendita o ricetta" />
+          <SectionTitle label="Piatti da rivedere" sub="Food cost sopra target — rivedi prezzo di vendita o ricetta" />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {overTarget.slice(0,5).map(d => (
               <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: STYLE.r }}>
@@ -299,7 +299,7 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
       {/* Risparmio potenziale */}
       {risparmio.length > 0 && (
         <>
-          <SectionTitle label="💰 Risparmio potenziale" sub="Ingredienti dove esiste un fornitore più economico nella tua classifica" />
+          <SectionTitle label="Risparmio potenziale" sub="Ingredienti dove esiste un fornitore più economico nella tua classifica" />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {risparmio.map(ing => (
               <div key={ing.id} style={{ padding: "10px 14px", background: STYLE.surf, border: STYLE.bds, borderRadius: STYLE.r }}>
@@ -321,7 +321,7 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
       {/* Andamento prezzi per ingrediente */}
       {ings.length > 0 && invs.length > 0 && (
         <>
-          <SectionTitle label="📈 Andamento prezzi" sub="Seleziona un ingrediente per vedere lo storico dalle fatture" />
+          <SectionTitle label="Andamento prezzi" sub="Seleziona un ingrediente per vedere lo storico dalle fatture" />
           <select style={{ ...inp({ appearance: "none", cursor: "pointer" }), maxWidth: 320, marginBottom: 12 }}
             value={selIng || ""}
             onChange={e => setSelIng(e.target.value || null)}>
@@ -353,7 +353,7 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
       {/* Spesa per fornitore */}
       {fornSpesa.length > 0 && (
         <>
-          <SectionTitle label="📦 Spesa per fornitore" sub={thisMonthName + " vs " + lastMonthName} />
+          <SectionTitle label="Spesa per fornitore" sub={thisMonthName + " vs " + lastMonthName} />
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {fornSpesa.map((f, i) => {
               const delta = f.thisMonth - f.lastMonth
@@ -509,10 +509,12 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
     // Calcola prezzi finali
     let finalPrezzi, finalCur, finalAvg
     if (edit && form.prezzi && form.prezzi.length > 0) {
-      // Modifica: usa array prezzi dal form
+      // Modifica: usa array prezzi dal form, riordina e aggiorna cur
       finalPrezzi = [...form.prezzi].sort((a, b) => a.price - b.price).slice(0, 5)
       finalCur = finalPrezzi[0].price
-      finalAvg = Math.round(((edit.avg * 0.7) + (finalCur * 0.3)) * 100) / 100
+      finalAvg = edit.avg !== finalCur
+        ? Math.round(((edit.avg * 0.7) + (finalCur * 0.3)) * 100) / 100
+        : edit.avg
     } else {
       // Nuovo: crea array con prezzo manuale
       finalCur = cur
@@ -663,28 +665,38 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
               )}
               {edit && form.prezzi && form.prezzi.length > 0 ? (
                 <div style={{ marginBottom: 12 }}>
-                  <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2, display: "block", marginBottom: 8 }}>Prezzi fornitori</label>
-                  {form.prezzi.map((p, i) => (
-                    <div key={i} style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
-                      <div style={{ flex: 1, fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</div>
-                      <input type="number" step="0.01" min="0"
-                        style={inp({ width: 100, padding: "5px 8px", fontSize: 12 })}
-                        value={p.price}
-                        onChange={e => {
-                          const newPrezzi = form.prezzi.map((x, j) => j === i ? { ...x, price: parseFloat(e.target.value) || 0 } : x)
-                          newPrezzi.sort((a, b) => a.price - b.price)
-                          setForm(f => ({ ...f, prezzi: newPrezzi }))
-                        }}
-                      />
-                      <span style={{ fontSize: 10, color: STYLE.t3 }}>/{form.unit}</span>
-                      {form.prezzi.length > 1 && (
-                        <button onClick={() => setForm(f => ({ ...f, prezzi: f.prezzi.filter((_, j) => j !== i) }))}
-                          style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 14, flexShrink: 0 }}>✕</button>
-                      )}
-                    </div>
-                  ))}
-                  <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 4 }}>
-                    Miglior prezzo: <strong style={{ color: STYLE.green }}>{form.prezzi.length > 0 ? formatEuro(form.prezzi[0].price) : "-"}/{form.unit}</strong>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2 }}>Prezzi per fornitore</label>
+                    <span style={{ fontSize: 10, color: STYLE.t3 }}>Miglior prezzo: <strong style={{ color: STYLE.green }}>{form.prezzi.length > 0 ? formatEuro(Math.min(...form.prezzi.map(p=>p.price))) : "—"}/{form.unit}</strong></span>
+                  </div>
+                  {/* Intestazione */}
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 28px", gap: 6, padding: "4px 8px", background: STYLE.el, borderRadius: "6px 6px 0 0" }}>
+                    <span style={{ fontSize: 9, color: STYLE.ac, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
+                    <span style={{ fontSize: 9, color: STYLE.ac, textAlign: "right" }}>Prezzo/{form.unit}</span>
+                    <span></span>
+                  </div>
+                  <div style={{ border: STYLE.bd, borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden", marginBottom: 8 }}>
+                    {[...form.prezzi].sort((a,b) => a.price - b.price).map((p, i) => (
+                      <div key={p.sup} style={{ display: "grid", gridTemplateColumns: "1fr 90px 28px", gap: 6, padding: "8px 8px", borderBottom: i < form.prezzi.length-1 ? STYLE.bds : "none", alignItems: "center", background: i === 0 ? "rgba(74,222,128,0.05)" : "transparent" }}>
+                        <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {i === 0 ? "" : ""}{p.sup}
+                        </span>
+                        <input type="number" step="0.01" min="0"
+                          style={{ ...inp({ padding: "4px 8px", fontSize: 12, textAlign: "right" }), width: "100%" }}
+                          value={p.price}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0
+                            const newPrezzi = form.prezzi.map(x => x.sup === p.sup ? { ...x, price: val, prevPrice: x.price } : x)
+                            setForm(f => ({ ...f, prezzi: newPrezzi }))
+                          }}
+                        />
+                        {form.prezzi.length > 1 && (
+                          <button
+                            onClick={() => setForm(f => ({ ...f, prezzi: f.prezzi.filter(x => x.sup !== p.sup) }))}
+                            style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 14, padding: 0, textAlign: "center" }}></button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                 </div>
               ) : form.unit !== "confezione" ? (
@@ -816,7 +828,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
             <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
               <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
                 style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "4px 10px", color: STYLE.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
-              <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}>✕</button>
+              <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}></button>
             </div>
           </div>
         ))}
@@ -1072,14 +1084,8 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
                     <button onClick={() => openEdit(ing)} style={{ background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r, padding: "3px 10px", color: STYLE.t2, fontSize: 11, fontFamily: "inherit", cursor: "pointer" }}>Modifica</button>
-                    <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                    <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}></button>
                   </div>
-                </div>
-                <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
-                  <span style={{ fontSize: 14, color: spiked ? STYLE.red : STYLE.t2, fontWeight: spiked ? 700 : 400 }}>
-                    {formatEuro(ing.cur)}/{ing.unit} {spiked ? "'" : ""}
-                  </span>
-                  <span style={{ fontSize: 12, color: STYLE.t3 }}>prec. {formatEuro(ing.prev || ing.avg || ing.cur || 0)}/{ing.unit}</span>
                 </div>
                 {ing.fornitore && <div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 2 }}>  {ing.fornitore}</div>}
                 {ing.prezzi && ing.prezzi.length > 0 && (
@@ -1170,7 +1176,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                     <td style={{ padding: "11px 16px", borderBottom: STYLE.bds, textAlign: "right" }}>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                         <button onClick={() => openEdit(ing)} style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 8px", borderRadius: STYLE.r }}>Modifica</button>
-                        <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina">✕</button>
+                        <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina"></button>
                       </div>
                     </td>
                   </tr>
@@ -1348,7 +1354,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
                               </div>
                             </div>
                             <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginLeft: 8, flexShrink: 0 }}>
-                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}></button>
                               <button onClick={() => { if(setEditDish && setPage) { setEditDish(v); setPage("fc") } }}
                                 style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r }}>Modifica</button>
                             </div>
@@ -1422,7 +1428,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
                 <div style={row({ gap: 8 })}>
                   <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
                     style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
-                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
+                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}></button>
                 </div>
               </div>
               {/* Food cost bar */}
@@ -3624,7 +3630,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
             <button style={btn("g", { fontSize: 12 })} onClick={clearDone}>Rimuovi completati</button>
           )}
           {spesa.filter(s => !s.done).length > 0 && (
-            <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>📤 Invia ordine</button>
+            <button style={btn("p", { fontSize: 12 })} onClick={() => setSendModalOpen(true)}>Invia ordine</button>
           )}
           {spesa.length > 0 && (
             <button style={{ ...btn("g", { fontSize: 12 }), color: STYLE.red }}
@@ -3639,7 +3645,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
             style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 9999 }}>
             <div onClick={e => e.stopPropagation()}
               style={{ background: STYLE.surf, borderRadius: "16px 16px 0 0", padding: 20, width: "100%", maxWidth: 480, maxHeight: "85vh", overflowY: "auto" }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1, marginBottom: 16 }}>📤 Invia ordine</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1, marginBottom: 16 }}>Invia ordine</div>
               <div style={{ marginBottom: 12 }}>
                 <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 4 }}>Nome ristorante</label>
                 <input value={ristoranteName} onChange={e => { setRistoranteName(e.target.value); localStorage.setItem("ristoranteName", e.target.value) }}
@@ -3669,7 +3675,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
                   <div key={f.id} onClick={() => sendOrder(f)}
                     style={{ ...card({ padding: "12px 14px", marginBottom: 8, cursor: "pointer" }) }}>
                     <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1 }}>{f.name}</div>
-                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{f.tel ? "📱 " + f.tel : f.email ? "✉️ " + f.email : "Nessun contatto"}</div>
+                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{f.tel ? "" + f.tel : f.email ? "" + f.email : "Nessun contatto"}</div>
                   </div>
                 ))
               )}
@@ -3716,7 +3722,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
                       <div style={{ width: 20, height: 20, borderRadius: "50%", border: "2px solid #2a2a31", flexShrink: 0 }} />
                       <span style={{ fontSize: 14, color: STYLE.t1, fontWeight: 600 }}>{s.name}</span>
                     </div>
-                    <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                    <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}></button>
                   </div>
                   <div style={row({ gap: 8, alignItems: "center" })}>
                     <input type="number" min="0" step="0.1"
@@ -3764,7 +3770,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
                     </div>
                     <span style={{ fontSize: 14, color: STYLE.t3, textDecoration: "line-through" }}>{s.name}</span>
                   </div>
-                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}>✕</button>
+                  <button onClick={() => removeItem(s.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}></button>
                 </div>
               ))}
             </div>
@@ -4094,7 +4100,7 @@ export default function App() {
         {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 22px 0", flexShrink: 0 }}>
           <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Impostazioni</div>
-          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18, lineHeight: 1 }}>✕</button>
+          <button onClick={() => setSettingsOpen(false)} style={{ background: STYLE.el, border: "none", borderRadius: "50%", width: 34, height: 34, cursor: "pointer", color: STYLE.t3, fontSize: 18, lineHeight: 1 }}></button>
         </div>
 
         {/* Avatar + email */}
