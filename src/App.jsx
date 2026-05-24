@@ -1003,7 +1003,39 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   </Fld>
                 </div>
               )}
-              {form.unit !== "confezione" ? (
+              {edit && form.prezzi && form.prezzi.length > 0 ? (
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                    <label style={{ fontSize: 11.5, fontWeight: 500, color: STYLE.t2 }}>Prezzi per fornitore</label>
+                    <span style={{ fontSize: 10, color: STYLE.t3 }}>Miglior prezzo: <strong style={{ color: STYLE.green }}>{form.prezzi.length > 0 ? formatEuro(Math.min(...form.prezzi.map(p=>p.price))) : "—"}/{form.unit}</strong></span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 90px 28px", gap: 6, padding: "4px 8px", background: STYLE.el, borderRadius: "6px 6px 0 0" }}>
+                    <span style={{ fontSize: 9, color: STYLE.ac, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
+                    <span style={{ fontSize: 9, color: STYLE.ac, textAlign: "right" }}>Prezzo/{form.unit}</span>
+                    <span></span>
+                  </div>
+                  <div style={{ border: STYLE.bd, borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden", marginBottom: 8 }}>
+                    {[...form.prezzi].sort((a,b) => a.price - b.price).map((p, i) => (
+                      <div key={p.sup} style={{ display: "grid", gridTemplateColumns: "1fr 90px 28px", gap: 6, padding: "8px 8px", borderBottom: i < form.prezzi.length-1 ? STYLE.bds : "none", alignItems: "center", background: i === 0 ? "rgba(74,222,128,0.05)" : "transparent" }}>
+                        <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</span>
+                        <input type="number" step="0.01" min="0"
+                          style={{ ...inp({ padding: "4px 8px", fontSize: 12, textAlign: "right" }), width: "100%" }}
+                          value={p.price}
+                          onChange={e => {
+                            const val = parseFloat(e.target.value) || 0
+                            const newPrezzi = form.prezzi.map(x => x.sup === p.sup ? { ...x, prevPrice: x.price, price: val } : x)
+                            setForm(f => ({ ...f, prezzi: newPrezzi }))
+                          }}
+                        />
+                        {form.prezzi.length > 1 && (
+                          <button onClick={() => setForm(f => ({ ...f, prezzi: f.prezzi.filter(x => x.sup !== p.sup) }))}
+                            style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 14, padding: 0, textAlign: "center" }}>✕</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : form.unit !== "confezione" ? (
                 <Fld label={"Prezzo (v/" + form.unit + ") *"}>
                   <input style={inp()} type="number" step="0.01" value={form.cur} onChange={e => setForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
                   {err.cur && <span style={{ fontSize: 11, color: STYLE.red }}>{err.cur}</span>}
