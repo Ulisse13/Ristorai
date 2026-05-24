@@ -154,225 +154,246 @@ const SOTTO1_ORDER = {
   "Dispensa":         ["Conserve", "Condimenti", "Secchi", "Bevande analcoliche", "Bevande alcoliche", "Superalcolici", "Detersivi"],
 }
 
-function Dashboard({ ings, dishes, isMobile }) {
-  const [tab, setTab] = useState("prezzi") // "prezzi" | "insights"
+function Dashboard({ ings, dishes, invs, isMobile }) {
+  const [selIng, setSelIng] = useState(null)
 
-  function variation(ing) {
-    const ref = ing.prev !== undefined ? ing.prev : ing.avg
-    if (!ref || ref === 0) return 0
-    return Math.round(((ing.cur - ref) / ref) * 1000) / 10
+  const now = new Date()
+  const thisMonth = now.toISOString().slice(0,7)
+  const lastMonthDate = new Date(now.getFullYear(), now.getMonth()-1, 1)
+  const lastMonth = lastMonthDate.toISOString().slice(0,7)
+  const thisMonthName = now.toLocaleString("it-IT", { month: "long" })
+  const lastMonthName = lastMonthDate.toLocaleString("it-IT", { month: "long" })
+
+  // KPI
+  const foodDishes = dishes.filter(d => d.fc > 0)
+  const avgFC = foodDishes.length > 0
+    ? Math.round(foodDishes.reduce((s,d) => s + d.fc, 0) / foodDishes.length * 1000) / 10
+    : 0
+  const overTarget = foodDishes.filter(d => d.fc > (d.target || 0.30))
+  const ingsConAumento = ings.filter(i => i.prezzi && i.prezzi.some(p => p.prevPrice && p.price > p.prevPrice))
+
+  // Risparmio potenziale
+  const risparmio = ings
+    .filter(i => i.prezzi && i.prezzi.length > 1)
+    .map(i => ({
+      ...i,
+      delta: Math.round((i.prezzi[i.prezzi.length-1].price - i.prezzi[0].price) * 100) / 100
+    }))
+    .filter(i => i.delta > 0)
+    .sort((a,b) => b.delta - a.delta)
+    .slice(0, 5)
+
+  // Spesa per fornitore questo mese vs scorso
+  const spesaMap = {}
+  invs.forEach(inv => {
+    if (!inv.sup || !inv.date) return
+    const month = inv.date.slice(0,7)
+    const sup = inv.sup.trim()
+    if (!spesaMap[sup]) spesaMap[sup] = { thisMonth: 0, lastMonth: 0 }
+    if (month === thisMonth) spesaMap[sup].thisMonth += inv.total || 0
+    if (month === lastMonth) spesaMap[sup].lastMonth += inv.total || 0
+  })
+  const fornSpesa = Object.entries(spesaMap)
+    .map(([sup, v]) => ({ sup, ...v }))
+    .filter(f => f.thisMonth > 0 || f.lastMonth > 0)
+    .sort((a,b) => b.thisMonth - a.thisMonth)
+    .slice(0, 6)
+
+  // Storico prezzi per ingrediente da fatture
+  function getPriceHistory(ing) {
+    if (!ing) return []
+    const normN = s => s.toLowerCase().replace(/\s+/g," ").trim()
+    const ingNorm = normN(ing.name)
+    const history = []
+    invs.forEach(inv => {
+      if (!inv.prodotti || !inv.date) return
+      inv.prodotti.forEach(p => {
+        if (!p.nome || !p.prezzoUnitario) return
+        if (normN(p.nome) === ingNorm) {
+          history.push({ date: inv.date, price: p.prezzoUnitario, sup: inv.sup })
+        }
+      })
+    })
+    return history.sort((a,b) => a.date.localeCompare(b.date))
   }
 
-  const withVar = ings.map(ing => ({ ...ing, var: variation(ing) }))
-  const increased = withVar.filter(i => i.var > 0).sort((a, b) => b.var - a.var)
-  const decreased = withVar.filter(i => i.var < 0).sort((a, b) => a.var - b.var)
-  const stable    = withVar.filter(i => i.var === 0)
-  const sorted    = [...increased, ...decreased, ...stable]
+  const selectedIng = selIng ? ings.find(i => i.id === selIng) : null
+  const priceHistory = getPriceHistory(selectedIng)
 
-  // Insights calcolate automaticamente
-  const foodDishes = dishes.filter(d => d.fc > 0)
-  const avgFoodCost = foodDishes.length > 0
-    ? Math.round((foodDishes.reduce((s, d) => s + d.fc, 0) / foodDishes.length) * 10) / 10
-    : 0
-  const overTarget  = foodDishes.filter(d => d.fc > (d.target || 30))
-  const topIncreased = increased.slice(0, 5)
-  const topExpensive = [...ings].sort((a, b) => b.cur - a.cur).slice(0, 5)
-  const catCosts = ["Carni","Pesce","Freschi","Frutta e Verdura","Surgelati"].map(cat => {
-    const catIngs = ings.filter(i => i.cat === cat)
-    const avg = catIngs.length > 0 ? catIngs.reduce((s, i) => s + i.cur, 0) / catIngs.length : 0
-    return { cat, avg: Math.round(avg * 100) / 100, count: catIngs.length }
-  }).filter(c => c.count > 0)
+  // Sparkline SVG
+  function Sparkline({ data, width, height }) {
+    if (!data || data.length < 2) return null
+    const prices = data.map(d => d.price)
+    const min = Math.min(...prices)
+    const max = Math.max(...prices)
+    const range = max - min || 1
+    const pts = data.map((d, i) => {
+      const x = (i / (data.length - 1)) * (width - 8) + 4
+      const y = (height - 8) - ((d.price - min) / range) * (height - 8) + 4
+      return `${x},${y}`
+    }).join(" ")
+    return (
+      <svg width={width} height={height} style={{ display: "block" }}>
+        <polyline points={pts} fill="none" stroke={STYLE.ac} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+        {data.map((d, i) => {
+          const x = (i / (data.length - 1)) * (width - 8) + 4
+          const y = (height - 8) - ((d.price - min) / range) * (height - 8) + 4
+          return <circle key={i} cx={x} cy={y} r="3" fill={STYLE.ac} />
+        })}
+      </svg>
+    )
+  }
 
-  const alerts = []
-  if (increased.length > 0) alerts.push({ type: "warn", msg: increased.length + " ingredient" + (increased.length > 1 ? "i aumentati" : "e aumentato") + " di prezzo" })
-  if (overTarget.length > 0) alerts.push({ type: "warn", msg: overTarget.length + " piatt" + (overTarget.length > 1 ? "i" : "o") + " sopra il target food cost" })
-  if (ings.length === 0) alerts.push({ type: "info", msg: "Nessun ingrediente  -  inizia scansionando una fattura" })
-  if (dishes.length === 0 && ings.length > 0) alerts.push({ type: "info", msg: "Magazzino popolato  -  ora crea le tue ricette" })
-  if (avgFoodCost > 35) alerts.push({ type: "warn", msg: "Food cost medio alto: " + avgFoodCost + "%" })
-  if (avgFoodCost > 0 && avgFoodCost <= 30) alerts.push({ type: "ok", msg: "Food cost medio ottimo: " + avgFoodCost + "%" })
-
-  const SectionTitle = ({ label }) => (
-    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, marginBottom: 10, marginTop: 20 }}>{label}</div>
+  const SectionTitle = ({ label, sub }) => (
+    <div style={{ marginBottom: 12, marginTop: 28, paddingBottom: 8, borderBottom: STYLE.bds }}>
+      <div style={{ fontSize: 14, fontWeight: 700, color: STYLE.t1 }}>{label}</div>
+      {sub && <div style={{ fontSize: 11, color: STYLE.t3, marginTop: 2 }}>{sub}</div>}
+    </div>
   )
 
   return (
     <div>
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
-        <div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Dashboard</div>
-          <div style={{ fontSize: 12, color: STYLE.t3 }}>{ings.length} ingredienti . {dishes.length} piatti</div>
-        </div>
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>Dashboard</div>
+        <div style={{ fontSize: 12, color: STYLE.t3 }}>{ings.length} ingredienti · {dishes.length} piatti · {invs.length} fatture</div>
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 20 }}>
-        {[["prezzi","  Prezzi"],["insights","* Insights"]].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)}
-            style={{ padding: "8px 20px", background: tab === id ? STYLE.ac : STYLE.el, color: tab === id ? "#0d0d0f" : STYLE.t2, border: "none", fontFamily: "inherit", fontSize: 13, fontWeight: tab === id ? 700 : 400, cursor: "pointer", borderRadius: id === "prezzi" ? "8px 0 0 8px" : "0 8px 8px 0" }}>
-            {label}
-          </button>
+      {/* KPI rapidi */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
+        {[
+          { l: "Ingredienti", v: ings.length, sub: "in magazzino", c: STYLE.ac },
+          { l: "Food cost medio", v: avgFC > 0 ? avgFC + "%" : "—", sub: avgFC > 35 ? "⚠ alto" : avgFC > 0 ? "✓ nella norma" : "nessun piatto", c: avgFC > 35 ? STYLE.red : avgFC > 0 ? STYLE.green : STYLE.t2 },
+          { l: "Piatti da rivedere", v: overTarget.length, sub: "sopra food cost target", c: overTarget.length > 0 ? STYLE.red : STYLE.green },
+          { l: "Prezzi aumentati", v: ingsConAumento.length, sub: "dalla scorsa fattura", c: ingsConAumento.length > 0 ? STYLE.red : STYLE.green },
+        ].map((k, i) => (
+          <div key={i} style={card({ padding: "14px 16px" })}>
+            <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 700 }}>{k.l}</div>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: k.c, lineHeight: 1 }}>{k.v}</div>
+            <div style={{ fontSize: 10, color: STYLE.t3, marginTop: 4 }}>{k.sub}</div>
+          </div>
         ))}
       </div>
 
-      {/* TAB PREZZI */}
-      {tab === "prezzi" && (
-        <div>
-          {/* Counter */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 20 }}>
-            {[
-              { label: "Aumenti",   count: increased.length, color: STYLE.red,   bg: STYLE.rd,  symbol: "'" },
-              { label: "Ribassi",   count: decreased.length, color: STYLE.green, bg: STYLE.gd,  symbol: " - " },
-              { label: "Invariati", count: stable.length,    color: STYLE.ac,    bg: STYLE.acg, symbol: "--" },
-            ].map((k, i) => (
-              <div key={i} style={{ background: k.bg, border: "1px solid " + (i === 0 ? "rgba(248,113,113,0.25)" : i === 1 ? "rgba(74,222,128,0.25)" : STYLE.acd), borderRadius: STYLE.r2, padding: "14px 16px", position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: k.color, opacity: 0.4 }} />
-                <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", color: STYLE.t3, fontWeight: 700, marginBottom: 6 }}>{k.label}</div>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                  <span style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: k.color, lineHeight: 1 }}>{k.count}</span>
-                  <span style={{ fontSize: 16, color: k.color, fontWeight: 700 }}>{k.symbol}</span>
+      {/* Alert piatti da rivedere */}
+      {overTarget.length > 0 && (
+        <>
+          <SectionTitle label="⚠ Piatti da rivedere" sub="Food cost sopra target — rivedi prezzo di vendita o ricetta" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {overTarget.slice(0,5).map(d => (
+              <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: STYLE.r }}>
+                <div>
+                  <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{d.name}</div>
+                  <div style={{ fontSize: 11, color: STYLE.t3 }}>target {d.target ? (d.target*100).toFixed(0) : 30}% · vendita {d.price > 0 ? formatEuro(d.price) : "—"} · costo {d.cost > 0 ? formatEuro(d.cost) : "—"}</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontSize: 15, color: STYLE.red, fontWeight: 700 }}>{(d.fc*100).toFixed(1)}%</div>
+                  <div style={{ fontSize: 10, color: STYLE.t3 }}>food cost</div>
                 </div>
               </div>
             ))}
           </div>
+        </>
+      )}
 
-          {/* Lista */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {sorted.map(ing => {
-              const v = ing.var
-              const isUp = v > 0; const isDown = v < 0
-              const varColor  = isUp ? STYLE.red : isDown ? STYLE.green : STYLE.ac
-              const varBg     = isUp ? STYLE.rd  : isDown ? STYLE.gd    : STYLE.acg
-              const varBorder = isUp ? "rgba(248,113,113,0.2)" : isDown ? "rgba(74,222,128,0.2)" : STYLE.acd
-              const varText   = isUp ? "+" + v.toFixed(1) + "%" : isDown ? v.toFixed(1) + "%" : "0%"
+      {/* Risparmio potenziale */}
+      {risparmio.length > 0 && (
+        <>
+          <SectionTitle label="💰 Risparmio potenziale" sub="Ingredienti dove esiste un fornitore più economico nella tua classifica" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {risparmio.map(ing => (
+              <div key={ing.id} style={{ padding: "10px 14px", background: STYLE.surf, border: STYLE.bds, borderRadius: STYLE.r }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                  <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{ing.name}</span>
+                  <span style={{ fontSize: 14, color: STYLE.green, fontWeight: 700 }}>-{formatEuro(ing.delta)}/{ing.unit}</span>
+                </div>
+                <div style={{ fontSize: 11, color: STYLE.t3 }}>
+                  <span style={{ color: STYLE.green, fontWeight: 600 }}>{ing.prezzi[0].sup}</span> {formatEuro(ing.prezzi[0].price)}
+                  <span style={{ margin: "0 6px" }}>vs</span>
+                  <span style={{ color: STYLE.red, fontWeight: 600 }}>{ing.prezzi[ing.prezzi.length-1].sup}</span> {formatEuro(ing.prezzi[ing.prezzi.length-1].price)}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      {/* Andamento prezzi per ingrediente */}
+      {ings.length > 0 && invs.length > 0 && (
+        <>
+          <SectionTitle label="📈 Andamento prezzi" sub="Seleziona un ingrediente per vedere lo storico dalle fatture" />
+          <select style={{ ...inp({ appearance: "none", cursor: "pointer" }), maxWidth: 320, marginBottom: 12 }}
+            value={selIng || ""}
+            onChange={e => setSelIng(e.target.value || null)}>
+            <option value="">— scegli ingrediente —</option>
+            {[...ings].sort((a,b) => a.name.localeCompare(b.name,"it")).map(i => (
+              <option key={i.id} value={i.id}>{i.name}</option>
+            ))}
+          </select>
+          {selectedIng && priceHistory.length > 1 ? (
+            <div style={card({ padding: 16 })}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 12 }}>{selectedIng.name}</div>
+              <Sparkline data={priceHistory} width={isMobile ? 280 : 420} height={64} />
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, marginTop: 14 }}>
+                {priceHistory.slice(-6).reverse().map((h, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0", borderBottom: i < 5 ? STYLE.bds : "none" }}>
+                    <span style={{ color: STYLE.t3 }}>{formatDate(h.date)}</span>
+                    <span style={{ color: STYLE.t2 }}>{h.sup}</span>
+                    <span style={{ color: STYLE.ac, fontWeight: 600 }}>{formatEuro(h.price)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : selectedIng ? (
+            <div style={{ fontSize: 12, color: STYLE.t3, padding: "16px 0" }}>Nessuno storico sufficiente — scansiona altre fatture per vedere l'andamento</div>
+          ) : null}
+        </>
+      )}
+
+      {/* Spesa per fornitore */}
+      {fornSpesa.length > 0 && (
+        <>
+          <SectionTitle label="📦 Spesa per fornitore" sub={thisMonthName + " vs " + lastMonthName} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {fornSpesa.map((f, i) => {
+              const delta = f.thisMonth - f.lastMonth
+              const pct = f.lastMonth > 0 ? Math.round((delta / f.lastMonth) * 100) : null
+              const maxVal = Math.max(f.thisMonth, f.lastMonth)
               return (
-                <div key={ing.id} style={{ background: STYLE.surf, border: "1px solid #1f1f25", borderRadius: STYLE.r, padding: "12px 16px", display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ minWidth: 56, background: varBg, border: "1px solid " + varBorder, borderRadius: 6, padding: "4px 8px", textAlign: "center", flexShrink: 0 }}>
-                    <div style={{ fontSize: 14, color: varColor, lineHeight: 1, fontWeight: 700 }}>{isUp ? "'" : isDown ? " - " : "--"}</div>
-                    <div style={{ fontSize: 10, color: varColor, fontWeight: 700, marginTop: 1 }}>{varText}</div>
+                <div key={i} style={card({ padding: "12px 14px" })}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1 }}>{f.sup}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      {pct !== null && (
+                        <span style={{ fontSize: 11, color: pct > 0 ? STYLE.red : STYLE.green, fontWeight: 600 }}>
+                          {pct > 0 ? "+" : ""}{pct}%
+                        </span>
+                      )}
+                      <span style={{ fontSize: 15, fontWeight: 700, color: STYLE.ac }}>{formatEuro(f.thisMonth)}</span>
+                    </div>
                   </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{ing.name}</div>
-                    <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cat}</div>
-                  </div>
-                  <div style={{ textAlign: "right", flexShrink: 0 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1 }}>{formatEuro(ing.cur)}<span style={{ fontSize: 10, color: STYLE.t3, fontWeight: 400 }}>/{ing.unit}</span></div>
-                    <div style={{ fontSize: 10, color: STYLE.t3 }}>prec. {formatEuro(ing.prev !== undefined ? ing.prev : ing.avg)}/{ing.unit}</div>
-                  </div>
+                  {f.lastMonth > 0 && (
+                    <>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: STYLE.t3, marginBottom: 4 }}>
+                        <span>{lastMonthName}: {formatEuro(f.lastMonth)}</span>
+                        <span>{thisMonthName}: {formatEuro(f.thisMonth)}</span>
+                      </div>
+                      <div style={{ position: "relative", height: 6, background: STYLE.el, borderRadius: 999, overflow: "hidden" }}>
+                        <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: (f.lastMonth / maxVal * 100) + "%", background: STYLE.t3, borderRadius: 999, opacity: 0.4 }} />
+                        <div style={{ position: "absolute", left: 0, top: 0, height: "100%", width: (f.thisMonth / maxVal * 100) + "%", background: delta > 0 ? STYLE.red : STYLE.green, borderRadius: 999 }} />
+                      </div>
+                    </>
+                  )}
                 </div>
               )
             })}
           </div>
-          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: STYLE.t3, fontSize: 13 }}>Nessun ingrediente  -  inizia scansionando una fattura</div>}
-        </div>
+        </>
       )}
 
-      {/* TAB INSIGHTS */}
-      {tab === "insights" && (
-        <div>
-          {/* Alert */}
-          {alerts.length > 0 && (
-            <>
-              <SectionTitle label="Alert" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 8 }}>
-                {alerts.map((a, i) => (
-                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: STYLE.r, background: a.type === "warn" ? STYLE.rd : a.type === "ok" ? STYLE.gd : STYLE.el, border: "1px solid " + (a.type === "warn" ? "rgba(248,113,113,0.3)" : a.type === "ok" ? "rgba(74,222,128,0.3)" : STYLE.acd) }}>
-                    <span style={{ fontSize: 14 }}>{a.type === "warn" ? "  " : a.type === "ok" ? " ..." : "  "}</span>
-                    <span style={{ fontSize: 13, color: a.type === "warn" ? STYLE.red : a.type === "ok" ? STYLE.green : STYLE.t2 }}>{a.msg}</span>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Food cost medio */}
-          {avgFoodCost > 0 && (
-            <>
-              <SectionTitle label="Food Cost" />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 8 }}>
-                <div style={{ ...card({ padding: "16px" }) }}>
-                  <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Media generale</div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: avgFoodCost > 35 ? STYLE.red : avgFoodCost > 28 ? "#f59e0b" : STYLE.green }}>{avgFoodCost}%</div>
-                </div>
-                <div style={{ ...card({ padding: "16px" }) }}>
-                  <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Piatti analizzati</div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: STYLE.t1 }}>{foodDishes.length}</div>
-                </div>
-              </div>
-              {overTarget.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
-                  {overTarget.slice(0, 5).map(d => (
-                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", padding: "8px 12px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: STYLE.r }}>
-                      <span style={{ fontSize: 13, color: STYLE.t1 }}>{d.name}</span>
-                      <span style={{ fontSize: 13, color: STYLE.red, fontWeight: 700 }}>{(d.fc * 100).toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Prezzi per categoria */}
-          {catCosts.length > 0 && (
-            <>
-              <SectionTitle label="Costo medio per categoria" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
-                {catCosts.sort((a, b) => b.avg - a.avg).map(c => (
-                  <div key={c.cat} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r }}>
-                    <div>
-                      <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{c.cat}</div>
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{c.count} ingredient{c.count !== 1 ? "i" : "e"}</div>
-                    </div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.ac }}>{formatEuro(c.avg)}/kg</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Top 5 aumenti */}
-          {topIncreased.length > 0 && (
-            <>
-              <SectionTitle label="Maggiori aumenti recenti" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 8 }}>
-                {topIncreased.map(ing => (
-                  <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.2)", borderRadius: STYLE.r }}>
-                    <div>
-                      <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{ing.name}</div>
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cat}</div>
-                    </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div style={{ fontSize: 13, color: STYLE.red, fontWeight: 700 }}>+{ing.var.toFixed(1)}%</div>
-                      <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(ing.cur)}/{ing.unit}</div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {/* Top 5 pi   cari */}
-          {topExpensive.length > 0 && (
-            <>
-              <SectionTitle label="Ingredienti pi   costosi" />
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {topExpensive.map((ing, i) => (
-                  <div key={ing.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 14px", background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <span style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t3, width: 20 }}>#{i+1}</span>
-                      <div>
-                        <div style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{ing.name}</div>
-                        <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cat}</div>
-                      </div>
-                    </div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.ac }}>{formatEuro(ing.cur)}/{ing.unit}</div>
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-
-          {ings.length === 0 && <div style={{ textAlign: "center", padding: "60px 0", color: STYLE.t3, fontSize: 13 }}>Nessun dato  -  inizia scansionando una fattura</div>}
+      {ings.length === 0 && (
+        <div style={{ textAlign: "center", padding: "60px 0", color: STYLE.t3, fontSize: 13 }}>
+          Inizia scansionando una fattura per popolare la dashboard
         </div>
       )}
     </div>
@@ -4175,7 +4196,7 @@ export default function App() {
   function renderPage() {
     try {
       switch(page) {
-        case "dash":   return <Dashboard ings={ings} dishes={dishes} isMobile={isMobile} />
+        case "dash":   return <Dashboard ings={ings} dishes={dishes} invs={invs} isMobile={isMobile} />
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
