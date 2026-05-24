@@ -1105,7 +1105,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
             return (
               <div key={ing.id} style={card({ padding: "14px 16px" })}>
                 <div style={row({ justifyContent: "space-between", marginBottom: 4 })}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2 }}>{ing.name}</div>
                     {(ing.sotto1 || ing.sotto2) && (
                       <div style={row({ gap: 6, marginBottom: 4 })}>
@@ -1119,7 +1119,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                     <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}></button>
                   </div>
                 </div>
-                {ing.fornitore && <div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 2 }}>  {ing.fornitore}</div>}
+                
                 {ing.prezzi && ing.prezzi.length > 0 && (
                   <div style={{ background: STYLE.el, borderRadius: STYLE.r, padding: "6px 8px", marginTop: 4 }}>
                     {/* Intestazione colonne */}
@@ -3632,7 +3632,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
                     borderColor: inList ? STYLE.acd : "#1f1f25",
                     background: inList ? STYLE.acg : STYLE.surf }}>
                   <div style={row({ justifyContent: "space-between" })}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 600, color: inList ? STYLE.ac : STYLE.t1, marginBottom: 2 }}>{ing.name}</div>
                       <div style={{ fontSize: 11, color: STYLE.t3 }}>{ing.cur > 0 ? "€ " + (ing.cur || 0).toFixed(2) + "/" + ing.unit : ing.unit}</div>
                     </div>
@@ -4327,7 +4327,7 @@ export default function App() {
         )}
       </div>
 
-      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minWidth: 0 }}>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 20px", height: 52, background: STYLE.surf, borderBottom: STYLE.bds, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1 }}>
             <span style={{ color: STYLE.ac, opacity: 0.8 }}><NavIcon id={page} /></span>
