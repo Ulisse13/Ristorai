@@ -1063,13 +1063,25 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                 {ing.fornitore && <div style={{ fontSize: 10, color: STYLE.t3, marginBottom: 2 }}>  {ing.fornitore}</div>}
                 {ing.prezzi && ing.prezzi.length > 0 && (
                   <div style={{ background: STYLE.el, borderRadius: STYLE.r, padding: "6px 8px", marginTop: 4 }}>
-                    <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, marginBottom: 4 }}>Prezzi fornitori</div>
-                    {ing.prezzi.map((p, i) => (
-                      <div key={i} style={row({ justifyContent: "space-between", padding: "2px 0" })}>
-                        <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400 }}>{p.sup}</span>
-                        <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.red }}>{formatEuro(p.price)}/{ing.unit}</span>
-                      </div>
-                    ))}
+                    {/* Intestazione colonne */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 52px 16px 56px", gap: 4, marginBottom: 5 }}>
+                      <span style={{ fontSize: 9, color: STYLE.t3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
+                      <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Prec.</span>
+                      <span></span>
+                      <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Attuale</span>
+                    </div>
+                    {ing.prezzi.map((p, i) => {
+                      const arrow = !p.prevPrice ? "" : p.price < p.prevPrice ? "↓" : p.price > p.prevPrice ? "↑" : "→"
+                      const arrowColor = !p.prevPrice ? STYLE.t3 : p.price < p.prevPrice ? STYLE.green : p.price > p.prevPrice ? STYLE.red : STYLE.ac
+                      return (
+                        <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr 52px 16px 56px", gap: 4, padding: "2px 0" }}>
+                          <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</span>
+                          <span style={{ fontSize: 10, color: STYLE.t3, textAlign: "right", alignSelf: "center" }}>{p.prevPrice ? formatEuro(p.prevPrice) : "—"}</span>
+                          <span style={{ fontSize: 11, color: arrowColor, textAlign: "center", fontWeight: 700 }}>{arrow}</span>
+                          <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, textAlign: "right" }}>{formatEuro(p.price)}</span>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
                 {ing.confPrice && (
@@ -1112,12 +1124,25 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                     <td style={{ padding: "11px 16px", color: STYLE.t2, borderBottom: STYLE.bds, fontVariantNumeric: "tabular-nums" }}>
                       {ing.prezzi && ing.prezzi.length > 0 ? (
                         <div>
-                          {ing.prezzi.map((p, i) => (
-                            <div key={i} style={row({ gap: 6 })}>
-                              <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400 }}>{p.sup}</span>
-                              <span style={{ fontSize: 12, fontWeight: i === 0 ? 700 : 400, color: i === 0 ? STYLE.green : STYLE.red }}>{formatEuro(p.price)}</span>
-                            </div>
-                          ))}
+                          {/* Intestazione */}
+                          <div style={{ display: "grid", gridTemplateColumns: "100px 58px 16px 58px", gap: 4, marginBottom: 4 }}>
+                            <span style={{ fontSize: 9, color: STYLE.t3, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Fornitore</span>
+                            <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Prec.</span>
+                            <span></span>
+                            <span style={{ fontSize: 9, color: STYLE.t3, textAlign: "right" }}>Attuale</span>
+                          </div>
+                          {ing.prezzi.map((p, i) => {
+                            const arrow = !p.prevPrice ? "" : p.price < p.prevPrice ? "↓" : p.price > p.prevPrice ? "↑" : "→"
+                            const arrowColor = !p.prevPrice ? STYLE.t3 : p.price < p.prevPrice ? STYLE.green : p.price > p.prevPrice ? STYLE.red : STYLE.ac
+                            return (
+                              <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 58px 16px 58px", gap: 4, padding: "1px 0" }}>
+                                <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</span>
+                                <span style={{ fontSize: 10, color: STYLE.t3, textAlign: "right" }}>{p.prevPrice ? formatEuro(p.prevPrice) : "—"}</span>
+                                <span style={{ fontSize: 11, color: arrowColor, textAlign: "center", fontWeight: 700 }}>{arrow}</span>
+                                <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, textAlign: "right" }}>{formatEuro(p.price)}</span>
+                              </div>
+                            )
+                          })}
                         </div>
                       ) : <span>{formatEuro(ing.avg || ing.cur)}/{ing.unit}</span>}
                     </td>
@@ -2031,7 +2056,7 @@ PRODOTTI:
         if (idx >= 0) {
           // Aggiorna solo se il prezzo è cambiato
           if (oldPrezzi[idx].price !== newPrice) {
-            oldPrezzi[idx] = { sup, price: newPrice, date: fattura.date }
+            oldPrezzi[idx] = { sup, prevPrice: oldPrezzi[idx].price, price: newPrice, date: fattura.date }
           }
         } else {
           oldPrezzi.push({ sup, price: newPrice, date: fattura.date })
