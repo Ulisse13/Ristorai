@@ -63,6 +63,18 @@ function cleanJSON(str) {
 }
 import { lookupFood } from "./foodDB"
 
+
+// Normalizza nome per matching: rimuove solo formato numerico (30pz, 5kg, 3l)
+// mantiene stato/lavorazione (fresco, arrostito, affumicato, ecc.)
+function normNameForMatch(s) {
+  if (!s) return ""
+  return s.toLowerCase()
+    .replace(/\b\d+[.,]?\d*\s*(kg|g|l|lt|litri|ml|pz|pezzi|conf|cf|cassa|cartone|bottiglie|buste|scatole)\b/gi, "")
+    .replace(/\./g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 function normFornitore(s) {
   if (!s) return ""
   return s.toLowerCase()
@@ -308,9 +320,9 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
                   <span style={{ fontSize: 14, color: STYLE.green, fontWeight: 700 }}>-{formatEuro(ing.delta)}/{ing.unit}</span>
                 </div>
                 <div style={{ fontSize: 11, color: STYLE.t3 }}>
-                  <span style={{ color: STYLE.green, fontWeight: 600 }}>{ing.prezzi[0].sup}</span> {formatEuro(ing.prezzi[0].price)}
+                  <span style={{ color: STYLE.green, fontWeight: 600 }}>{ing.prezzi[0].sup}</span> {formatEuro(ing.prezzi[0].price)}/{ing.unit}
                   <span style={{ margin: "0 6px" }}>vs</span>
-                  <span style={{ color: STYLE.red, fontWeight: 600 }}>{ing.prezzi[ing.prezzi.length-1].sup}</span> {formatEuro(ing.prezzi[ing.prezzi.length-1].price)}
+                  <span style={{ color: STYLE.red, fontWeight: 600 }}>{ing.prezzi[ing.prezzi.length-1].sup}</span> {formatEuro(ing.prezzi[ing.prezzi.length-1].price)}/{ing.unit}
                 </div>
               </div>
             ))}
@@ -533,10 +545,10 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
     if (edit) {
       setIngs(prev => {
         // Cerca duplicato: stesso nome + categoria + sottocategoria
-        const nameNorm = d.name.toLowerCase().trim()
+        const nameNorm = normNameForMatch(d.name)
         const duplicate = prev.find(i =>
           i.id !== edit.id &&
-          i.name.toLowerCase().trim() === nameNorm &&
+          normNameForMatch(i.name) === nameNorm &&
           i.cat === d.cat &&
           (i.sotto1 || "") === (d.sotto1 || "")
         )
@@ -1137,7 +1149,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                           <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</span>
                           <span style={{ fontSize: 10, color: STYLE.t3, textAlign: "right", alignSelf: "center" }}>{p.prevPrice ? formatEuro(p.prevPrice) : "—"}</span>
                           <span style={{ fontSize: 11, color: arrowColor, textAlign: "center", fontWeight: 700 }}>{arrow}</span>
-                          <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, textAlign: "right" }}>{formatEuro(p.price)}</span>
+                          <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, textAlign: "right" }}>{formatEuro(p.price)}<span style={{ fontSize: 9, color: STYLE.t3 }}>/{ing.unit}</span></span>
                         </div>
                       )
                     })}
@@ -1198,7 +1210,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                                 <span style={{ fontSize: 11, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{p.sup}</span>
                                 <span style={{ fontSize: 10, color: STYLE.t3, textAlign: "right" }}>{p.prevPrice ? formatEuro(p.prevPrice) : "—"}</span>
                                 <span style={{ fontSize: 11, color: arrowColor, textAlign: "center", fontWeight: 700 }}>{arrow}</span>
-                                <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, textAlign: "right" }}>{formatEuro(p.price)}</span>
+                                <span style={{ fontSize: 12, color: i === 0 ? STYLE.green : STYLE.red, fontWeight: i === 0 ? 700 : 400, textAlign: "right" }}>{formatEuro(p.price)}<span style={{ fontSize: 9, color: STYLE.t3 }}>/{ing.unit}</span></span>
                               </div>
                             )
                           })}
@@ -1606,7 +1618,8 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
       let extractedText = ""
       const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown.
 
-REGOLE NOME: massimo 5 parole, solo il prodotto. NO pesi, NO volumi, NO codici articolo.
+REGOLE NOME: massimo 5 parole, solo il prodotto. NO codici articolo.
+ECCEZIONE: se l'unità di misura è pz, conf, cf, cassa, cartone, bottiglia → INCLUDI il peso/volume nel nome (es. "Maionese 5kg", "Uova 30pz", "Olio EVO 5l"). Questo serve per distinguere formati diversi dello stesso prodotto.
 PRESERVARE SEMPRE nel nome queste specificazioni se presenti:
 - Conservazione: al naturale, sott'aceto, sott'olio, affumicato, salmistrato, marinato, fermentato\n- Stato: fresco, precotto, cotto, crudo, abbattuto, decongelato, dec\n- Surgelazione: surgelato, gelo, IQF\n- Tagli: intero, metà, filetti, pulito, sporco, piccolo, medio, grande\n- Calibri gamberi: 1°, 2°, 3°, 4°\n- Calibri polpo: T1 T2 T3 T4 T5 T6 T7\n- Calibri calamari: U5 U10 2P 3P 4P\n- Abbreviazioni: B.A. (bovino adulto), C/O (con osso), S/V (sottovuoto)
 Esempi: "Gambero Rosso 2°", "Polpo Pulito T2", "Calamaro IQF U5", "Salmone Affumicato", "Fesa B.A.", "Petto Barberie", "Peperoni Rossi al Naturale"
@@ -2012,18 +2025,17 @@ PRODOTTI:
       const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
-      const normN = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
-      const nameLower = normN(p.nome)
+      const nameLower = normNameForMatch(p.nome)
       const existing = ings.find(i => {
         if (i.cat !== cat) return false
-        const aNorm = normN(i.name)
+        const aNorm = normNameForMatch(i.name)
         if (aNorm === nameLower) return true
         const aWords = aNorm.split(/\s+/).filter(w => w.length >= 4)
         const bWords = nameLower.split(/\s+/).filter(w => w.length >= 4)
         if (!aWords.length || !bWords.length) return false
         const common = aWords.filter(w => bWords.includes(w))
         const union = new Set([...aWords, ...bWords]).size
-        return common.length / union >= 0.7 && common.length >= 2
+        return common.length / union >= 0.8 && common.length >= 2
       })
 
       // Prezzo: usa prezzoUnitario dell'AI (già calcolato dal prompt Firebase)
@@ -2141,7 +2153,7 @@ PRODOTTI:
         id: "i" + uid(),
         name: (p.nomeEdit || p.nome).trim(),
         cat: p.cat,
-        unit: p.cat === "Vini" ? "bottiglia" : (p.unita || "kg"),
+        unit: p.cat === "Vini" ? "bottiglia" : (p.confUnit || (["kg","l","litri"].includes((p.unita||"").toLowerCase()) ? p.unita : "kg")),
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
         prezzi: p.prezzoUnitario > 0 ? [{ sup: fattura.sup.trim() || "Fornitore", price: p.prezzoUnitario, date: fattura.date }] : [],
@@ -2540,13 +2552,14 @@ PRODOTTI:
                         </div>
                       ) : null}
                       <div>
-                        <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Prezzo unitario v</label>
+                        <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>
+                          {!["kg","l","litri"].includes((p.unita||"").toLowerCase()) ? "Prezzo confezione €" : "Prezzo unitario €"}
+                        </label>
                         <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12, padding: "5px 8px" })}
                           value={p.prezzoStr !== undefined ? p.prezzoStr : (p.prezzoUnitario === 0 ? "" : String(p.prezzoUnitario).replace(".", ","))}
                           onChange={e => {
                             const val = e.target.value
-                            // Permette di digitare liberamente (es. "9,", "9,8")
                             const cleaned = val.replace(",", ".")
                             const num = parseFloat(cleaned)
                             setFound(prev => prev.map((x, j) => j === i ? {
@@ -2556,7 +2569,6 @@ PRODOTTI:
                             } : x))
                           }}
                           onBlur={e => {
-                            // Al blur pulisce la stringa
                             const num = parseFloat(e.target.value.replace(",", "."))
                             setFound(prev => prev.map((x, j) => j === i ? {
                               ...x,
@@ -2568,6 +2580,42 @@ PRODOTTI:
                         />
                         {p.sconto && <div style={{ fontSize: 9, color: STYLE.t3, marginTop: 2 }}>sconto: {p.sconto}</div>}
                       </div>
+                      {/* Campo contenuto confezione - solo per unità non kg/l */}
+                      {!["kg","l","litri"].includes((p.unita||"").toLowerCase()) && (
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <div style={{ background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: STYLE.r, padding: "8px 12px" }}>
+                            <label style={{ fontSize: 10, color: STYLE.ac, fontWeight: 700, display: "block", marginBottom: 6 }}>
+                              Contenuto confezione — per calcolo prezzo/unità base
+                            </label>
+                            <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px", gap: 8, alignItems: "center" }}>
+                              <div style={{ fontSize: 11, color: STYLE.t2 }}>
+                                {p.unita} da fattura · prezzo €{p.prezzoUnitario || 0}
+                              </div>
+                              <input type="number" step="0.001" min="0"
+                                style={inp({ fontSize: 12, padding: "4px 8px" })}
+                                value={p.confQty || ""}
+                                onChange={e => setFound(prev => prev.map((x,j) => j===i ? {
+                                  ...x, confQty: e.target.value,
+                                  prezzoUnitario: e.target.value && +e.target.value > 0
+                                    ? Math.round((x.prezzoUnitario || (parseFloat(String(x.prezzoStr||"").replace(",",".")) || 0)) / +e.target.value * 100) / 100
+                                    : x.prezzoUnitario
+                                } : x))}
+                                placeholder="qtà"
+                              />
+                              <select style={inp({ fontSize: 11, appearance: "none", padding: "4px 6px" })}
+                                value={p.confUnit || "kg"}
+                                onChange={e => setFound(prev => prev.map((x,j) => j===i ? { ...x, confUnit: e.target.value } : x))}>
+                                {["kg","l","pz"].map(u => <option key={u}>{u}</option>)}
+                              </select>
+                            </div>
+                            {p.confQty && +p.confQty > 0 && p.prezzoUnitario > 0 && (
+                              <div style={{ fontSize: 11, color: STYLE.green, marginTop: 6, fontWeight: 600 }}>
+                                → {formatEuro(Math.round(p.prezzoUnitario * 100) / 100)}/{p.confUnit || "kg"} (calcolato)
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -2798,7 +2846,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
   }
   function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
   const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
-  const UNITS = ["kg", "l", "confezione"]
+  const UNITS = ["g", "kg", "ml", "l", "pz"]
   const r2 = n => Math.round(n * 100) / 100
   const uid2 = () => Math.random().toString(36).slice(2, 7)
 
@@ -2819,24 +2867,26 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     if (iu === "g")  { iu = "kg"; ingScale = 1000 } // prezzo per g ' converti a kg
     if (iu === "ml") { iu = "l";  ingScale = 1000 } // prezzo per ml ' converti a l
 
-    // Converti quantit   da rowUnit a iu
+    // Converti quantità da rowUnit a iu
     let qtyConverted = qty
-    if (ru === "g"  && iu === "kg") qtyConverted = qty / 1000
+    if      (ru === "g"  && iu === "kg") qtyConverted = qty / 1000
     else if (ru === "kg" && iu === "g")  qtyConverted = qty * 1000
     else if (ru === "ml" && iu === "l")  qtyConverted = qty / 1000
     else if (ru === "l"  && iu === "ml") qtyConverted = qty * 1000
+    else if (ru === "pz" && iu === "pz") qtyConverted = qty
     else if (ru === iu) qtyConverted = qty
+    else qtyConverted = qty // unità incompatibili - passa as-is
 
-    // Applica scala ingrediente (se era in g, il prezzo va diviso per 1000)
+    // Applica scala ingrediente
     return qtyConverted / ingScale
   }
 
   //  -  -  FOOD COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [fForm, setFForm]     = useState(() => {
-    try { const s = localStorage.getItem("fm_fc_form"); return s ? JSON.parse(s) : { name: "", cat: "Secondi", ricarico: "300" } } catch(e) { return { name: "", cat: "Secondi", ricarico: "300" } }
+    try { const s = localStorage.getItem("fm_fc_form"); return s ? JSON.parse(s) : { name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" } } catch(e) { return { name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" } }
   })
   const [fRecipe, setFRecipe] = useState(() => {
-    try { const s = localStorage.getItem("fm_fc_recipe"); return s ? JSON.parse(s) : [{ id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] } catch(e) { return [{ id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] }
+    try { const s = localStorage.getItem("fm_fc_recipe"); return s ? JSON.parse(s) : [{ id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] } catch(e) { return [{ id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] }
   })
   const [fErr, setFErr]       = useState({})
   const [fSaved, setFSaved]   = useState(false)
@@ -2856,13 +2906,22 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     })
     if (editDish.recipe && editDish.recipe.length > 0) {
       setFRecipe(editDish.recipe.map(r => ({
-        id: uid2(), ingId: r.ingId, qty: String(r.qty), unit: r.unit, waste: String(r.waste || "0")
+        id: uid2(), ingId: r.ingId, ingType: r.ingType || "ing", qty: String(r.qty), unit: r.unit, waste: String(r.waste || "0")
       })))
     }
+    if (editDish.resa) setFForm(f => ({ ...f, resa: String(editDish.resa), resaUnit: editDish.resaUnit || "porzioni" }))
     setTab("food")
   }, [editDish])
 
   const fLiveCost = fRecipe.reduce((sum, rr) => {
+    if (rr.ingType === "prep") {
+      const prep = dishes.find(d => d.id === rr.ingId)
+      if (!prep || !rr.qty || !prep.costPerUnit) return sum
+      const qty = parseFloat(rr.qty) || 0
+      const wastePct = (parseFloat(rr.waste) || 0) / 100
+      const wasteMult = wastePct >= 1 ? 1 : 1 / (1 - wastePct)
+      return sum + toIngUnit(qty, rr.unit, prep.resaUnit || "pz") * prep.costPerUnit * wasteMult
+    }
     const ing = ings.find(i => i.id === rr.ingId)
     if (!ing || !rr.qty) return sum
     const qty = parseFloat(rr.qty) || 0
@@ -2875,7 +2934,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
   const fMargin    = fSugPrice - fLiveCost
   const fFoodCostPct = fSugPrice > 0 ? fLiveCost / fSugPrice : 0
 
-  function fAddRow()    { setFRecipe(r => [...r, { id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }]) }
+  function fAddRow()    { setFRecipe(r => [...r, { id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }]) }
   function fRemoveRow(id) { setFRecipe(r => r.filter(x => x.id !== id)) }
   function fUpdateRow(id, patch) { setFRecipe(r => r.map(x => x.id === id ? { ...x, ...patch } : x)) }
 
@@ -2891,8 +2950,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     const fc    = price > 0 ? r2(cost / price) : 0
     const catMap = { Speciali: "speciale", Antipasti: "antipasto", Primi: "primo", Secondi: "secondo", Dolci: "dolce", Cocktail: "cocktail", Bevande: "bevanda" }
     const savedRecipe = fRecipe.filter(r => r.ingId).map(r => ({
-      ingId: r.ingId, qty: parseFloat(r.qty) || 0, unit: r.unit, waste: r.waste || "0"
+      ingId: r.ingId, ingType: r.ingType || "ing", qty: parseFloat(r.qty) || 0, unit: r.unit, waste: r.waste || "0"
     }))
+    const resa = parseFloat(fForm.resa) || 1
+    const costPerUnit = resa > 0 ? r2(cost / resa) : cost
     if (editDish) {
       // Aggiorna piatto esistente
       setDishes(prev => prev.map(d => d.id === editDish.id ? {
@@ -2900,7 +2961,8 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
         price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
         ricarico: fRicarico,
-        recipe: savedRecipe
+        recipe: savedRecipe,
+        ...(fForm.cat === "Speciali" ? { resa: parseFloat(fForm.resa)||1, resaUnit: fForm.resaUnit, costPerUnit } : {})
       } : d))
       if (setEditDish) setEditDish(null)
     } else {
@@ -2909,10 +2971,11 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         cat: catMap[fForm.cat] || fForm.cat.toLowerCase(),
         price, target: fFoodCostPct, cost, fc, margin: r2(fMargin),
         ricarico: fRicarico,
-        recipe: savedRecipe, stagioni: []
+        recipe: savedRecipe, stagioni: [],
+        ...(fForm.cat === "Speciali" ? { resa: parseFloat(fForm.resa)||1, resaUnit: fForm.resaUnit, costPerUnit } : {})
       }])
     }
-    setFForm({ name: "", cat: "Secondi", ricarico: "300" })
+    setFForm({ name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" })
     setFRecipe([{ id: uid2(), ingId: "", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }])
     try { localStorage.removeItem("fm_fc_form"); localStorage.removeItem("fm_fc_recipe") } catch(e) {}
     setFErr({})
@@ -3047,6 +3110,26 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                 </div>
               </div>
             </div>
+            {fForm.cat === "Speciali" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 4 }}>
+                <Fld label="Resa (quantità prodotta)">
+                  <input style={inp()} type="number" step="0.1" min="0.1" value={fForm.resa}
+                    onChange={e => setFForm(f => ({ ...f, resa: e.target.value }))} placeholder="es. 10" />
+                </Fld>
+                <Fld label="Unità resa">
+                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={fForm.resaUnit}
+                    onChange={e => setFForm(f => ({ ...f, resaUnit: e.target.value }))}>
+                    {["porzioni", "kg", "l", "pz"].map(u => <option key={u}>{u}</option>)}
+                  </select>
+                </Fld>
+              </div>
+            )}
+            {fForm.cat === "Speciali" && fLiveCost > 0 && (
+              <div style={{ background: STYLE.gd, border: "1px solid rgba(74,222,128,0.25)", borderRadius: STYLE.r, padding: "8px 12px", marginTop: 4 }}>
+                <span style={{ fontSize: 11, color: STYLE.t2 }}>Costo per {fForm.resaUnit}: </span>
+                <strong style={{ color: STYLE.green }}>{formatEuro(r2(fLiveCost / (parseFloat(fForm.resa)||1)))}/{fForm.resaUnit}</strong>
+              </div>
+            )}
           </div>
 
           {/* Ricetta */}
@@ -3065,28 +3148,31 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
             </div>
             <div style={{ border: STYLE.bd, borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
               {fRecipe.map((row, idx) => {
-                const ing = ings.find(i => i.id === row.ingId)
+                const ing = row.ingType !== "prep" ? ings.find(i => i.id === row.ingId) : null
+                const prep = row.ingType === "prep" ? dishes.find(d => d.id === row.ingId) : null
                 const qty = parseFloat(row.qty) || 0
-                const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : qty
+                const lineQty = ing ? toIngUnit(qty, row.unit, ing.unit) : prep ? toIngUnit(qty, row.unit, prep.resaUnit||"pz") : qty
                 const wastePctDisplay = (parseFloat(row.waste) || 0) / 100
                 const wasteMultDisplay = wastePctDisplay >= 1 ? 1 : 1 / (1 - wastePctDisplay)
-                const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : 0
+                const lineCost = ing && qty > 0 ? r2(lineQty * ing.cur * wasteMultDisplay) : prep && qty > 0 ? r2(lineQty * (prep.costPerUnit||0) * wasteMultDisplay) : 0
                 return (
                   <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr 90px 70px 24px", gap: 6, padding: "7px 6px", borderBottom: idx < fRecipe.length - 1 ? STYLE.bds : "none", alignItems: "flex-start", background: idx % 2 === 0 ? "transparent" : STYLE.el + "44" }}>
                     {/* Bottone che apre modal full-screen per selezionare ingrediente */}
                     {(() => {
-                      const ing = ings.find(i => i.id === row.ingId)
+                      const ing = row.ingType !== "prep" ? ings.find(i => i.id === row.ingId) : null
+                      const prep = row.ingType === "prep" ? dishes.find(d => d.id === row.ingId) : null
+                      const selected = ing || prep
                       return (
                         <button
                           onClick={() => fUpdateRow(row.id, { _open: true, _cat: row._cat || "" })}
-                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: ing ? STYLE.acg : STYLE.el, borderColor: ing ? STYLE.acd : "#2a2a31" })}}>
+                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: selected ? STYLE.acg : STYLE.el, borderColor: selected ? STYLE.acd : "#2a2a31" })}}>
                           <div style={{ overflow: "hidden", flex: 1 }}>
-                            <div style={{ color: ing ? STYLE.ac : STYLE.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {ing ? ing.name.slice(0, 6) + (ing.name.length > 6 ? " " : "") : "Sel "}
+                            <div style={{ color: selected ? STYLE.ac : STYLE.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                              {ing ? ing.name.slice(0,6) + (ing.name.length > 6 ? "…" : "") : prep ? prep.name.slice(0,6) + (prep.name.length > 6 ? "…" : "") : "Sel…"}
                             </div>
                             {lineCost > 0 && <div style={{ fontSize: 10, color: STYLE.green, marginTop: 1 }}>{formatEuro(lineCost)}</div>}
                           </div>
-                          <span style={{ fontSize: 9, color: STYLE.t3, flexShrink: 0, marginLeft: 4 }}>- </span>
+                          <span style={{ fontSize: 9, color: STYLE.t3, flexShrink: 0, marginLeft: 4 }}>▾</span>
                         </button>
                       )
                     })()}
@@ -3108,15 +3194,41 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                           </div>
                           <div style={{ overflowY: "auto", flex: 1 }}>
                             {!row._cat ? (
-                              ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa","Vini"]
-                                .filter(c => ings.some(i => i.cat === c))
-                                .map(c => (
-                                  <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, _sotto1: null })}
-                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
-                                    <span style={{ fontSize: 15, color: STYLE.t1 }}>{c}</span>
-                                    <span style={{ color: STYLE.t3 }}> </span>
+                              <>
+                                {dishes.filter(d => (d.cat||"") === "speciale" && d.costPerUnit > 0).length > 0 && (
+                                  <div onClick={() => fUpdateRow(row.id, { _cat: "__prep__", _sotto1: null })}
+                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: STYLE.bds, cursor: "pointer", background: STYLE.acg }}>
+                                    <span style={{ fontSize: 15, color: STYLE.ac, fontWeight: 600 }}>Preparazioni</span>
+                                    <span style={{ color: STYLE.ac }}>›</span>
                                   </div>
-                                ))
+                                )}
+                                {["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa","Vini"]
+                                  .filter(c => ings.some(i => i.cat === c))
+                                  .map(c => (
+                                    <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, _sotto1: null })}
+                                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                                      <span style={{ fontSize: 15, color: STYLE.t1 }}>{c}</span>
+                                      <span style={{ color: STYLE.t3 }}>›</span>
+                                    </div>
+                                  ))}
+                              </>
+                            ) : row._cat === "__prep__" ? (
+                              <>
+                                <div onClick={() => fUpdateRow(row.id, { _cat: "" })}
+                                  style={{ padding: "10px 18px", borderBottom: STYLE.bds, cursor: "pointer", fontSize: 12, color: STYLE.ac }}>← Categorie</div>
+                                {dishes.filter(d => (d.cat||"") === "speciale" && d.costPerUnit > 0)
+                                  .sort((a,b) => a.name.localeCompare(b.name,"it"))
+                                  .map(d => (
+                                    <div key={d.id} onClick={() => fUpdateRow(row.id, { ingId: d.id, ingType: "prep", _open: false })}
+                                      style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer", background: row.ingId === d.id ? STYLE.acg : "" }}>
+                                      <div>
+                                        <div style={{ fontSize: 14, color: row.ingId === d.id ? STYLE.ac : STYLE.t1, fontWeight: row.ingId === d.id ? 600 : 400 }}>{d.name}</div>
+                                        <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(d.costPerUnit)}/{d.resaUnit}</div>
+                                      </div>
+                                      {row.ingId === d.id && <span style={{ color: STYLE.ac }}>✓</span>}
+                                    </div>
+                                  ))}
+                              </>
                             ) : row._cat && !row._sotto1 && ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati"].includes(row._cat) ? (
                               <>
                                 <div onClick={() => fUpdateRow(row.id, { _cat: null })}
