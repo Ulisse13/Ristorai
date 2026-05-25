@@ -3166,7 +3166,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                     <span style={{ color: STYLE.ac }}>›</span>
                                   </div>
                                 )}
-                                {["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa","Vini"]
+                                {["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa"]
                                   .filter(c => ings.some(i => i.cat === c))
                                   .map(c => (
                                     <div key={c} onClick={() => fUpdateRow(row.id, { _cat: c, _sotto1: null })}
@@ -3193,7 +3193,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                     </div>
                                   ))}
                               </>
-                            ) : row._cat && !row._sotto1 && ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati"].includes(row._cat) ? (
+                            ) : row._cat && !row._sotto1 && ["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa"].includes(row._cat) ? (
                               <>
                                 <div onClick={() => fUpdateRow(row.id, { _cat: null })}
                                   style={{ padding: "10px 18px", borderBottom: STYLE.bds, cursor: "pointer", fontSize: 12, color: STYLE.ac }}> Categorie</div>
@@ -3229,7 +3229,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                                     ? ings.filter(i => i.cat === row._cat && !i.sotto1)
                                     : ings.filter(i => i.cat === row._cat && i.sotto1 === row._sotto1)
                                   : ings.filter(i => i.cat === row._cat)
-                                ).map(i => (
+                                ).sort((a,b) => a.name.localeCompare(b.name,"it")).map(i => (
                                 <div key={i.id} onClick={() => fUpdateRow(row.id, { ingId: i.id, _open: false })}
                                   style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer", background: row.ingId === i.id ? STYLE.acg : "" }}>
                                   <div style={{ flex: 1 }}>
