@@ -1859,7 +1859,7 @@ PRODOTTI:
             sotto1: catMap[i]?.sotto1 || "",
             sotto2: catMap[i]?.sotto2 || "",
             quantita: p.qta,
-            unita: catMap[i]?.unita || p.um || "pz",
+            unita: catMap[i]?.unita || (p.um ? p.um.toLowerCase().replace("lt","l").replace("litri","l").replace("kgs","kg") : null) || "kg",
             prezzoUnitario: p.prezzoUnitario,
             sconto: p.sconto,
             produttore: ""
@@ -2619,6 +2619,11 @@ PRODOTTI:
                             {p.confQty && +p.confQty > 0 && (p.prezzoFattura || p.prezzoUnitario) > 0 && (
                               <div style={{ fontSize: 11, color: STYLE.green, marginTop: 6, fontWeight: 600 }}>
                                 {formatEuro(Math.round((p.prezzoFattura || p.prezzoUnitario) / +p.confQty * 100) / 100)}/{p.confUnit || "kg"} per unità base
+                              </div>
+                            )}
+                            {(p.confUnit || "kg") === "pz" && (
+                              <div style={{ fontSize: 10, color: STYLE.ac, marginTop: 4 }}>
+                                Usa pz solo se l'ingrediente si usa intero in ricetta (uova, dadi, limoni...). Se si usa a peso scegli kg, se a volume scegli l.
                               </div>
                             )}
                           </div>
