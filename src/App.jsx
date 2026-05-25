@@ -2589,28 +2589,36 @@ PRODOTTI:
                             </label>
                             <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 80px", gap: 8, alignItems: "center" }}>
                               <div style={{ fontSize: 11, color: STYLE.t2 }}>
-                                {p.unita} da fattura · prezzo €{p.prezzoUnitario || 0}
+                                {p.unita} da fattura · prezzo {formatEuro(p.prezzoFattura || p.prezzoUnitario || 0)}
                               </div>
                               <input type="number" step="0.001" min="0"
                                 style={inp({ fontSize: 12, padding: "4px 8px" })}
                                 value={p.confQty || ""}
-                                onChange={e => setFound(prev => prev.map((x,j) => j===i ? {
-                                  ...x, confQty: e.target.value,
-                                  prezzoUnitario: e.target.value && +e.target.value > 0
-                                    ? Math.round((x.prezzoUnitario || (parseFloat(String(x.prezzoStr||"").replace(",",".")) || 0)) / +e.target.value * 100) / 100
-                                    : x.prezzoUnitario
-                                } : x))}
+                                onChange={e => {
+                                  const qty = parseFloat(e.target.value) || 0
+                                  // Salva prezzoFattura la prima volta, poi divide sempre da quello
+                                  setFound(prev => prev.map((x,j) => {
+                                    if (j !== i) return x
+                                    const prezzoBase = x.prezzoFattura || x.prezzoUnitario || 0
+                                    return {
+                                      ...x,
+                                      confQty: e.target.value,
+                                      prezzoFattura: prezzoBase, // salva originale
+                                      prezzoUnitario: qty > 0 ? Math.round(prezzoBase / qty * 100) / 100 : prezzoBase
+                                    }
+                                  }))
+                                }}
                                 placeholder="qtà"
                               />
                               <select style={inp({ fontSize: 11, appearance: "none", padding: "4px 6px" })}
                                 value={p.confUnit || "kg"}
                                 onChange={e => setFound(prev => prev.map((x,j) => j===i ? { ...x, confUnit: e.target.value } : x))}>
-                                {["kg","l","pz"].map(u => <option key={u}>{u}</option>)}
+                                {["kg","l","pz","g","ml","mazzo","conf"].map(u => <option key={u}>{u}</option>)}
                               </select>
                             </div>
-                            {p.confQty && +p.confQty > 0 && p.prezzoUnitario > 0 && (
+                            {p.confQty && +p.confQty > 0 && (p.prezzoFattura || p.prezzoUnitario) > 0 && (
                               <div style={{ fontSize: 11, color: STYLE.green, marginTop: 6, fontWeight: 600 }}>
-                                → {formatEuro(Math.round(p.prezzoUnitario * 100) / 100)}/{p.confUnit || "kg"} (calcolato)
+                                {formatEuro(Math.round((p.prezzoFattura || p.prezzoUnitario) / +p.confQty * 100) / 100)}/{p.confUnit || "kg"} per unità base
                               </div>
                             )}
                           </div>
