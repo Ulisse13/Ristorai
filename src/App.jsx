@@ -1128,6 +1128,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   </div>
                   <div style={{ display: "flex", gap: 4 }}>
                     <button onClick={() => openEdit(ing)} style={{ background: STYLE.el, border: STYLE.bds, borderRadius: STYLE.r, padding: "3px 10px", color: STYLE.t2, fontSize: 11, fontFamily: "inherit", cursor: "pointer" }}>Modifica</button>
+                    <button onClick={() => { if (window.confirm("Eliminare " + ing.name + "?")) setIngs(prev => prev.filter(i => i.id !== ing.id)) }} style={{ background: "none", border: "1px solid rgba(248,113,113,0.3)", borderRadius: STYLE.r, padding: "3px 10px", color: STYLE.red, fontSize: 11, fontFamily: "inherit", cursor: "pointer" }}>Elimina</button>
                     <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px", flexShrink: 0 }}></button>
                   </div>
                 </div>
@@ -1220,6 +1221,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                     <td style={{ padding: "11px 16px", borderBottom: STYLE.bds, textAlign: "right" }}>
                       <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
                         <button onClick={() => openEdit(ing)} style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 8px", borderRadius: STYLE.r }}>Modifica</button>
+                        <button onClick={() => { if (window.confirm("Eliminare " + ing.name + "?")) setIngs(prev => prev.filter(i => i.id !== ing.id)) }} style={{ background: "none", border: "1px solid rgba(248,113,113,0.3)", color: STYLE.red, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 8px", borderRadius: STYLE.r }}>Elimina</button>
                         <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "2px 6px" }} title="Elimina"></button>
                       </div>
                     </td>
@@ -1808,7 +1810,7 @@ PRODOTTI:
             sotto1: catMap[i]?.sotto1 || "",
             sotto2: catMap[i]?.sotto2 || "",
             quantita: p.qta,
-            unita: catMap[i]?.unita || (p.um ? p.um.toLowerCase().replace("lt","l").replace("litri","l").replace("kgs","kg") : null) || "kg",
+            unita: (p.um ? p.um.toLowerCase().replace("lt","l").replace("litri","l").replace("kgs","kg") : null) || catMap[i]?.unita || "kg",
             prezzoUnitario: p.prezzoUnitario,
             sconto: p.sconto,
             produttore: ""
