@@ -25,8 +25,9 @@ const ALL_DB = [
 function resolveUnit(cat, sotto1, sotto2, keywords) {
   const kws = (keywords || []).join(" ").toLowerCase()
 
-  // Uova → pz
-  if (sotto2 === "Uova" || kws.includes("uova") || kws.includes("uovo")) return "pz"
+  // Uova intere → pz | ovoprodotti (tuorlo, albume, misto) → kg
+  if (sotto2 === "Uova" || kws.match(/\buova\b|\buovo\b/)) return "pz"
+  if (sotto2 === "Ovoprodotti" || kws.match(/tuorlo|albume|misto.?uovo|ovoprodotto|uova pastorizzate/)) return "kg"
 
   // Latte e bevande liquide → l
   if (/\blatte\b/.test(kws) && !kws.includes("cioccolato al latte")) return "l"
