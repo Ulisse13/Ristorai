@@ -1,177 +1,189 @@
-// ─────────────────────────────────────────────────────────────────────────────
-// foodDB_pesce.js — Database prodotti PESCE per Ristorai
-// sotto1: specie pesce (Salmone, Orata...) | "Crostacei" | "Molluschi"
-// sotto2: taglio (Filetto, Trancio, Intero) o nome specifico per Crostacei/Molluschi
-// ─────────────────────────────────────────────────────────────────────────────
-
+// foodDB_pesce.js — da cataloghi Selecta + MARR (197 prodotti)
 export const PESCE_DB = [
 
-  // ── ORATA ──────────────────────────────────────────────────────────────────
-  { keywords: ["orata", "orate"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["orata intera", "orate intere", "orata fresca intera"], sotto1: "Orata", sotto2: "Intero" },
-  { keywords: ["filetto orata", "filetti orata", "filetto di orata"], sotto1: "Orata", sotto2: "Filetto" },
+  // ──────────────────────────────────────────────────
+  // ALTRI PESCI
+  // ──────────────────────────────────────────────────
+  { keywords: ["pagro"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["san pietro"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["gallinella o capone", "gallinella capone"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["triglia di scoglio del mediterraneo", "triglia scoglio mediterraneo"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["pagro madai ikejime ammare®"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["filetti di acciuga del cantabrico rosalita scatola porzione", "filetti acciuga cantabrico rosalita scatola porzione"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["- 12 filetti"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["filetti di acciuga xl del cantabrico rosalita", "filetti acciuga xl cantabrico rosalita"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["alici del cantabrico marinate filetti rosalita", "alici cantabrico marinate filetti rosalita"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["110 g peso netto 15,50 cad"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["uova di riccio di mare real conservera española", "uova riccio mare real conservera española"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["115 g peso netto 9,20 cad"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["acciuga salata del cantabrico "00" -", "acciuga salata cantabrico "00" -"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["acciuga salata del cantabrico "0" -", "acciuga salata cantabrico "0" -"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["bottarga di muggine", "bottarga muggine"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["bottarga di muggine grattugiata", "bottarga muggine grattugiata"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["katsuobushi"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["filetti di anguilla affumicati", "filetti anguilla affumicati"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["filetti di aringa affumicata", "filetti aringa affumicata"], sotto1: "Altri Pesci", sotto2: "" },
+  { keywords: ["anguilla affumicata intera"], sotto1: "Altri Pesci", sotto2: "" },
 
-  // ── BRANZINO ───────────────────────────────────────────────────────────────
-  { keywords: ["branzino", "spigola", "branzini"], sotto1: "Branzino", sotto2: "" },
-  { keywords: ["branzino intero", "spigola intera", "branzino fresco intero"], sotto1: "Branzino", sotto2: "Intero" },
-  { keywords: ["filetto branzino", "filetto di branzino", "filetti branzino", "filetto spigola"], sotto1: "Branzino", sotto2: "Filetto" },
+  // ──────────────────────────────────────────────────
+  // BRANZINO
+  // ──────────────────────────────────────────────────
+  { keywords: ["filetto di branzino", "filetto branzino"], sotto1: "Branzino", sotto2: "" },
 
-  // ── SALMONE ────────────────────────────────────────────────────────────────
-  { keywords: ["salmone fresco", "salmone atlantico", "salmone norvegese"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone intero", "salmone fresco intero"], sotto1: "Salmone", sotto2: "Intero" },
-  { keywords: ["filetto salmone", "filetto di salmone", "filetti salmone"], sotto1: "Salmone", sotto2: "Filetto" },
-  { keywords: ["filone salmone"], sotto1: "Salmone", sotto2: "Filone" },
-  { keywords: ["trancio salmone", "tranci salmone"], sotto1: "Salmone", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // DENTICE
+  // ──────────────────────────────────────────────────
+  { keywords: ["dentice reale"], sotto1: "Dentice", sotto2: "" },
 
-  // ── PESCE SPADA ────────────────────────────────────────────────────────────
-  { keywords: ["pesce spada"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["pesce spada intero"], sotto1: "Pesce Spada", sotto2: "Intero" },
-  { keywords: ["filetto pesce spada", "filetto di pesce spada"], sotto1: "Pesce Spada", sotto2: "Filetto" },
-  { keywords: ["filone pesce spada"], sotto1: "Pesce Spada", sotto2: "Filone" },
-  { keywords: ["trancio pesce spada", "tranci pesce spada"], sotto1: "Pesce Spada", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // MOLLUSCHI
+  // ──────────────────────────────────────────────────
+  { keywords: ["polpo cotto s/v (nella sua acqua) porto santo spirito®"], sotto1: "Molluschi", sotto2: "" },
+  { keywords: ["tentacolo di polpo cotto a bassa temperatura rosalita", "tentacolo polpo cotto bassa temperatura rosalita"], sotto1: "Molluschi", sotto2: "" },
 
-  // ── TONNO ──────────────────────────────────────────────────────────────────
-  { keywords: ["tonno fresco", "tonno rosso", "tonno pinna gialla", "alalunga"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["tonno intero", "tonno fresco intero"], sotto1: "Tonno", sotto2: "Intero" },
-  { keywords: ["filetto tonno", "filetto di tonno", "filetti tonno"], sotto1: "Tonno", sotto2: "Filetto" },
-  { keywords: ["filone tonno", "filone di tonno"], sotto1: "Tonno", sotto2: "Filone" },
-  { keywords: ["trancio tonno", "tranci tonno", "trancio di tonno"], sotto1: "Tonno", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // OMBRINA
+  // ──────────────────────────────────────────────────
+  { keywords: ["ombrina"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["filetto di ombrina occellata", "filetto ombrina occellata"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["branzino mediterraneo ammare®"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["branzino atlantico ikejime ammare®"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["5-8 kg cassa da", "5-8 kg cassa"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["bosega di valle", "bosega valle"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["anguilla eviscerata"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["filetto di coregone lavarello pescato con pelle", "filetto coregone lavarello pescato pelle"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["filetto di luccio pescato", "filetto luccio pescato"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["filetto di luccioperca pescato", "filetto luccioperca pescato"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["filetto di salmerino alpino allevato", "filetto salmerino alpino allevato"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["storione bianco allevato eviscerato"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["filetto di storione allevato senza pelle", "filetto storione allevato senza pelle"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["rane eviscerate fresche"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["rane eviscerate fresche stese"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["cosce di rana fresche", "cosce rana fresche"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["cosce di rana fresche xl", "cosce rana fresche xl"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["suprema di rana", "suprema rana"], sotto1: "Ombrina", sotto2: "" },
+  { keywords: ["gusci di lumaca", "gusci lumaca"], sotto1: "Ombrina", sotto2: "" },
 
-  // ── RICCIOLA ───────────────────────────────────────────────────────────────
-  { keywords: ["ricciola", "ricciole"], sotto1: "Ricciola", sotto2: "" },
-  { keywords: ["ricciola intera", "ricciola fresca intera"], sotto1: "Ricciola", sotto2: "Intero" },
-  { keywords: ["filetto ricciola", "filetti ricciola", "filetto di ricciola"], sotto1: "Ricciola", sotto2: "Filetto" },
-  { keywords: ["filone ricciola"], sotto1: "Ricciola", sotto2: "Filone" },
-  { keywords: ["trancio ricciola", "tranci ricciola"], sotto1: "Ricciola", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // ORATA
+  // ──────────────────────────────────────────────────
+  { keywords: ["orata pescata mediterraneo"], sotto1: "Orata", sotto2: "" },
+  { keywords: ["orata pescata mediterraneo royale"], sotto1: "Orata", sotto2: "" },
+  { keywords: ["filetto di orata", "filetto orata"], sotto1: "Orata", sotto2: "" },
+  { keywords: ["orata mediterraneo ammare®"], sotto1: "Orata", sotto2: "" },
+  { keywords: ["orata atlantico ammare®"], sotto1: "Orata", sotto2: "" },
+  { keywords: ["orata atlantico ikejime ammare®"], sotto1: "Orata", sotto2: "" },
+  { keywords: ["orata di valle", "orata valle"], sotto1: "Orata", sotto2: "" },
 
-  // ── DENTICE ────────────────────────────────────────────────────────────────
-  { keywords: ["dentice", "dentici"], sotto1: "Dentice", sotto2: "" },
-  { keywords: ["dentice intero", "dentice fresco intero"], sotto1: "Dentice", sotto2: "Intero" },
-  { keywords: ["filetto dentice", "filetti dentice", "filetto di dentice"], sotto1: "Dentice", sotto2: "Filetto" },
-  { keywords: ["trancio dentice", "tranci dentice"], sotto1: "Dentice", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // PESCE SPADA
+  // ──────────────────────────────────────────────────
+  { keywords: ["branzino pescato mediterraneo"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["pagello fragolino mediterraneo"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["tonnetto o alletterato", "tonnetto alletterato"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["lampuga"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["mormora"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["leccia"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["suro o sugarello", "suro sugarello"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["nasello di amo", "nasello amo"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["rana pescatrice"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["scorfano"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["aguglia imperiale"], sotto1: "Pesce Spada", sotto2: "" },
+  { keywords: ["pesce spada affumicato (tagli centrali)"], sotto1: "Pesce Spada", sotto2: "" },
 
-  // ── CERNIA ─────────────────────────────────────────────────────────────────
-  { keywords: ["cernia", "cernie"], sotto1: "Cernia", sotto2: "" },
-  { keywords: ["cernia intera", "cernia fresca intera"], sotto1: "Cernia", sotto2: "Intero" },
-  { keywords: ["filetto cernia", "filetti cernia", "filetto di cernia"], sotto1: "Cernia", sotto2: "Filetto" },
-  { keywords: ["trancio cernia", "tranci cernia"], sotto1: "Cernia", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // RICCIOLA
+  // ──────────────────────────────────────────────────
+  { keywords: ["ricciola di fondale o morone", "ricciola fondale morone"], sotto1: "Ricciola", sotto2: "" },
+  { keywords: ["ricciola"], sotto1: "Ricciola", sotto2: "" },
+  { keywords: ["ricciola hiramasa ammare®"], sotto1: "Ricciola", sotto2: "" },
+  { keywords: ["ricciola hamachi giapponese ikejime ammare®"], sotto1: "Ricciola", sotto2: "" },
 
-  // ── OMBRINA ────────────────────────────────────────────────────────────────
-  { keywords: ["ombrina", "ombrine"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["ombrina intera", "ombrina fresca intera"], sotto1: "Ombrina", sotto2: "Intero" },
-  { keywords: ["filetto ombrina", "filetti ombrina", "filetto di ombrina"], sotto1: "Ombrina", sotto2: "Filetto" },
-  { keywords: ["trancio ombrina", "tranci ombrina"], sotto1: "Ombrina", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // ROMBO
+  // ──────────────────────────────────────────────────
+  { keywords: ["trancio di rombo chiodato", "trancio rombo chiodato"], sotto1: "Rombo", sotto2: "" },
+  { keywords: ["filetto di rombo chiodato con pelle", "filetto rombo chiodato pelle"], sotto1: "Rombo", sotto2: "" },
+  { keywords: ["rombo chiodato ammare®"], sotto1: "Rombo", sotto2: "" },
 
-  // ── ALTRI PESCI ────────────────────────────────────────────────────────────
-  { keywords: ["pagro", "pagri", "pagro reale"], sotto1: "Pagro", sotto2: "" },
-  { keywords: ["filetto pagro", "filetti pagro", "filetto di pagro"], sotto1: "Pagro", sotto2: "Filetto" },
+  // ──────────────────────────────────────────────────
+  // SALMONE
+  // ──────────────────────────────────────────────────
+  { keywords: ["filetto di salmone fresco scozia", "filetto salmone fresco scozia"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone scozia label rouge ammare®"], sotto1: "Salmone", sotto2: "" },
+  { keywords: [""classic small" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["filetto "zar nikolaj" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["filetto 4.2 (for two) "zar nikolaj" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["filetto 4.1 (for one) "zar nikolaj" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: [""sjomga zarina" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: [""sjomga orange" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["filetto "sashimi style" balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["banqueting balik pretagliato"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["i cubi di balik tagliati a coltello", "cubi balik tagliati coltello"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["tartare nature balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["perle (uova) di salmone balik", "perle (uova) salmone balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["fettine balik"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone affumicato intero scozzese"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone affumicato preaffettato scozzese"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone fetta lunga scozzese"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["fettine di salmone affumicato scozzese", "fettine salmone affumicato scozzese"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["balmoral fillet (astucciato)"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["lingotto ventrale"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["trimming salmone scozzese"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone affumicato intero carpier"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone norvegese affumicato"], sotto1: "Salmone", sotto2: "" },
+  { keywords: ["salmone affumicato red king intero pescato canada"], sotto1: "Salmone", sotto2: "" },
 
-  { keywords: ["merluzzo", "merluzzi", "baccala fresco"], sotto1: "Merluzzo", sotto2: "" },
-  { keywords: ["filetto merluzzo", "filetti merluzzo"], sotto1: "Merluzzo", sotto2: "Filetto" },
-  { keywords: ["trancio merluzzo"], sotto1: "Merluzzo", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // SGOMBRO
+  // ──────────────────────────────────────────────────
+  { keywords: ["lanzardo o sgombro occhione", "lanzardo sgombro occhione"], sotto1: "Sgombro", sotto2: "" },
+  { keywords: ["sgombro"], sotto1: "Sgombro", sotto2: "" },
 
-  { keywords: ["sogliola", "sogliole"], sotto1: "Sogliola", sotto2: "" },
-  { keywords: ["filetto sogliola", "filetti sogliola"], sotto1: "Sogliola", sotto2: "Filetto" },
+  // ──────────────────────────────────────────────────
+  // SOGLIOLA
+  // ──────────────────────────────────────────────────
+  { keywords: ["sogliola ammare®"], sotto1: "Sogliola", sotto2: "" },
 
-  { keywords: ["rombo", "rombo chiodato", "rombo liscio"], sotto1: "Rombo", sotto2: "" },
-  { keywords: ["filetto rombo"], sotto1: "Rombo", sotto2: "Filetto" },
-  { keywords: ["trancio rombo"], sotto1: "Rombo", sotto2: "Trancio" },
+  // ──────────────────────────────────────────────────
+  // TONNO
+  // ──────────────────────────────────────────────────
+  { keywords: ["filone di tonno qualità standard", "filone tonno qualità standard"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["trancio di tonno qualità premium", "trancio tonno qualità premium"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["trancio di tonno yellowfin qualità premium bonificato", "trancio tonno yellowfin qualità premium bonificato"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["trancio di tonno obeso qualità premium bonificato", "trancio tonno obeso qualità premium bonificato"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["filone di tonno obeso qualità premium bonificato", "filone tonno obeso qualità premium bonificato"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["tonno rosso mediterraneo - lombo alto"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["tonno rosso mediterraneo - lombo basso"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["tonno alalunga"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["palamita"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["toro - ventresca di tonno rosso ammare®", "toro - ventresca tonno rosso ammare®"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["filetto di acciuga in olio extra vergine d'oliva", "filetto acciuga olio extra vergine d'oliva"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["acqua di mare alimentare 5 litri brick con dispens", "acqua mare alimentare 5 litri brick dispens"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["acqua di mare alimentare 10 litri brick con dispens", "acqua mare alimentare 10 litri brick dispens"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale asetra prunier in scatola d'origine", "caviale asetra prunier scatola d'origine"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale asetra prunier"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale st. james prunier"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale baerii prunier"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale tradition prunier"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale beluga sel. a caviar house", "caviale beluga sel. caviar house"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale asetra caviar house"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale selezione imperial caviar house"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale oscietra d&h italia"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale oscietra d&h ungheria"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["caviale organic riofrio bio"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["tonno in olio d'oliva real conservera española", "tonno olio d'oliva real conservera española"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["bottarga di tonno rosso", "bottarga tonno rosso"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["bottarga di tonno rosso xxl", "bottarga tonno rosso xxl"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["bottarga di tonno rosso trancio", "bottarga tonno rosso trancio"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["tonno affumicato (tagli centrali)"], sotto1: "Tonno", sotto2: "" },
+  { keywords: ["prosciutto di tonno (mosciame)", "prosciutto tonno (mosciame)"], sotto1: "Tonno", sotto2: "" },
 
-  { keywords: ["trota", "trota salmonata", "trota iridea"], sotto1: "Trota", sotto2: "" },
-  { keywords: ["filetto trota", "filetti trota"], sotto1: "Trota", sotto2: "Filetto" },
-
-  { keywords: ["acciughe fresche", "alice fresca", "alici fresche"], sotto1: "Acciuga", sotto2: "" },
-  { keywords: ["sarde fresche", "sardine fresche"], sotto1: "Sarda", sotto2: "" },
-  { keywords: ["sgombro fresco", "sgombri freschi"], sotto1: "Sgombro", sotto2: "" },
-  { keywords: ["spinarolo", "palombo", "gattucci"], sotto1: "Pesce di fondale", sotto2: "" },
-
-  // ── CROSTACEI ──────────────────────────────────────────────────────────────
-  // sotto1 = "Crostacei" | sotto2 = tipo specifico
-
-  // Gamberi
-  { keywords: ["gambero rosa", "gamberi rosa", "gambero mediterraneo", "gamberi mediterraneo"], sotto1: "Crostacei", sotto2: "Gambero Rosa" },
-  { keywords: ["gambero rosso", "gamberi rossi", "gambero rosso di mazara", "gambero rosso di sicilia"], sotto1: "Crostacei", sotto2: "Gambero Rosso" },
-  { keywords: ["gambero viola", "gamberi viola"], sotto1: "Crostacei", sotto2: "Gambero Viola" },
-  { keywords: ["gambero blu", "gamberi blu", "gambero blu adriatico"], sotto1: "Crostacei", sotto2: "Gambero Blu" },
-  { keywords: ["gambero bianco", "gamberi bianchi", "gambero imperiale"], sotto1: "Crostacei", sotto2: "Gambero Bianco" },
-  { keywords: ["gamberone", "gamberoni", "mazzancolla", "mazzancolle", "gambero argentino"], sotto1: "Crostacei", sotto2: "Gamberoni" },
-  { keywords: ["gambero tropicale", "gambero vannamei", "gambero tigre", "tiger prawn"], sotto1: "Crostacei", sotto2: "Gambero Tropicale" },
-  { keywords: ["gamberetto", "gamberetti", "gambero grigio", "gamberi grigi"], sotto1: "Crostacei", sotto2: "Gamberetti" },
-  { keywords: ["gamberi puliti", "gamberi sgusciati", "code gamberi", "code di gambero"], sotto1: "Crostacei", sotto2: "Gamberi - Code" },
-  { keywords: ["gamberi interi", "gamberi con testa", "gamberi sporchi"], sotto1: "Crostacei", sotto2: "Gamberi - Interi" },
-
-  // Scampi
-  { keywords: ["scampo", "scampi", "scampo norvegese", "langoustine"], sotto1: "Crostacei", sotto2: "Scampi" },
-  { keywords: ["scampi puliti", "code scampi", "code di scampo"], sotto1: "Crostacei", sotto2: "Scampi - Code" },
-  { keywords: ["scampi interi", "scampi con testa"], sotto1: "Crostacei", sotto2: "Scampi - Interi" },
-
-  // Aragoste
-  { keywords: ["aragosta", "aragoste", "aragosta europea", "aragosta rossa"], sotto1: "Crostacei", sotto2: "Aragosta" },
-  { keywords: ["aragosta intera", "aragosta viva"], sotto1: "Crostacei", sotto2: "Aragosta - Intera" },
-  { keywords: ["mezza aragosta", "code aragosta", "coda aragosta"], sotto1: "Crostacei", sotto2: "Aragosta - Coda" },
-
-  // Astici
-  { keywords: ["astice", "astici", "astice europeo", "astice blu", "astice americano", "astice canadese", "homard"], sotto1: "Crostacei", sotto2: "Astice" },
-  { keywords: ["astice intero", "astice vivo"], sotto1: "Crostacei", sotto2: "Astice - Intero" },
-  { keywords: ["mezza astice", "coda astice", "code astice"], sotto1: "Crostacei", sotto2: "Astice - Coda" },
-
-  // Granchi
-  { keywords: ["granchio", "granchi", "granciporro", "granchio comune"], sotto1: "Crostacei", sotto2: "Granchio" },
-  { keywords: ["grancevola", "granceola", "granseola"], sotto1: "Crostacei", sotto2: "Grancevola" },
-  { keywords: ["granchio reale", "king crab", "granchio delle nevi", "snow crab"], sotto1: "Crostacei", sotto2: "Granchio Reale" },
-  { keywords: ["moleche", "moeca"], sotto1: "Crostacei", sotto2: "Moleche" },
-  { keywords: ["polpa granchio", "polpa di granchio"], sotto1: "Crostacei", sotto2: "Polpa di Granchio" },
-
-  // Canocchie
-  { keywords: ["cicala di mare", "cicale di mare", "canocchia", "canocchie", "pannocchia", "pannocchie"], sotto1: "Crostacei", sotto2: "Canocchie" },
-  { keywords: ["crostacei misti", "misto crostacei"], sotto1: "Crostacei", sotto2: "Misto Crostacei" },
-
-  // ── MOLLUSCHI ──────────────────────────────────────────────────────────────
-  // sotto1 = "Molluschi" | sotto2 = tipo + lavorazione
-
-  // Calamari
-  { keywords: ["calamaro", "calamari", "calamaretto", "calamaretti"], sotto1: "Molluschi", sotto2: "Calamaro" },
-  { keywords: ["calamari puliti", "calamaro pulito", "calamari mondati"], sotto1: "Molluschi", sotto2: "Calamaro - Pulito" },
-  { keywords: ["calamari sporchi", "calamaro sporco", "calamari interi con testa"], sotto1: "Molluschi", sotto2: "Calamaro - Sporco" },
-
-  // Polpo
-  { keywords: ["polpo", "polpi", "moscardino", "moscardini"], sotto1: "Molluschi", sotto2: "Polpo" },
-  { keywords: ["polpo pulito", "polpi puliti", "polpo mondato"], sotto1: "Molluschi", sotto2: "Polpo - Pulito" },
-  { keywords: ["polpo sporco", "polpo intero", "polpi interi", "polpo con testa"], sotto1: "Molluschi", sotto2: "Polpo - Sporco" },
-  { keywords: ["tentacoli polpo", "tentacoli di polpo"], sotto1: "Molluschi", sotto2: "Polpo - Tentacoli" },
-
-  // Seppia
-  { keywords: ["seppia", "seppie", "seppiolina"], sotto1: "Molluschi", sotto2: "Seppia" },
-  { keywords: ["seppia pulita", "seppie pulite", "seppia mondata"], sotto1: "Molluschi", sotto2: "Seppia - Pulita" },
-  { keywords: ["seppia sporca", "seppia intera", "seppie intere", "seppia con nero"], sotto1: "Molluschi", sotto2: "Seppia - Sporca" },
-
-  // Cozze
-  { keywords: ["cozze", "mitili", "cozze nere", "cozza"], sotto1: "Molluschi", sotto2: "Cozze" },
-  { keywords: ["cozze pulite", "cozze sgusciate", "cozze spurgate"], sotto1: "Molluschi", sotto2: "Cozze - Pulite" },
-  { keywords: ["cozze sporche", "cozze con guscio", "cozze intere"], sotto1: "Molluschi", sotto2: "Cozze - Con guscio" },
-
-  // Vongole
-  { keywords: ["vongola", "vongole", "vongole veraci", "vongole lupini"], sotto1: "Molluschi", sotto2: "Vongole" },
-  { keywords: ["vongole sgusciate", "vongole pulite"], sotto1: "Molluschi", sotto2: "Vongole - Sgusciate" },
-  { keywords: ["vongole con guscio", "vongole spurgate"], sotto1: "Molluschi", sotto2: "Vongole - Con guscio" },
-
-  // Ostriche
-  { keywords: ["ostrica", "ostriche", "ostrica piatta", "ostrica concava", "fine de claire", "speciale"], sotto1: "Molluschi", sotto2: "Ostrica" },
-
-  // Capesante
-  { keywords: ["capasanta", "capesante", "noce di capasanta", "pettine", "pettini di mare", "saint jacques"], sotto1: "Molluschi", sotto2: "Capasanta" },
-  { keywords: ["noce capasanta", "noci capasante", "capesante sgusciate"], sotto1: "Molluschi", sotto2: "Capasanta - Noce" },
-  { keywords: ["capesante con guscio", "capasanta intera"], sotto1: "Molluschi", sotto2: "Capasanta - Intera" },
-
-  // Telline e fasolari
-  { keywords: ["tellina", "telline", "arselle"], sotto1: "Molluschi", sotto2: "Telline" },
-  { keywords: ["fasolaro", "fasolari"], sotto1: "Molluschi", sotto2: "Fasolari" },
-
-  // Ricci e altri
-  { keywords: ["riccio di mare", "ricci di mare", "uni"], sotto1: "Molluschi", sotto2: "Ricci di Mare" },
-  { keywords: ["dattero di mare", "datteri di mare"], sotto1: "Molluschi", sotto2: "Datteri di Mare" },
-  { keywords: ["tartufo di mare", "tartufi di mare"], sotto1: "Molluschi", sotto2: "Tartufi di Mare" },
-  { keywords: ["cannolicchio", "cannolicchi", "canolicchio"], sotto1: "Molluschi", sotto2: "Cannolicchi" },
-  { keywords: ["lupino", "lupini di mare"], sotto1: "Molluschi", sotto2: "Lupini" },
-  { keywords: ["molluschi misti", "misto molluschi", "frutti di mare misti"], sotto1: "Molluschi", sotto2: "Misto Molluschi" },
+  // ──────────────────────────────────────────────────
+  // TROTA
+  // ──────────────────────────────────────────────────
+  { keywords: ["trota iridea bianca"], sotto1: "Trota", sotto2: "" },
+  { keywords: ["filetto di trota iridea", "filetto trota iridea"], sotto1: "Trota", sotto2: "" },
+  { keywords: ["filetto di trota salmonata super con pelle", "filetto trota salmonata super pelle"], sotto1: "Trota", sotto2: "" },
+  { keywords: ["filetto di trota affumicata", "filetto trota affumicata"], sotto1: "Trota", sotto2: "" },
 ]
