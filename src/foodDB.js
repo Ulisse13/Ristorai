@@ -20,15 +20,55 @@ const ALL_DB = [
   { cat: "Dispensa",         db: DISPENSA_DB },
 ]
 
-// ── Indice piatto keyword → { cat, sotto1, sotto2 } ─────────────────────────
+// ── Risolvi unità base per ogni prodotto ────────────────────────────────────
+// Regole in ordine di priorità: keywords > sotto1 > cat
+function resolveUnit(cat, sotto1, sotto2, keywords) {
+  const kws = (keywords || []).join(" ").toLowerCase()
+
+  // Uova → pz
+  if (sotto2 === "Uova" || kws.includes("uova") || kws.includes("uovo")) return "pz"
+
+  // Latte e bevande liquide → l
+  if (/\blatte\b/.test(kws) && !kws.includes("cioccolato al latte")) return "l"
+  if (/panna/.test(kws)) return "l"
+  if (/kefir/.test(kws)) return "l"
+
+  // Dispensa: liquidi → l
+  if (cat === "Dispensa") {
+    if (sotto1 === "Bevande analcoliche" || sotto1 === "Bevande alcoliche" || sotto1 === "Superalcolici") return "l"
+    if (sotto2 === "Olio" || sotto2 === "Aceto") return "l"
+    if (/\bolio\b|aceto|salsa di soia|worcest|tabasco|sriracha|ketchup|worcest/.test(kws)) return "l"
+    if (/\bacqua\b|birra|vino|liquore|grappa|amaro|rum|gin |vodka|whisky|whiskey/.test(kws)) return "l"
+    // Detersivi liquidi → l
+    if (sotto1 === "Detersivi" && /liquid|gel|detergente|ammorbident|candegg|sgrassat/.test(kws)) return "l"
+    return "kg"
+  }
+
+  // Freschi: latticini liquidi
+  if (cat === "Freschi" && sotto1 === "Latticini") {
+    if (/\blatte\b|panna|kefir/.test(kws)) return "l"
+    return "kg"
+  }
+
+  // Tutto il resto → kg
+  return "kg"
+}
+
+// ── Indice: keyword → { cat, sotto1, sotto2, unit } ─────────────────────────
 const INDEX = {}
 
 for (const { cat, db } of ALL_DB) {
   for (const entry of db) {
+    const unit = resolveUnit(cat, entry.sotto1, entry.sotto2, entry.keywords)
     for (const kw of entry.keywords) {
       const key = kw.toLowerCase().trim()
       if (key && key.length >= 2 && !INDEX[key]) {
-        INDEX[key] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "" }
+        INDEX[key] = {
+          cat,
+          sotto1: entry.sotto1 || "",
+          sotto2: entry.sotto2 || "",
+          unit
+        }
       }
     }
   }
@@ -43,9 +83,9 @@ function norm(s) {
 }
 
 /**
- * Cerca un prodotto nel database e restituisce categoria e sottocategorie.
+ * Cerca un prodotto nel database.
  * @param {string} nome - Nome del prodotto dalla fattura
- * @returns {{ cat: string, sotto1: string, sotto2: string } | null}
+ * @returns {{ cat, sotto1, sotto2, unit } | null}
  */
 export function lookupFood(nome) {
   if (!nome || nome.length < 2) return null

@@ -1810,7 +1810,7 @@ PRODOTTI:
             sotto1: catMap[i]?.sotto1 || "",
             sotto2: catMap[i]?.sotto2 || "",
             quantita: p.qta,
-            unita: (p.um ? p.um.toLowerCase().replace("lt","l").replace("litri","l").replace("kgs","kg") : null) || catMap[i]?.unita || "kg",
+            unita: dbUnit || (p.um ? p.um.toLowerCase().replace("lt","l").replace("litri","l").replace("kgs","kg") : null) || catMap[i]?.unita || "kg",
             prezzoUnitario: p.prezzoUnitario,
             sconto: p.sconto,
             produttore: ""
@@ -1976,6 +1976,7 @@ PRODOTTI:
       const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
       const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
+      const dbUnit = (learnedMatch ? learnedMatch.unit : null) || (dbMatch ? dbMatch.unit : null)
       const nameLower = normNameForMatch(p.nome)
       const existing = ings.find(i => {
         if (i.cat !== cat) return false
