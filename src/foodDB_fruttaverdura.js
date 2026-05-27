@@ -10,8 +10,8 @@ export const FRUTTAVERDURA_DB = [
   // AGRUMI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Arancia", testo: "varianti: rossa, navel, tarocco, moro, sanguinella, bionda | origine: Sicilia, Calabria, Spagna, Marocco | calibri: 57/67, 67/82, 82/102 | BIO | cassetta, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Limone", testo: "varianti: sfusato, verdello, di Amalfi, di Sorrento | origine: Sicilia, Campania, Spagna, Argentina | calibri: 40/48, 48/56, 56/64 | BIO | cassetta, busta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Arancia", testo: "alias: arancia fresca, arance fresche, arancia tarocco fresca, arancia navel fresca, arance cassetta | varianti: rossa, navel, tarocco, moro, sanguinella, bionda | origine: Sicilia, Calabria, Spagna, Marocco | calibri: 57/67, 67/82, 82/102 | BIO | cassetta, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Limone", testo: "alias: limone fresco, limoni freschi, limone sfusato, verdello fresco, limone di Amalfi fresco, limone di Sorrento fresco, limoni cassetta | varianti: sfusato, verdello, di Amalfi, di Sorrento | origine: Sicilia, Campania, Spagna, Argentina | calibri: 40/48, 48/56, 56/64 | BIO | cassetta, busta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Mandarino", testo: "alias: clementina, mandarancio, tangerina | varianti: clementine senza semi, tardivi | origine: Sicilia, Calabria, Spagna | calibri: 1, 2, 3, 4 | BIO | cassetta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Pompelmo", testo: "alias: grapefruit | varianti: giallo, rosa, rosso | origine: Israele, Spagna, USA | calibri: 32/40, 40/48 | cassetta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Lime", testo: "alias: limette, lime verde | origine: Messico, Brasile, Persia | BIO | busta, cassetta", sotto1: "Frutta", sotto2: "", unit: "kg" },
@@ -28,18 +28,18 @@ export const FRUTTAVERDURA_DB = [
   // FRUTTA ESTIVA E DRUPE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Pesca", testo: "alias: nettarina, pesca noce | varianti: gialla, bianca, saturnina, percoca | origine: Emilia, Veneto, Campania, Spagna | calibri: A, AA, B, C | BIO | cassetta, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Pesca", testo: "alias: pesca fresca, pesche fresche, nettarina fresca, pesca noce fresca, pesca percoca fresca | varianti: gialla, bianca, saturnina, percoca | origine: Emilia, Veneto, Campania, Spagna | calibri: A, AA, B, C | BIO | cassetta, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Albicocca", testo: "varianti: del Vesuvio, Pavan, Goldrich, Orangered | origine: Campania, Emilia, Spagna | calibri: 40/45, 45/50, 50/55, 55/60 | BIO | cassetta, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Ciliegia", testo: "varianti: Ferrovia, Marasca, Bigarreau, amarena, mora | origine: Puglia, Emilia, Vignola, Spagna, Cile | calibri: 24/26, 26/28, 28/32 | BIO | cassetta, vaschetta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Susina", testo: "alias: prugna | varianti: Stanley, Regina Claudia, Mirabella, nera, rossa | origine: Emilia, Francia | calibri: vari | BIO | cassetta, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Fragola", testo: "alias: fragolina di bosco | varianti: Candonga, Elsanta, Alba, Camarosa, Sabrina | origine: Campania, Sicilia, Spagna, Olanda, serra | calibri: 18/22, 22/28, 28/35 | BIO | vaschetta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Fragola", testo: "alias: fragola fresca, fragole fresche, fragolina di bosco, fragole vaschetta, fragoline di bosco fresche | varianti: Candonga, Elsanta, Alba, Camarosa, Sabrina | origine: Campania, Sicilia, Spagna, Olanda, serra | calibri: 18/22, 22/28, 28/35 | BIO | vaschetta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // FRUTTI DI BOSCO
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Lampone", testo: "varianti: rosso, giallo | origine: Olanda, Polonia, Cile, serra | BIO | vaschetta, plateau | Marius Auda", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Mirtillo", testo: "alias: blueberry, mirtillo rosso | varianti: nero, rosso, americano | origine: Olanda, Polonia, Cile, Perù | BIO | vaschetta, plateau | Marius Auda", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Lampone", testo: "alias: lampone fresco, lamponi freschi, lamponi vaschetta | varianti: rosso, giallo | origine: Olanda, Polonia, Cile, serra | BIO | vaschetta, plateau | Marius Auda", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Mirtillo", testo: "alias: mirtillo fresco, mirtilli freschi, blueberry freschi, mirtillo rosso fresco | varianti: nero, rosso, americano | origine: Olanda, Polonia, Cile, Perù | BIO | vaschetta, plateau | Marius Auda", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Mora", testo: "alias: mora di rovo, blackberry | origine: Olanda, Cile | BIO | vaschetta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Ribes", testo: "varianti: rosso, nero, bianco | origine: Olanda, Polonia | BIO | vaschetta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Uva", testo: "varianti: bianca, nera, rossa, fragola, Italia, Victoria, Sultanina, Moscato, Red Globe | origine: Puglia, Sicilia, Spagna, Cile, Sudafrica | calibri: da tavola, con semi, senza semi | BIO | cassetta, busta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
@@ -50,7 +50,7 @@ export const FRUTTAVERDURA_DB = [
 
   { nome: "Banana", testo: "varianti: Cavendish, nana, verde, matura | origine: Ecuador, Colombia, Costa Rica | calibri: Extra, Cat I, Cat II | BIO | cartone, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Ananas", testo: "varianti: Gold, MD2, Baby, fresh cut | origine: Costa Rica, Ghana, Benin | calibri: 5, 6, 7, 8, 9, 10, 12 | BIO | cartone, busta", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Mango", testo: "varianti: Kent, Ataulfo, Keitt, Tommy Atkins | origine: Perù, Brasile, Costa d'Avorio, Spagna | calibri: 8, 10, 12 | BIO | cartone", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Mango", testo: "alias: mango fresco, manghi freschi, mango Kent fresco, mango maturo | varianti: Kent, Ataulfo, Keitt, Tommy Atkins | origine: Perù, Brasile, Costa d'Avorio, Spagna | calibri: 8, 10, 12 | BIO | cartone", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Avocado", testo: "varianti: Hass, Fuerte, Reed | origine: Spagna, Perù, Messico, Sudafrica | calibri: 10, 12, 14, 16, 18 | BIO | cartone, busta, plateau", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Kiwi", testo: "varianti: verde, giallo Gold, Hayward | origine: Lazio, Piemonte, Nuova Zelanda, Cile | calibri: 25, 30, 33, 36, 42 | BIO | plateau, cassetta", sotto1: "Frutta", sotto2: "", unit: "kg" },
   { nome: "Melograno", testo: "varianti: Wonderful, Acco | origine: Israele, Spagna, Turchia | calibri: vari | BIO | cartone", sotto1: "Frutta", sotto2: "", unit: "kg" },
@@ -65,7 +65,7 @@ export const FRUTTAVERDURA_DB = [
   // POMODORI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Pomodoro", testo: "varianti: San Marzano, ciliegino, cherry, datterino, cuore di bue, costoluto, Pachino IGP, Piccadilly, Camone, Raf, tondo liscio, grappolo | origine: Sicilia, Campania, Puglia, Olanda, Spagna, serra | calibri: 47/57, 57/67, 67/82, 82/102 | BIO | cassetta, busta, plateau, vaschetta | mini, pomodorino", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Pomodoro", testo: "alias: pomodoro fresco, pomodori freschi, pomodorino fresco, ciliegino fresco, datterino fresco, pomodoro san marzano fresco, pomodoro pachino fresco, pomodoro grappolo fresco, pomodori cassetta | varianti: San Marzano, ciliegino, cherry, datterino, cuore di bue, costoluto, Pachino IGP, Piccadilly, Camone, Raf, tondo liscio, grappolo | origine: Sicilia, Campania, Puglia, Olanda, Spagna, serra | calibri: 47/57, 57/67, 67/82, 82/102 | BIO | cassetta, busta, plateau, vaschetta | mini, pomodorino", sotto1: "Verdure", sotto2: "", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // INSALATE E FOGLIE
@@ -105,8 +105,8 @@ export const FRUTTAVERDURA_DB = [
   // CIPOLLE E AFFINI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Cipolla", testo: "varianti: bianca, rossa, dorata, Borettana, cipollotto, novella | origine: Puglia, Sicilia, Spagna, Egitto | calibri: 40/60, 60/80, 80/100 | BIO | cassetta, busta, rete | mini Selecta", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Aglio", testo: "varianti: bianco, rosa, nero fermentato, di Sulmona, testa, spicchi | origine: Campania, Spagna, Cina | BIO | treccia, rete, busta, testa | Nero di Voghiera", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Cipolla", testo: "alias: cipolla fresca, cipolle fresche, cipollotto fresco, cipolla novella fresca | varianti: bianca, rossa, dorata, Borettana, cipollotto, novella | origine: Puglia, Sicilia, Spagna, Egitto | calibri: 40/60, 60/80, 80/100 | BIO | cassetta, busta, rete | mini Selecta", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Aglio", testo: "alias: aglio fresco, aglio bianco fresco, aglio rosa fresco, testa d'aglio fresca, spicchi d'aglio freschi | varianti: bianco, rosa, nero fermentato, di Sulmona, testa, spicchi | origine: Campania, Spagna, Cina | BIO | treccia, rete, busta, testa | Nero di Voghiera", sotto1: "Verdure", sotto2: "", unit: "kg" },
   { nome: "Scalogno", testo: "alias: shallot | varianti: lungo, tondo | origine: Francia, Olanda | BIO | rete, busta", sotto1: "Verdure", sotto2: "", unit: "kg" },
   { nome: "Porro", testo: "alias: porri | varianti: gigante, mini, baby | origine: Veneto, Campania, Olanda | BIO | mazzo, cassetta | Marius Auda mini", sotto1: "Verdure", sotto2: "", unit: "kg" },
 
@@ -136,7 +136,7 @@ export const FRUTTAVERDURA_DB = [
   // ══════════════════════════════════════════════════════════════════════════
 
   { nome: "Asparago", testo: "alias: asparagi | varianti: verde, bianco, viola, selvatico, mini | origine: Veneto, Puglia, Olanda, Perù | calibri: 8/12, 12/16, 16/20, 20+ mm | BIO | mazzo, busta | Marius Auda mini", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Carciofo", testo: "alias: carciofi | varianti: romanesco, spinoso sardo, violetto, Cynara, baby | origine: Sardegna, Puglia, Sicilia, Bretagna | calibri: 6, 9, 12, 16 per cassa | BIO | cassetta, mazzo", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Carciofo", testo: "alias: carciofo fresco, carciofi freschi, carciofo romanesco fresco, carciofo spinoso fresco, carciofo baby fresco | varianti: romanesco, spinoso sardo, violetto, Cynara, baby | origine: Sardegna, Puglia, Sicilia, Bretagna | calibri: 6, 9, 12, 16 per cassa | BIO | cassetta, mazzo", sotto1: "Verdure", sotto2: "", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // LEGUMI FRESCHI
@@ -150,12 +150,12 @@ export const FRUTTAVERDURA_DB = [
   // FUNGHI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Champignon", testo: "alias: fungo champignon, funghi prataioli | varianti: bianchi, bruni, Portobello, baby | origine: Olanda, Polonia, nazionale | calibri: Extra, I, II | BIO | vaschetta, busta, cassetta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
-  { nome: "Porcini", testo: "alias: funghi porcini freschi | varianti: Extra, I categoria, misti | origine: Italia, Europa | stagionale | vaschetta, busta, cassetta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
-  { nome: "Finferli", testo: "alias: gallinacci, cantarelli, finferlo | varianti: freschi | stagionale | vaschetta, busta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
+  { nome: "Champignon", testo: "alias: fungo champignon fresco, funghi champignon freschi, funghi prataioli freschi, champignon freschi, portobello fresco, champignon baby freschi | varianti: bianchi, bruni, Portobello, baby | origine: Olanda, Polonia, nazionale | calibri: Extra, I, II | BIO | vaschetta, busta, cassetta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
+  { nome: "Porcini", testo: "alias: funghi porcini freschi, porcini freschi, porcino fresco | varianti: Extra, I categoria, misti | origine: Italia, Europa | stagionale | vaschetta, busta, cassetta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
+  { nome: "Finferli", testo: "alias: finferli freschi, gallinacci freschi, cantarelli freschi, finferlo fresco | varianti: freschi | stagionale | vaschetta, busta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
   { nome: "Shiitake", testo: "alias: fungo shiitake, lentinula | varianti: freschi, disidratati | origine: Cina, Olanda | vaschetta, busta | Selecta freschi", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
   { nome: "Pleurotus", testo: "alias: fungo ostrica, orecchioni, pioppino, chiodini | varianti: grigio, giallo, rosa | origine: Olanda, nazionale | vaschetta, busta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
-  { nome: "Tartufo", testo: "alias: tartufo nero, tartufo bianco, scorzone, tartufo estivo | varianti: intero, a lamelle, grattugiato | stagionale | origine: Umbria, Marche, Alba | vaschetta, barattolo", sotto1: "Verdure", sotto2: "Tartufo", unit: "kg" },
+  { nome: "Tartufo", testo: "alias: tartufo nero fresco, tartufo bianco fresco, scorzone fresco, tartufo estivo fresco, tartufo intero fresco | varianti: intero, a lamelle, grattugiato | stagionale | origine: Umbria, Marche, Alba | vaschetta, barattolo", sotto1: "Verdure", sotto2: "Tartufo", unit: "kg" },
   { nome: "Funghi Misti", testo: "alias: misto bosco, mix funghi, funghi misti | varianti: freschi, gelo | stagionale | vaschetta, busta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
@@ -176,7 +176,7 @@ export const FRUTTAVERDURA_DB = [
   // ERBE AROMATICHE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Basilico", testo: "varianti: genovese, napoletano, a foglia larga, greco | origine: Liguria, Campania, serra | BIO | mazzo, vaso, busta | Marius Auda", sotto1: "Erbe aromatiche", sotto2: "Basilico", unit: "kg" },
+  { nome: "Basilico", testo: "alias: basilico fresco, basilico genovese fresco, mazzo di basilico, basilico in vaso fresco | varianti: genovese, napoletano, a foglia larga, greco | origine: Liguria, Campania, serra | BIO | mazzo, vaso, busta | Marius Auda", sotto1: "Erbe aromatiche", sotto2: "Basilico", unit: "kg" },
   { nome: "Prezzemolo", testo: "varianti: riccio, piatto, radice | origine: Italia, Olanda | BIO | mazzo, busta | Marius Auda", sotto1: "Erbe aromatiche", sotto2: "Prezzemolo", unit: "kg" },
   { nome: "Rosmarino", testo: "varianti: fresco | BIO | mazzo, vaso, busta | Marius Auda", sotto1: "Erbe aromatiche", sotto2: "Rosmarino", unit: "kg" },
   { nome: "Timo", testo: "varianti: comune, al limone, selvatico | BIO | mazzo, vaso, busta | Marius Auda", sotto1: "Erbe aromatiche", sotto2: "Timo", unit: "kg" },
