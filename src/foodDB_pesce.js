@@ -1,189 +1,99 @@
-// foodDB_pesce.js — da cataloghi Selecta + MARR (197 prodotti)
+// ─────────────────────────────────────────────────────────────────────────────
+// foodDB_pesce.js — Database PESCE per Ristorai
+// Struttura: nome (matching) + testo (varianti) + sotto1/sotto2 + unit
+// Fonti: catalogo MARR + catalogo Selecta
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const PESCE_DB = [
 
-  // ──────────────────────────────────────────────────
-  // ALTRI PESCI
-  // ──────────────────────────────────────────────────
-  { keywords: ["pagro"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["san pietro"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["gallinella o capone", "gallinella capone"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["triglia di scoglio del mediterraneo", "triglia scoglio mediterraneo"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["pagro madai ikejime ammare®"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["filetti di acciuga del cantabrico rosalita scatola porzione", "filetti acciuga cantabrico rosalita scatola porzione"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["- 12 filetti"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["filetti di acciuga xl del cantabrico rosalita", "filetti acciuga xl cantabrico rosalita"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["alici del cantabrico marinate filetti rosalita", "alici cantabrico marinate filetti rosalita"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["110 g peso netto 15,50 cad"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["uova di riccio di mare real conservera española", "uova riccio mare real conservera española"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["115 g peso netto 9,20 cad"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["acciuga salata del cantabrico 00", "acciuga salata cantabrico 00"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["acciuga salata del cantabrico 0", "acciuga salata cantabrico 0"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["bottarga di muggine", "bottarga muggine"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["bottarga di muggine grattugiata", "bottarga muggine grattugiata"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["katsuobushi"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["filetti di anguilla affumicati", "filetti anguilla affumicati"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["filetti di aringa affumicata", "filetti aringa affumicata"], sotto1: "Altri Pesci", sotto2: "" },
-  { keywords: ["anguilla affumicata intera"], sotto1: "Altri Pesci", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // PESCI DI MARE — ALLEVATI
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ──────────────────────────────────────────────────
-  // BRANZINO
-  // ──────────────────────────────────────────────────
-  { keywords: ["filetto di branzino", "filetto branzino"], sotto1: "Branzino", sotto2: "" },
+  { nome: "Orata", testo: "varianti: filetto, filetti, intero | stati: fresco, congelato, IQF, abbattuto | origine: nazionale, greca, turca, Levantina, Ammare | calibri: 300/500g, 500/800g, 800/1200g", sotto1: "Orata", sotto2: "", unit: "kg" },
+  { nome: "Branzino", testo: "alias: spigola | varianti: filetto, filetti, intero | stati: fresco, congelato, IQF | origine: nazionale, greca, turca, Levantina, Ammare | calibri: 300/500g, 500/800g", sotto1: "Branzino", sotto2: "", unit: "kg" },
+  { nome: "Spigola", testo: "alias branzino | varianti: filetto, intero | fresco, congelato", sotto1: "Branzino", sotto2: "", unit: "kg" },
+  { nome: "Ricciola", testo: "varianti: filetto, filone, trancio, intero | stati: fresco, congelato, IQF, ultra frozen | Ammare, allevata", sotto1: "Ricciola", sotto2: "", unit: "kg" },
+  { nome: "Ombrina", testo: "alias: ombrina occellata | varianti: filetto, intero | fresco, congelato | Ammare", sotto1: "Ombrina", sotto2: "", unit: "kg" },
+  { nome: "Rombo", testo: "alias: rombo chiodato, rombo liscio | varianti: filetto, trancio, intero | fresco, congelato | Ammare | calibri: 1/2kg, 2/4kg", sotto1: "Rombo", sotto2: "", unit: "kg" },
+  { nome: "Sogliola", testo: "varianti: filetto, intera | fresca, congelata | Ammare | calibri: 100/200g, 200/300g", sotto1: "Sogliola", sotto2: "", unit: "kg" },
+  { nome: "Salmone", testo: "varianti: filetto, filone, trancio, intero | stati: fresco, congelato, IQF, ultra frozen, affumicato | origine: Atlantico, Norvegese, Scozzese, Canada, pescato | marchi: Balik, Coln Valley | calibri: 3/4kg, 4/5kg, 5/6kg", sotto1: "Salmone", sotto2: "", unit: "kg" },
+  { nome: "Carbonaro", testo: "alias: carbonaro d'Alaska, black cod | varianti: filetto | congelato, IQF | Ammare", sotto1: "Salmone", sotto2: "", unit: "kg" },
+  { nome: "Pagro", testo: "alias: pagro reale | varianti: filetto, intero | fresco, congelato | Ammare", sotto1: "Altri Pesci", sotto2: "Pagro", unit: "kg" },
 
-  // ──────────────────────────────────────────────────
-  // DENTICE
-  // ──────────────────────────────────────────────────
-  { keywords: ["dentice reale"], sotto1: "Dentice", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // PESCI DI MARE — PESCATO
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ──────────────────────────────────────────────────
-  // MOLLUSCHI
-  // ──────────────────────────────────────────────────
-  { keywords: ["polpo cotto s/v (nella sua acqua) porto santo spirito®"], sotto1: "Molluschi", sotto2: "" },
-  { keywords: ["tentacolo di polpo cotto a bassa temperatura rosalita", "tentacolo polpo cotto bassa temperatura rosalita"], sotto1: "Molluschi", sotto2: "" },
+  { nome: "Pesce Spada", testo: "varianti: filetto, filone, trancio | stati: fresco, congelato, IQF, ultra frozen, bonificato, affumicato | origine: Mediterraneo, Atlantico | calibri: 15/20kg, 20/30kg", sotto1: "Pesce Spada", sotto2: "", unit: "kg" },
+  { nome: "Tonno Rosso", testo: "alias: tonno rosso mediterraneo, tonno rosso superfrozen | varianti: filetto, filone, trancio, ventresca | stati: fresco, ultra frozen, superfrozen, bonificato, affumicato | marchi: Ammare | calibri: 30/50kg, 50/80kg", sotto1: "Tonno", sotto2: "Tonno Rosso", unit: "kg" },
+  { nome: "Tonno Yellowfin", testo: "alias: tonno pinna gialla, alalunga | varianti: filetto, filone, trancio | stati: fresco, ultra frozen, bonificato | origine: Oceano Indiano, Atlantico", sotto1: "Tonno", sotto2: "Tonno Yellowfin", unit: "kg" },
+  { nome: "Tonno", testo: "varianti: filetto, filone, trancio, bottarga | stati: fresco, congelato, IQF, ultra frozen, bonificato, affumicato | calibri: 20/30kg, 30/50kg", sotto1: "Tonno", sotto2: "", unit: "kg" },
+  { nome: "Dentice", testo: "varianti: filetto, trancio, intero | fresco, congelato | Mediterraneo | calibri: 500/1000g, 1/2kg", sotto1: "Dentice", sotto2: "", unit: "kg" },
+  { nome: "Cernia", testo: "varianti: filetto, trancio, intera | fresca, congelata | Mediterraneo | calibri: 1/2kg, 2/4kg", sotto1: "Cernia", sotto2: "", unit: "kg" },
+  { nome: "Merluzzo", testo: "alias: baccalà fresco | varianti: filetto, trancio | stati: fresco, congelato, IQF | origine: Alaska, Nord Atlantico, Atlantico Centro Orientale | marchi: Alma", sotto1: "Altri Pesci", sotto2: "Merluzzo", unit: "kg" },
+  { nome: "Baccalà", testo: "alias: baccalà dissalato, baccalà ammollato | varianti: filetto, trancio, intero | leggermente salato, sotto sale | marchi: Rafols, Alma", sotto1: "Altri Pesci", sotto2: "Merluzzo", unit: "kg" },
+  { nome: "Trota", testo: "alias: trota salmonata, trota iridea | varianti: filetto, intera, affumicata | fresca, congelata | allevata, nazionale", sotto1: "Acqua Dolce", sotto2: "Trota", unit: "kg" },
+  { nome: "Anguilla", testo: "alias: capitone | varianti: intera, affumicata, filetto | fresca, congelata, affumicata", sotto1: "Acqua Dolce", sotto2: "Anguilla", unit: "kg" },
+  { nome: "Acciughe", testo: "alias: alici | varianti: fresche, sott'olio, salate, in salamoia, filetti | origine: Mediterraneo, Cantabrico | marchi: Rosalita, Don Tonino", sotto1: "Altri Pesci", sotto2: "Acciughe", unit: "kg" },
+  { nome: "Sarde", testo: "alias: sardine | varianti: fresche, sott'olio, affumicate | Mediterraneo, Adriatico", sotto1: "Altri Pesci", sotto2: "Sarde", unit: "kg" },
+  { nome: "Sgombro", testo: "varianti: fresco, affumicato, sott'olio | Mediterraneo, Atlantico", sotto1: "Altri Pesci", sotto2: "Sgombro", unit: "kg" },
+  { nome: "Spinarolo", testo: "alias: palombo | varianti: filetto, trancio | fresco, congelato", sotto1: "Altri Pesci", sotto2: "", unit: "kg" },
+  { nome: "Coda di Rospo", testo: "alias: rana pescatrice | varianti: filetto, intera, con osso, senza osso | fresca, congelata", sotto1: "Altri Pesci", sotto2: "Coda di Rospo", unit: "kg" },
 
-  // ──────────────────────────────────────────────────
-  // OMBRINA
-  // ──────────────────────────────────────────────────
-  { keywords: ["ombrina"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["filetto di ombrina occellata", "filetto ombrina occellata"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["branzino mediterraneo ammare®"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["branzino atlantico ikejime ammare®"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["5-8 kg cassa da", "5-8 kg cassa"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["bosega di valle", "bosega valle"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["anguilla eviscerata"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["filetto di coregone lavarello pescato con pelle", "filetto coregone lavarello pescato pelle"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["filetto di luccio pescato", "filetto luccio pescato"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["filetto di luccioperca pescato", "filetto luccioperca pescato"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["filetto di salmerino alpino allevato", "filetto salmerino alpino allevato"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["storione bianco allevato eviscerato"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["filetto di storione allevato senza pelle", "filetto storione allevato senza pelle"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["rane eviscerate fresche"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["rane eviscerate fresche stese"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["cosce di rana fresche", "cosce rana fresche"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["cosce di rana fresche xl", "cosce rana fresche xl"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["suprema di rana", "suprema rana"], sotto1: "Ombrina", sotto2: "" },
-  { keywords: ["gusci di lumaca", "gusci lumaca"], sotto1: "Ombrina", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // CROSTACEI
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ──────────────────────────────────────────────────
-  // ORATA
-  // ──────────────────────────────────────────────────
-  { keywords: ["orata pescata mediterraneo"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["orata pescata mediterraneo royale"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["filetto di orata", "filetto orata"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["orata mediterraneo ammare®"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["orata atlantico ammare®"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["orata atlantico ikejime ammare®"], sotto1: "Orata", sotto2: "" },
-  { keywords: ["orata di valle", "orata valle"], sotto1: "Orata", sotto2: "" },
+  { nome: "Gambero Rosa", testo: "alias: gambero mediterraneo, gambero grigio | calibri: small, medium, large | stati: fresco, congelato, IQF | intero, pulito, sgusciato, code | origine: Mediterraneo, Adriatico", sotto1: "Crostacei", sotto2: "Gambero Rosa", unit: "kg" },
+  { nome: "Gambero Rosso", testo: "calibri: 1°, 2°, 3°, 4° | stati: fresco, congelato, IQF | intero, pulito, sgusciato, code | origine: Mazara, Sicilia, Adriatico, Porto Santo Spirito", sotto1: "Crostacei", sotto2: "Gambero Rosso", unit: "kg" },
+  { nome: "Gambero Viola", testo: "calibri: 1°, 2°, 3°, 4° | congelato a bordo, IQF | Porto Santo Spirito", sotto1: "Crostacei", sotto2: "Gambero Viola", unit: "kg" },
+  { nome: "Gambero Blu", testo: "alias: gambero blu adriatico | calibri: vari | fresco, congelato, IQF", sotto1: "Crostacei", sotto2: "Gambero Blu", unit: "kg" },
+  { nome: "Gambero Bianco", testo: "alias: gambero imperiale, mazzancolla bianca | calibri: vari | congelato, IQF", sotto1: "Crostacei", sotto2: "Gambero Bianco", unit: "kg" },
+  { nome: "Gambero Vannamei", testo: "alias: gambero tropicale, gambero indopac, gamb.indop, gambero asiatico | calibri: U5, U10, U15, 6/8, 8/12, 13/15, 16/20, 21/25, 26/30 | congelato, IQF | intero, pulito, sgusciato, code | origine: Asia, Sudamerica", sotto1: "Crostacei", sotto2: "Gambero Tropicale", unit: "kg" },
+  { nome: "Gambero Tigre", testo: "alias: tiger prawn, black tiger | calibri: U5, U10, 6/8, 8/12 | congelato, IQF | intero, pulito, code", sotto1: "Crostacei", sotto2: "Gambero Tropicale", unit: "kg" },
+  { nome: "Gamberetti", testo: "alias: gambero grigio, gamberetto, gambero di laguna | congelato, IQF | sgusciati, con guscio | piccola pezzatura", sotto1: "Crostacei", sotto2: "Gamberetti", unit: "kg" },
+  { nome: "Mazzancolle", testo: "alias: gamberoni, gambero argentino | calibri: 6/8, 8/12, 13/15, 16/20, U5, U10 | stati: fresco, congelato, IQF | intero con testa, pulito, code | Porto Santo Spirito", sotto1: "Crostacei", sotto2: "Gamberoni", unit: "kg" },
+  { nome: "Scampo", testo: "alias: langoustine, scampo norvegese | calibri: 3/5, 5/7, 7/10, 10/20, 20/40 | stati: fresco, congelato, IQF | intero, code, decorticato | origine: Scozia, Norvegia, Porcupine | marchi: Premium Shellfish, 5DO", sotto1: "Scampi", sotto2: "", unit: "kg" },
+  { nome: "Aragosta", testo: "calibri: 300/500g, 500/700g, 700/1000g | congelata, IQF | intera, mezza, coda | origine: Mediterraneo, Atlantico, Caraibica", sotto1: "Crostacei", sotto2: "Aragosta", unit: "kg" },
+  { nome: "Astice", testo: "alias: homard, astice americano, astice canadese, astice blu | calibri: 400/600g, 600/800g, 800/1000g, 1/1,5kg | congelato, IQF | intero vivo, cotto, mezza, coda | origine: Canada, Atlantico | marchi: Premium Shellfish", sotto1: "Crostacei", sotto2: "Astice", unit: "kg" },
+  { nome: "Granchio", testo: "alias: granciporro, granchio comune | varianti: intero, polpa | fresco, congelato", sotto1: "Crostacei", sotto2: "Granchio", unit: "kg" },
+  { nome: "Grancevola", testo: "alias: granseola, granceola | varianti: intera, polpa | fresca, congelata | Adriatico", sotto1: "Crostacei", sotto2: "Grancevola", unit: "kg" },
+  { nome: "Granchio Reale", testo: "alias: king crab, granchio delle nevi, snow crab | varianti: zampe, polpa, intero | congelato, cotto | origine: Alaska, Russia, Norvegia | marchi: Red King Crab", sotto1: "Crostacei", sotto2: "Granchio Reale", unit: "kg" },
+  { nome: "Canocchia", testo: "alias: cicala di mare, pannocchia | calibri: piccola, media, grande | fresca, congelata, IQF | Porto Santo Spirito", sotto1: "Canocchie", sotto2: "", unit: "kg" },
 
-  // ──────────────────────────────────────────────────
-  // PESCE SPADA
-  // ──────────────────────────────────────────────────
-  { keywords: ["branzino pescato mediterraneo"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["pagello fragolino mediterraneo"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["tonnetto o alletterato", "tonnetto alletterato"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["lampuga"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["mormora"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["leccia"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["suro o sugarello", "suro sugarello"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["nasello di amo", "nasello amo"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["rana pescatrice"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["scorfano"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["aguglia imperiale"], sotto1: "Pesce Spada", sotto2: "" },
-  { keywords: ["pesce spada affumicato (tagli centrali)"], sotto1: "Pesce Spada", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // MOLLUSCHI — CEFALOPODI
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ──────────────────────────────────────────────────
-  // RICCIOLA
-  // ──────────────────────────────────────────────────
-  { keywords: ["ricciola di fondale o morone", "ricciola fondale morone"], sotto1: "Ricciola", sotto2: "" },
-  { keywords: ["ricciola"], sotto1: "Ricciola", sotto2: "" },
-  { keywords: ["ricciola hiramasa ammare®"], sotto1: "Ricciola", sotto2: "" },
-  { keywords: ["ricciola hamachi giapponese ikejime ammare®"], sotto1: "Ricciola", sotto2: "" },
+  { nome: "Calamaro", testo: "calibri: U5, U10, 1P, 2P, 3P, 4P, 3/5cm, 100/300g, 300/500g, 500/1000g | stati: fresco, congelato, IQF | pulizia: pulito, sporco, intero | varianti: anelli, ciuffi, tubi | origine: (MAR), (SEN), (THA), (CHN), (IND), (NLD), FAO34 | marchi: B.Line, Marfrio, Orof, Justfish", sotto1: "Molluschi", sotto2: "Calamaro", unit: "kg" },
+  { nome: "Calamaretto", testo: "alias: calamaretti | calibri: piccoli, baby | fresco, congelato, IQF | pulito, sporco", sotto1: "Molluschi", sotto2: "Calamaro", unit: "kg" },
+  { nome: "Totano", testo: "alias: totani | calibri: S, M, G | congelato, IQF | pulizia: pulito, sporco | varianti: anelli, tubi, tentacoli, fettuccine | origine: (SEN), (MAR), Atlantico | marchi: Justfish", sotto1: "Totani", sotto2: "", unit: "kg" },
+  { nome: "Polpo", testo: "calibri: T1, T2, T3, T4, T5, T6, T7, T8, T9, 200/300g, 300/500g, 500/1000g, 1/2kg, 2/3kg | stati: fresco, congelato, IQF, cotto, abbattuto | pulizia: pulito, sporco, mondato | varianti: tentacoli, intero | origine: (MAR), (SEN), (MRT), (MEDIT) | marchi: Porto Santo Spirito", sotto1: "Molluschi", sotto2: "Polpo", unit: "kg" },
+  { nome: "Moscardino", testo: "alias: moscardini | calibri: piccoli, baby | fresco, congelato, IQF | cotto, crudo", sotto1: "Molluschi", sotto2: "Polpo", unit: "kg" },
+  { nome: "Seppia", testo: "calibri: U1, U2, 1/2, 8/12, 20/40, 500/1000g, 1/2kg | stati: fresca, congelata, IQF | pulizia: pulita, sporca, mondata | varianti: intera, con nero | origine: (IND), (MAR), (SEN), (ITA) | marchi: Orof, Porto Santo Spirito", sotto1: "Molluschi", sotto2: "Seppia", unit: "kg" },
+  { nome: "Seppiolina", testo: "alias: seppie piccole, baby seppia | fresca, congelata, IQF | pulita, sporca", sotto1: "Molluschi", sotto2: "Seppia", unit: "kg" },
 
-  // ──────────────────────────────────────────────────
-  // ROMBO
-  // ──────────────────────────────────────────────────
-  { keywords: ["trancio di rombo chiodato", "trancio rombo chiodato"], sotto1: "Rombo", sotto2: "" },
-  { keywords: ["filetto di rombo chiodato con pelle", "filetto rombo chiodato pelle"], sotto1: "Rombo", sotto2: "" },
-  { keywords: ["rombo chiodato ammare®"], sotto1: "Rombo", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // MOLLUSCHI — BIVALVI
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ──────────────────────────────────────────────────
-  // SALMONE
-  // ──────────────────────────────────────────────────
-  { keywords: ["filetto di salmone fresco scozia", "filetto salmone fresco scozia"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone scozia label rouge ammare®"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["classic small balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["filetto zar nikolaj balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["filetto 4.2 (for two) zar nikolaj balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["filetto 4.1 (for one) zar nikolaj balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["sjomga zarina balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["sjomga orange balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["filetto sashimi style balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["banqueting balik pretagliato"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["i cubi di balik tagliati a coltello", "cubi balik tagliati coltello"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["tartare nature balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["perle (uova) di salmone balik", "perle (uova) salmone balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["fettine balik"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone affumicato intero scozzese"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone affumicato preaffettato scozzese"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone fetta lunga scozzese"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["fettine di salmone affumicato scozzese", "fettine salmone affumicato scozzese"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["balmoral fillet (astucciato)"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["lingotto ventrale"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["trimming salmone scozzese"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone affumicato intero carpier"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone norvegese affumicato"], sotto1: "Salmone", sotto2: "" },
-  { keywords: ["salmone affumicato red king intero pescato canada"], sotto1: "Salmone", sotto2: "" },
+  { nome: "Cozze", testo: "alias: mitili | varianti: con guscio, sgusciate, spurgate, precotte | stati: fresca, congelata, IQF | calibri: 46/60, 80/100, 200/300 | origine: (CHL), (NZL), nazionale | Porto Santo Spirito", sotto1: "Molluschi", sotto2: "Cozze", unit: "kg" },
+  { nome: "Vongole", testo: "alias: vongole veraci, lupini | varianti: con guscio, sgusciate, spurgate | fresche, congelate, IQF | Porto Santo Spirito", sotto1: "Molluschi", sotto2: "Vongole", unit: "kg" },
+  { nome: "Ostrica", testo: "alias: ostriche | varianti: piatta, concava, calibri N°1 N°2 N°3 N°4 N°5 | fresca | origine: Bretagna, Normandia, Irlanda, Portogallo, nazionale | marchi: Cadoret, Gillardeau, Ancelin", sotto1: "Molluschi", sotto2: "Ostrica", unit: "pz" },
+  { nome: "Capasanta", testo: "alias: cappesante, saint jacques, pettine | varianti: con guscio, noce sgusciata | calibri: 10/20, 20/30, U8, U10 | fresca, congelata, IQF | origine: Atlantico, Pacifico | marchi: Rougié, Premium Shellfish", sotto1: "Molluschi", sotto2: "Capasanta", unit: "kg" },
+  { nome: "Tellina", testo: "alias: telline, arselle | fresca, congelata | con guscio | Adriatico", sotto1: "Molluschi", sotto2: "Telline", unit: "kg" },
+  { nome: "Fasolaro", testo: "alias: fasolari | fresco, congelato | con guscio | Adriatico", sotto1: "Molluschi", sotto2: "Fasolari", unit: "kg" },
+  { nome: "Riccio di Mare", testo: "alias: ricci di mare, uni | varianti: gonadi, pasta di ricci | fresco, pastorizzato | origine: Sardegna, Adriatico, Giappone", sotto1: "Molluschi", sotto2: "Ricci di Mare", unit: "kg" },
+  { nome: "Cannolicchio", testo: "alias: cannolicchi | congelato, IQF | origine: (NLD) | calibri: 5kg", sotto1: "Molluschi", sotto2: "Cannolicchi", unit: "kg" },
+  { nome: "Canestrello", testo: "alias: canestrelli | sgusciati, con guscio | calibri: 20/40 | congelato, IQF", sotto1: "Molluschi", sotto2: "Fasolari", unit: "kg" },
 
-  // ──────────────────────────────────────────────────
-  // SGOMBRO
-  // ──────────────────────────────────────────────────
-  { keywords: ["lanzardo o sgombro occhione", "lanzardo sgombro occhione"], sotto1: "Sgombro", sotto2: "" },
-  { keywords: ["sgombro"], sotto1: "Sgombro", sotto2: "" },
+  // ══════════════════════════════════════════════════════════════════════════
+  // PRODOTTI ITTICI SPECIALI
+  // ══════════════════════════════════════════════════════════════════════════
 
-  // ──────────────────────────────────────────────────
-  // SOGLIOLA
-  // ──────────────────────────────────────────────────
-  { keywords: ["sogliola ammare®"], sotto1: "Sogliola", sotto2: "" },
-
-  // ──────────────────────────────────────────────────
-  // TONNO
-  // ──────────────────────────────────────────────────
-  { keywords: ["filone di tonno qualità standard", "filone tonno qualità standard"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["trancio di tonno qualità premium", "trancio tonno qualità premium"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["trancio di tonno yellowfin qualità premium bonificato", "trancio tonno yellowfin qualità premium bonificato"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["trancio di tonno obeso qualità premium bonificato", "trancio tonno obeso qualità premium bonificato"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["filone di tonno obeso qualità premium bonificato", "filone tonno obeso qualità premium bonificato"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["tonno rosso mediterraneo - lombo alto"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["tonno rosso mediterraneo - lombo basso"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["tonno alalunga"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["palamita"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["toro - ventresca di tonno rosso ammare®", "toro - ventresca tonno rosso ammare®"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["filetto di acciuga in olio extra vergine doliva", "filetto acciuga olio extra vergine doliva"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["acqua di mare alimentare 5 litri brick con dispens", "acqua mare alimentare 5 litri brick dispens"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["acqua di mare alimentare 10 litri brick con dispens", "acqua mare alimentare 10 litri brick dispens"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale asetra prunier in scatola dorigine", "caviale asetra prunier scatola dorigine"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale asetra prunier"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale st. james prunier"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale baerii prunier"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale tradition prunier"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale beluga sel. a caviar house", "caviale beluga sel. caviar house"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale asetra caviar house"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale selezione imperial caviar house"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale oscietra d&h italia"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale oscietra d&h ungheria"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["caviale organic riofrio bio"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["tonno in olio doliva real conservera española", "tonno olio doliva real conservera española"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["bottarga di tonno rosso", "bottarga tonno rosso"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["bottarga di tonno rosso xxl", "bottarga tonno rosso xxl"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["bottarga di tonno rosso trancio", "bottarga tonno rosso trancio"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["tonno affumicato (tagli centrali)"], sotto1: "Tonno", sotto2: "" },
-  { keywords: ["prosciutto di tonno (mosciame)", "prosciutto tonno (mosciame)"], sotto1: "Tonno", sotto2: "" },
-
-  // ──────────────────────────────────────────────────
-  // TROTA
-  // ──────────────────────────────────────────────────
-  { keywords: ["trota iridea bianca"], sotto1: "Trota", sotto2: "" },
-  { keywords: ["filetto di trota iridea", "filetto trota iridea"], sotto1: "Trota", sotto2: "" },
-  { keywords: ["filetto di trota salmonata super con pelle", "filetto trota salmonata super pelle"], sotto1: "Trota", sotto2: "" },
-  { keywords: ["filetto di trota affumicata", "filetto trota affumicata"], sotto1: "Trota", sotto2: "" },
+  { nome: "Bottarga", testo: "varianti: tonno rosso, muggine | intera, grattugiata, trancio | origine: Sardegna, Sicilia | marchi: Don Tonino, Carpier", sotto1: "Altri Pesci", sotto2: "Bottarga", unit: "kg" },
+  { nome: "Caviale", testo: "alias: caviale asetra, caviale baerii, caviale beluga, caviale oscietra | origine: Iran, Russia, Cina, Uruguay | marchi: Prunier, Caviar House, Dieckmann Hansen, Riofrio BIO", sotto1: "Altri Pesci", sotto2: "Caviale", unit: "kg" },
+  { nome: "Salmone Affumicato", testo: "alias: salmone smoked | varianti: intero, fette, trancio | origine: Scozia, Norvegia, Canada | marchi: Balik, Coln Valley", sotto1: "Altri Pesci", sotto2: "Salmone Affumicato", unit: "kg" },
+  { nome: "Rana", testo: "alias: rane | varianti: fresca, gelo, cosce | disponibilità: maggio-settembre", sotto1: "Acqua Dolce", sotto2: "Rana", unit: "kg" },
 ]

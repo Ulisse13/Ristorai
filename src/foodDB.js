@@ -62,11 +62,24 @@ const INDEX = {}
 
 for (const { cat, db } of ALL_DB) {
   for (const entry of db) {
-    const unit = resolveUnit(cat, entry.sotto1, entry.sotto2, entry.keywords)
-    for (const kw of entry.keywords) {
-      const key = kw.toLowerCase().trim()
+    // Supporta sia struttura nuova (nome) che vecchia (keywords)
+    const unit = entry.keywords
+      ? resolveUnit(cat, entry.sotto1, entry.sotto2, entry.keywords)
+      : resolveUnit(cat, entry.sotto1, entry.sotto2, [entry.nome || "", entry.testo || ""])
+
+    if (entry.nome) {
+      // Nuova struttura: usa nome come chiave primaria
+      const key = entry.nome.toLowerCase().trim()
       if (key && key.length >= 2 && !INDEX[key]) {
-        INDEX[key] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit }
+        INDEX[key] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, testo: entry.testo || "" }
+      }
+    } else if (entry.keywords) {
+      // Vecchia struttura: usa keywords array
+      for (const kw of entry.keywords) {
+        const key = kw.toLowerCase().trim()
+        if (key && key.length >= 2 && !INDEX[key]) {
+          INDEX[key] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit }
+        }
       }
     }
   }
@@ -208,13 +221,38 @@ function detectStato(n) {
   return stato
 }
 
+// ── Indice testo: keyword testo → { cat, sotto1, sotto2, unit, nome } ─────────
+// Usato per matching su abbreviazioni e nomi strani (es. gamb.indop, B.A., ecc.)
+const TEXT_INDEX = {}
+for (const { cat, db } of ALL_DB) {
+  for (const entry of db) {
+    if (!entry.testo) continue
+    const unit = entry.keywords
+      ? resolveUnit(cat, entry.sotto1, entry.sotto2, entry.keywords)
+      : resolveUnit(cat, entry.sotto1, entry.sotto2, [entry.nome || "", entry.testo || ""])
+    // Estrai parole chiave dal testo (alias, abbreviazioni, marchi)
+    const testoNorm = norm(entry.testo)
+    const testoWords = testoNorm.split(/[\s|,]+/).filter(w => w.length >= 3)
+    for (const tw of testoWords) {
+      if (!TEXT_INDEX[tw]) {
+        TEXT_INDEX[tw] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, nomeBase: entry.nome || "" }
+      }
+    }
+  }
+}
+
 // ── Lookup base ──────────────────────────────────────────────────────────────
 function lookupFoodBase(n) {
+  // 1. Match esatto su nome
   if (INDEX[n]) return INDEX[n]
+
+  // 2. Match nome contenuto nel prodotto (dal più lungo al più corto)
   const keys = Object.keys(INDEX).sort((a, b) => b.length - a.length)
   for (const kw of keys) {
     if (n.includes(kw) && kw.length >= 4) return INDEX[kw]
   }
+
+  // 3. Match parziale su nome
   const words = n.split(" ").filter(w => w.length >= 4)
   let best = null, bestScore = 0
   for (const [kw, data] of Object.entries(INDEX)) {
@@ -225,7 +263,15 @@ function lookupFoodBase(n) {
     }
     if (score > bestScore) { bestScore = score; best = data }
   }
-  return bestScore >= 5 ? best : null
+  if (bestScore >= 5) return best
+
+  // 4. Fallback: match su testo (alias, abbreviazioni, marchi)
+  const textKeys = Object.keys(TEXT_INDEX).sort((a, b) => b.length - a.length)
+  for (const tw of textKeys) {
+    if (n.includes(tw) && tw.length >= 4) return TEXT_INDEX[tw]
+  }
+
+  return null
 }
 
 // ── Lookup principale ────────────────────────────────────────────────────────
@@ -235,16 +281,22 @@ export function lookupFood(nome) {
   const n = norm(nome)
   const stato = detectStato(n)
 
-  // Surgelato → cerca prima nel DB surgelati, poi forza categoria
+  // ── REGOLA SURGELATI ────────────────────────────────────────────────────
+  // Se il nome contiene indicatori di gelo/surgelato/abbattuto/ultra frozen/IQF ecc.
+  // → forza categoria Surgelati indipendentemente dal DB di provenienza
   if (stato.temp === "surgelato") {
+    // Cerca prima nel DB surgelati per sotto1/sotto2 corretto
     const surgelatiKeys = Object.keys(INDEX)
       .filter(k => INDEX[k].cat === "Surgelati")
       .sort((a, b) => b.length - a.length)
     for (const kw of surgelatiKeys) {
       if (n.includes(kw) && kw.length >= 4) return { ...INDEX[kw], stato }
     }
+    // Non trovato in surgelati → cerca in tutti i DB e forza Surgelati
     const baseMatch = lookupFoodBase(n)
     if (baseMatch) return { ...baseMatch, cat: "Surgelati", stato }
+    // Nessun match → restituisce solo la categoria Surgelati
+    return { cat: "Surgelati", sotto1: "", sotto2: "", unit: "kg", stato }
   }
 
   const result = lookupFoodBase(n)

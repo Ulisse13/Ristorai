@@ -1,165 +1,131 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // foodDB_dispensa.js — Database DISPENSA per Ristorai
-// cat: "Dispensa"
-// sotto1: Conserve | Condimenti | Secchi | Bevande analcoliche | Bevande alcoliche | Superalcolici | Detersivi
+// Struttura: nome (matching) + testo (varianti) + sotto1/sotto2 + unit
+// Fonti: catalogo MARR + catalogo Selecta
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const DISPENSA_DB = [
 
   // ══════════════════════════════════════════════════════════════════════════
-  // CONSERVE
+  // CONSERVE — POMODORO
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["pelati", "pomodori pelati", "pelati san marzano", "pelati mutti", "pelati cirio"], sotto1: "Conserve", sotto2: "Pomodoro" },
-  { keywords: ["passata di pomodoro", "passata pomodoro", "passata mutti", "passata rustica"], sotto1: "Conserve", sotto2: "Pomodoro" },
-  { keywords: ["polpa di pomodoro", "polpa pomodoro", "pomodori a cubetti", "pomodori tritati"], sotto1: "Conserve", sotto2: "Pomodoro" },
-  { keywords: ["concentrato di pomodoro", "doppio concentrato", "triplo concentrato"], sotto1: "Conserve", sotto2: "Pomodoro" },
-  { keywords: ["sugo pronto", "sugo al pomodoro", "sugo alla bolognese", "sugo pronto barattolo"], sotto1: "Conserve", sotto2: "Sughi" },
-  { keywords: ["pomodori secchi", "pomodori secchi sott'olio"], sotto1: "Conserve", sotto2: "Pomodoro" },
-  { keywords: ["ceci in scatola", "ceci precotti", "ceci latta"], sotto1: "Conserve", sotto2: "Legumi" },
-  { keywords: ["fagioli in scatola", "fagioli precotti", "fagioli borlotti scatola", "fagioli cannellini scatola"], sotto1: "Conserve", sotto2: "Legumi" },
-  { keywords: ["lenticchie in scatola", "lenticchie precotte"], sotto1: "Conserve", sotto2: "Legumi" },
-  { keywords: ["piselli in scatola", "piselli precotti", "piselli latta"], sotto1: "Conserve", sotto2: "Legumi" },
-  { keywords: ["legumi misti scatola", "misto legumi precotti"], sotto1: "Conserve", sotto2: "Legumi" },
-  { keywords: ["tonno in scatola", "tonno sott'olio", "tonno al naturale", "tonno rio mare", "tonno nostromo"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["sardine in scatola", "sardine sott'olio"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["acciughe sott'olio", "acciughe in scatola", "filetti di acciughe"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["sgombro in scatola", "sgombro sott'olio"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["salmone in scatola", "salmone al naturale scatola"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["polpo in scatola", "polpo precotto scatola"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["cozze in scatola", "vongole in scatola", "frutti di mare scatola"], sotto1: "Conserve", sotto2: "Pesce" },
-  { keywords: ["mais in scatola", "mais dolce scatola"], sotto1: "Conserve", sotto2: "Altro" },
-  { keywords: ["castagne in scatola", "marroni in barattolo"], sotto1: "Conserve", sotto2: "Altro" },
-  { keywords: ["tartufo in barattolo", "salsa al tartufo barattolo", "condimento tartufo"], sotto1: "Conserve", sotto2: "Altro" },
-  { keywords: ["funghi sott'olio", "funghi in barattolo", "porcini sott'olio", "funghi misti barattolo"], sotto1: "Conserve", sotto2: "Altro" },
-  { keywords: ["marmellata", "confettura", "confettura di albicocche", "marmellata di arance"], sotto1: "Conserve", sotto2: "Dolci" },
-  { keywords: ["cioccolato fondente", "cioccolato al latte", "cioccolato bianco", "copertura cioccolato"], sotto1: "Conserve", sotto2: "Dolci" },
+  { nome: "Pelati", testo: "varianti: San Marzano, datterino, tondo, interi | formato: 3/1, 4/4, 400g, 2,5kg | marchi: Mutti, Gran Natura, Torrente, Le Tenute del Cavaliere | BIO", sotto1: "Conserve", sotto2: "Pomodoro", unit: "kg" },
+  { nome: "Passata Pomodoro", testo: "alias: passata di pomodoro, passata classica | varianti: rustica, liscia, vellutata, BIO | formato: bottiglia 700g, 3/1, 5/1, 10kg bib | marchi: Mutti, Ortolina, Gran Natura, Le Tenute del Cavaliere", sotto1: "Conserve", sotto2: "Pomodoro", unit: "kg" },
+  { nome: "Polpa Pomodoro", testo: "alias: polpa di pomodoro, polpa cubetti, polpa fine | varianti: cubetti, fine, a filetti | formato: 3/1, 5/1, 400g, 10kg bib | marchi: Mutti, Gran Natura, Due Fagiani, Rossogargano, Jolly", sotto1: "Conserve", sotto2: "Pomodoro", unit: "kg" },
+  { nome: "Concentrato Pomodoro", testo: "alias: doppio concentrato, triplo concentrato | varianti: doppio, triplo | formato: 3/1, 4/4, 1kg", sotto1: "Conserve", sotto2: "Pomodoro", unit: "kg" },
+  { nome: "Pomodori Secchi", testo: "alias: pomodori essiccati, pomodori secchi sott'olio | formato: vaso, barattolo, busta | origine: Puglia, Sicilia", sotto1: "Conserve", sotto2: "Pomodoro", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // CONDIMENTI
+  // CONSERVE — ORTAGGI E VERDURE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["olio extravergine", "olio evo", "olio di oliva", "olio cucinarte", "olio extravergine pet"], sotto1: "Condimenti", sotto2: "Olio" },
-  { keywords: ["olio di semi", "olio di girasole", "olio di arachidi", "olio di mais"], sotto1: "Condimenti", sotto2: "Olio" },
-  { keywords: ["aceto di vino bianco", "aceto di vino rosso", "aceto di mele", "aceto balsamico", "glassa balsamica"], sotto1: "Condimenti", sotto2: "Aceto" },
-  { keywords: ["maionese", "maionese calve", "maionese hellmann", "maionese classica"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["senape", "senape di digione", "senape classica"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["ketchup", "salsa ketchup"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["salsa di soia", "tamari", "teriyaki"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["worcestershire", "salsa worcester"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["tabasco", "salsa piccante", "sriracha"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["pesto barattolo", "pesto genovese barattolo", "pesto al basilico barattolo"], sotto1: "Condimenti", sotto2: "Salse" },
-  { keywords: ["olive sott'olio", "olive in salamoia", "olive verdi", "olive nere", "olive taggiasche"], sotto1: "Condimenti", sotto2: "Conserve Vegetali" },
-  { keywords: ["capperi", "capperi sott'aceto", "capperi sotto sale"], sotto1: "Condimenti", sotto2: "Conserve Vegetali" },
-  { keywords: ["cetriolini", "giardiniera", "sottaceti misti", "peperoni sott'aceto"], sotto1: "Condimenti", sotto2: "Conserve Vegetali" },
-  { keywords: ["sale fino", "sale grosso", "sale marino", "sale iodato", "sale rosa himalaya"], sotto1: "Condimenti", sotto2: "Sale e Spezie" },
-  { keywords: ["pepe nero", "pepe bianco", "pepe macinato", "pepe in grani"], sotto1: "Condimenti", sotto2: "Sale e Spezie" },
-  { keywords: ["noce moscata", "cannella", "chiodi di garofano", "cardamomo", "curcuma", "paprika", "curry", "zafferano"], sotto1: "Condimenti", sotto2: "Sale e Spezie" },
-  { keywords: ["origano secco", "basilico secco", "timo secco", "rosmarino secco", "salvia secca", "alloro"], sotto1: "Condimenti", sotto2: "Sale e Spezie" },
-  { keywords: ["aglio in polvere", "cipolla in polvere", "peperoncino secco", "peperoncino in polvere"], sotto1: "Condimenti", sotto2: "Sale e Spezie" },
-  { keywords: ["miele", "miele millefiori", "miele di acacia", "miele di castagno", "miele agreste"], sotto1: "Condimenti", sotto2: "Dolcificanti" },
-  { keywords: ["sciroppo di glucosio", "golden syrup"], sotto1: "Condimenti", sotto2: "Dolcificanti" },
+  { nome: "Carciofi Conserva", testo: "alias: carciofi sott'olio, carciofi al naturale, cuori di carciofo | varianti: interi, tagliati, sott'olio | formato: vaso, barattolo, latta | marchi: Ortoc", sotto1: "Conserve", sotto2: "Ortaggi", unit: "kg" },
+  { nome: "Peperoni Conserva", testo: "alias: peperoni arrostiti, peperoni sott'olio, Piquillo | varianti: al naturale, sott'olio, arrostiti | formato: vaso, barattolo, latta | marchi: Olmeda Origenes", sotto1: "Conserve", sotto2: "Ortaggi", unit: "kg" },
+  { nome: "Capperi", testo: "alias: capperi in salamoia, capperi sotto sale, cucunci | varianti: in salamoia, in sale, sott'olio, in polvere, foglie | origine: Pantelleria IGP, Sicilia | formato: vaso, vasetto, busta, secchiello | marchi: Selecta", sotto1: "Conserve", sotto2: "Capperi", unit: "kg" },
+  { nome: "Olive", testo: "varianti: verdi, nere, Taggiasche, Kalamata, Gordal, Chupadedos | sott'olio, in salamoia, denocciolate | formato: vaso, latta, barattolo | marchi: Olmeda Origenes, Selecta", sotto1: "Conserve", sotto2: "Olive", unit: "kg" },
+  { nome: "Fagioli Conserva", testo: "alias: fagioli in scatola, fagioli borlotti, fagioli cannellini | varianti: borlotti, cannellini, neri, bianchi | al naturale | formato: latta, barattolo", sotto1: "Conserve", sotto2: "Legumi", unit: "kg" },
+  { nome: "Ceci Conserva", testo: "alias: ceci in scatola, ceci al naturale | al naturale | formato: latta, barattolo", sotto1: "Conserve", sotto2: "Legumi", unit: "kg" },
+  { nome: "Mais Conserva", testo: "alias: mais dolce in scatola, mais al naturale, ortoriso | al naturale | formato: latta, barattolo | marchi: Iposea", sotto1: "Conserve", sotto2: "Ortaggi", unit: "kg" },
+  { nome: "Tonno Conserva", testo: "alias: tonno in scatola, tonno sott'olio, tonno al naturale | varianti: olio oliva, olio girasole, naturale, busta | formato: scatola 70g, 140g, 620g, 1730g, busta 1kg | marchi: Nostromo, Justfish, Amati, Donzela, Perlas, Orofish", sotto1: "Conserve", sotto2: "Pesce", unit: "kg" },
+  { nome: "Acciughe Conserva", testo: "alias: alici sott'olio, acciughe in scatola, filetti acciughe | varianti: filetti sott'olio, sotto sale, pasta di acciughe | formato: latta, vaso, vasetto | marchi: Don Tonino, Rosalita, Cantabrico, R.C.E.", sotto1: "Conserve", sotto2: "Pesce", unit: "kg" },
+  { nome: "Confettura", testo: "alias: marmellata, confettura di frutta, composta | varianti: albicocca, fragola, lampone, ciliegia, fico, mirtillo, arancia | formato: vaso, vasetto 110g | BIO | marchi: MonS, Gli Indispensabili", sotto1: "Conserve", sotto2: "Dolci", unit: "kg" },
+  { nome: "Miele", testo: "varianti: castagno, ailanto, lavanda, millefiori, corbezzolo, acacia | BIO | formato: vasetto, vaso, secchiello | marchi: MonS, Thiercelin 1809", sotto1: "Conserve", sotto2: "Dolci", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // SECCHI
+  // CONDIMENTI — OLI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["pasta secca", "spaghetti", "rigatoni", "penne", "fusilli", "farfalle", "linguine", "bucatini", "mezze penne", "tortiglioni", "sedanini", "conchiglie", "ditali"], sotto1: "Secchi", sotto2: "Pasta" },
-  { keywords: ["pasta integrale", "pasta di farro", "pasta di kamut", "pasta senza glutine"], sotto1: "Secchi", sotto2: "Pasta" },
-  { keywords: ["riso", "riso arborio", "riso carnaroli", "riso vialone nano", "riso basmati", "riso integrale", "riso parboiled", "riso venere"], sotto1: "Secchi", sotto2: "Riso" },
-  { keywords: ["farro", "orzo perlato", "orzo", "quinoa", "amaranto", "bulgur", "couscous"], sotto1: "Secchi", sotto2: "Cereali" },
-  { keywords: ["polenta", "farina di mais", "farina bramata"], sotto1: "Secchi", sotto2: "Farine" },
-  { keywords: ["farina 00", "farina 0", "farina 1", "farina 2", "farina integrale", "farina di grano tenero", "semola di grano duro", "semola rimacinata"], sotto1: "Secchi", sotto2: "Farine" },
-  { keywords: ["farina di mandorle", "farina di nocciole", "farina di riso", "farina di ceci", "farina di castagne"], sotto1: "Secchi", sotto2: "Farine" },
-  { keywords: ["amido di mais", "maizena", "amido di frumento", "fecola di patate"], sotto1: "Secchi", sotto2: "Farine" },
-  { keywords: ["zucchero semolato", "zucchero bianco", "zucchero pacco"], sotto1: "Secchi", sotto2: "Zucchero" },
-  { keywords: ["zucchero di canna", "zucchero grezzo", "zucchero di canna grezzo"], sotto1: "Secchi", sotto2: "Zucchero" },
-  { keywords: ["zucchero a velo", "zucchero impalpabile", "zucchero velo"], sotto1: "Secchi", sotto2: "Zucchero" },
-  { keywords: ["brodo knorr", "brodo granulare", "dado da brodo", "dado vegetale", "dado di carne", "dado di pesce"], sotto1: "Secchi", sotto2: "Brodi e Basi" },
-  { keywords: ["fondo bruno", "fondo di carne"], sotto1: "Secchi", sotto2: "Brodi e Basi" },
-  { keywords: ["brodo pronto", "brodo in brick", "brodo di pollo pronto", "brodo vegetale pronto"], sotto1: "Secchi", sotto2: "Brodi e Basi" },
-  { keywords: ["cacao amaro", "cacao in polvere"], sotto1: "Secchi", sotto2: "Dolci" },
-  { keywords: ["granella di nocciole", "granella di mandorle", "granella di pistacchi", "granella noci"], sotto1: "Secchi", sotto2: "Dolci" },
-  { keywords: ["nocciole sgusciate", "mandorle sgusciate", "noci sgusciate", "pistacchi sgusciati", "pinoli", "anacardi", "arachidi"], sotto1: "Secchi", sotto2: "Frutta Secca" },
-  { keywords: ["vaniglia", "bacche di vaniglia", "estratto di vaniglia", "vanillina"], sotto1: "Secchi", sotto2: "Dolci" },
-  { keywords: ["lievito in polvere", "lievito per dolci", "lievito chimico", "bicarbonato di sodio"], sotto1: "Secchi", sotto2: "Dolci" },
-  { keywords: ["savoiardi", "biscotti savoiardi", "pavesini"], sotto1: "Secchi", sotto2: "Biscotti" },
-  { keywords: ["amaretti", "amaretti di saronno", "amaretti morbidi"], sotto1: "Secchi", sotto2: "Biscotti" },
-  { keywords: ["pangrattato", "pane grattugiato", "pan grattato"], sotto1: "Secchi", sotto2: "Pane" },
-  { keywords: ["fette biscottate", "grissini", "crackers", "taralli", "tarallini"], sotto1: "Secchi", sotto2: "Pane" },
-  { keywords: ["gelatina", "colla di pesce", "agar agar"], sotto1: "Secchi", sotto2: "Dolci" },
-  { keywords: ["uva passa", "uvetta", "frutta candita", "scorze candite"], sotto1: "Secchi", sotto2: "Dolci" },
+  { nome: "Olio EVO", testo: "alias: olio extravergine di oliva, olio evo | varianti: 100% italiano, UE, IGP Toscana, biologico, spray, monoporzione | formato: bottiglia 250ml, 500ml, 750ml, 1L, latta 5L, PET 5L, 10L, monoporzione | marchi: Coppini, David, Olitalia, F.Casale, Primoljo, Topfood, Meridiani, Favololio, Essenza", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+  { nome: "Olio Oliva", testo: "alias: olio di oliva, olio vergine | varianti: vergine, di sansa | formato: bottiglia 1L, latta 5L, PET 1L, 5L | marchi: David, F.Casale, Olitalia, Topfood", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+  { nome: "Olio Semi", testo: "alias: olio di semi, olio semi vari, olio girasole, olio arachidi, olio soia, olio mais, olio palma | varianti: girasole, arachidi, soia, mais, palma, alto oleico | formato: PET 1L, 5L, 10L, latta 25L | marchi: Olitalia, Desantis, S/Terra, Mediter", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+  { nome: "Olio Friggere", testo: "alias: olio per frittura, frienn | formato: latta 5L, 10L | marchi: Frienn, Friol, Frideal", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+  { nome: "Olio Nocciola", testo: "alias: olio di nocciola gastronomico | formato: bottiglia 250ml, 500ml | marchi: Selecta", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+  { nome: "Olio Sesamo", testo: "alias: olio di sesamo, sesame oil | formato: bottiglia 500ml | marchi: Thiercelin 1809, Selecta", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+  { nome: "Olio Argan", testo: "alias: olio di argan gastronomico | formato: bottiglia | marchi: Thiercelin 1809", sotto1: "Condimenti", sotto2: "Olio", unit: "l" },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CONDIMENTI — ACETI
+  // ══════════════════════════════════════════════════════════════════════════
+
+  { nome: "Aceto Balsamico", testo: "alias: aceto balsamico di Modena IGP, aceto balsamico tradizionale | varianti: IGP, tradizionale 25 anni, spray, glassa | formato: bottiglia 250ml, 500ml, PET 5L | marchi: De Nigris, Cucinarte, DNT, De Nigris Mons", sotto1: "Condimenti", sotto2: "Aceto", unit: "l" },
+  { nome: "Aceto Vino", testo: "alias: aceto di vino bianco, aceto di vino rosso, aceto di mele, aceto champagne | varianti: bianco, rosso, Chardonnay, Chianti, mele, Jerez, Lampone, Champagne | formato: bottiglia 250ml, 500ml, PET 1L | marchi: De Nigris, San Francesco, Verna, Agreste, Olmeda Origenes, Selecta", sotto1: "Condimenti", sotto2: "Aceto", unit: "l" },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // CONDIMENTI — SALSE E ALTRI
+  // ══════════════════════════════════════════════════════════════════════════
+
+  { nome: "Salsa di Soia", testo: "alias: soy sauce, shoyu, tamari, salsa di soia giapponese | varianti: classica, bianca, tamari, senza glutine | formato: bottiglia 500ml, 1L, 1,8L | marchi: Yamasa, Marusho, Thiercelin 1809", sotto1: "Condimenti", sotto2: "Salse Etniche", unit: "l" },
+  { nome: "Mirin", testo: "alias: mirin giapponese, sake da cucina | formato: bottiglia | marchi: Marusho, Thiercelin 1809", sotto1: "Condimenti", sotto2: "Salse Etniche", unit: "l" },
+  { nome: "Ponzu", testo: "alias: ponzu giapponese, champonzu, daidai ponzu | formato: bottiglia | marchi: Marusho", sotto1: "Condimenti", sotto2: "Salse Etniche", unit: "l" },
+  { nome: "Wasabi", testo: "alias: wasabi in pasta, wasabi in polvere | formato: tubo, barattolo | marchi: Selecta", sotto1: "Condimenti", sotto2: "Salse Etniche", unit: "kg" },
+  { nome: "Tahini", testo: "alias: pasta di sesamo, tahina | formato: vasetto, barattolo | marchi: Selecta", sotto1: "Condimenti", sotto2: "Salse Etniche", unit: "kg" },
+  { nome: "Sriracha", testo: "alias: salsa piccante asiatica, chili sauce | formato: bottiglia | marchi: Selecta", sotto1: "Condimenti", sotto2: "Salse Etniche", unit: "l" },
+  { nome: "Ketchup", testo: "alias: salsa ketchup, pomodoro ketchup | formato: bottiglia 1L, flacone, monoporzione | marchi: Heinz, Calvé", sotto1: "Condimenti", sotto2: "Salse", unit: "l" },
+  { nome: "Maionese", testo: "varianti: classica, light, alle erbe | formato: secchio 5kg, barattolo, tubo, monoporzione | marchi: Calvé, Heinz", sotto1: "Condimenti", sotto2: "Salse", unit: "kg" },
+  { nome: "Senape", testo: "varianti: Dijon, rustica con grani, all'aneto, allo zafferano, allo Yuzu | formato: vasetto 200g, secchiello 1kg, flacone 500g | marchi: Balik, Selecta, Thiercelin 1809", sotto1: "Condimenti", sotto2: "Salse", unit: "kg" },
+  { nome: "Mostarda", testo: "alias: mostarda di frutta, salsa senapata | varianti: frutta mista, fichi, pere, limoni, cotogne | formato: vasetto, vaso | marchi: Gli Indispensabili, Selecta", sotto1: "Condimenti", sotto2: "Salse", unit: "kg" },
+  { nome: "Salsa Worcestershire", testo: "alias: worcester, salsa inglese | formato: bottiglia | marchi: Lea & Perrins", sotto1: "Condimenti", sotto2: "Salse", unit: "l" },
+  { nome: "Tabasco", testo: "alias: salsa piccante, hot sauce | formato: bottiglia | marchi: Tabasco", sotto1: "Condimenti", sotto2: "Salse", unit: "l" },
+  { nome: "Tartufo Condimento", testo: "alias: crema di tartufo, salsa tartufata, condimento al tartufo, fette di tartufo | varianti: nero, bianco, estivo, scorzone | formato: vasetto, barattolo, vaso | marchi: Selecta", sotto1: "Condimenti", sotto2: "Tartufo", unit: "kg" },
+
+  // ══════════════════════════════════════════════════════════════════════════
+  // SECCHI — PASTA E RISO
+  // ══════════════════════════════════════════════════════════════════════════
+
+  { nome: "Pasta", testo: "varianti: spaghetti, rigatoni, penne, fusilli, tagliatelle, farfalle, linguine, bucatini, orecchiette, caserecce | formato: 500g, 1kg, 3kg, 5kg | BIO, semola, integrale | marchi: vari", sotto1: "Secchi", sotto2: "Pasta", unit: "kg" },
+  { nome: "Riso", testo: "varianti: Carnaroli, Vialone Nano, Arborio, Basmati, Parboiled, profumato, sushi, nero glutinoso | DOP, IGP, BIO | formato: sacco 1kg, 5kg, 25kg, sacchetto di tela | origine: Veneto, Po Delta, Pakistan, Thailandia | marchi: Selecta", sotto1: "Secchi", sotto2: "Riso", unit: "kg" },
+  { nome: "Farina", testo: "varianti: tipo 00, 0, 1, 2, integrale, di forza W220, W310, semola, farro, avena, ceci, mais, riso, grano saraceno, mandorle, nocciole, Kamut, 5 cereali | BIO, macinate a pietra | formato: sacco 1kg, 5kg, 25kg | marchi: Selecta", sotto1: "Secchi", sotto2: "Farina", unit: "kg" },
+  { nome: "Legumi Secchi", testo: "varianti: ceci, fagioli borlotti, fagioli cannellini, lenticchie, cicerchia, roveja, fagiolo risina | BIO, DOP, IGP | formato: busta 500g, 1kg | marchi: Selecta", sotto1: "Secchi", sotto2: "Legumi", unit: "kg" },
+  { nome: "Cereali", testo: "varianti: farro, orzo, quinoa bianca, quinoa rossa, quinoa nera, grano saraceno | BIO | formato: busta 500g, 1kg | marchi: Selecta, Thiercelin 1809", sotto1: "Secchi", sotto2: "Cereali", unit: "kg" },
+  { nome: "Zucchero", testo: "varianti: bianco, di canna, muscovado, invertito, a velo, di canna grezzo | formato: sacco 1kg, 5kg, 25kg | marchi: vari", sotto1: "Secchi", sotto2: "Zucchero", unit: "kg" },
+  { nome: "Sale", testo: "varianti: fino, grosso, marino, di rocca, Halen Môn, Kala Namak, affumicato, speziato, vanigliato | formato: barattolo, busta, sacco | marchi: Halen Môn, Thiercelin 1809, Selecta", sotto1: "Secchi", sotto2: "Sale", unit: "kg" },
+  { nome: "Dado", testo: "alias: dado brodo, brodo granulare, brodo in polvere | varianti: manzo, pollo, verdure, pesce | formato: busta, barattolo, pz | marchi: Knorr, Star, Selecta fondi", sotto1: "Secchi", sotto2: "Brodi", unit: "pz" },
+  { nome: "Lievito", testo: "alias: lievito in polvere, lievito per dolci, lievito secco, lievito istantaneo | varianti: chimico, secco, di birra secco | formato: bustina, barattolo, busta", sotto1: "Secchi", sotto2: "Lievito", unit: "kg" },
+  { nome: "Amido", testo: "alias: amido di mais, maizena, fecola di patate, frumina | varianti: mais, patate, riso, tapioca | formato: busta, barattolo", sotto1: "Secchi", sotto2: "Addensanti", unit: "kg" },
+  { nome: "Pane Grattugiato", testo: "alias: pangrattato, panko, pane grattato | varianti: classico, panko giapponese, integrale | formato: busta, sacchetto | marchi: Selecta Panko Thai", sotto1: "Secchi", sotto2: "Panatura", unit: "kg" },
+  { nome: "Spezie", testo: "varianti: pepe nero, pepe bianco, pepe rosa, pepe verde, pepe Sichuan, curcuma, paprika, cumino, coriandolo, noce moscata, cannella, chiodi garofano, zafferano, anice stellato, cardamomo, curry, masala, Ras El Hanout | intera, macinata | formato: barattolo, busta, vasetto | marchi: Speziale, Thiercelin 1809, Selecta", sotto1: "Secchi", sotto2: "Spezie", unit: "kg" },
+  { nome: "Vaniglia", testo: "alias: baccelli di vaniglia, estratto di vaniglia, pasta di vaniglia | varianti: Bourbon Madagascar, Tahiti | formato: baccello, estratto, pasta, polvere | marchi: Thiercelin 1809, Norohy, Selecta", sotto1: "Secchi", sotto2: "Spezie", unit: "kg" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // BEVANDE ANALCOLICHE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["acqua minerale", "acqua naturale", "acqua frizzante", "acqua liscia", "acqua bottiglia", "acqua san pellegrino", "acqua ferrarelle", "acqua panna", "acqua levissima"], sotto1: "Bevande analcoliche", sotto2: "Acqua" },
-  { keywords: ["acqua tonica", "tonica", "schweppes tonica", "fever tree tonica"], sotto1: "Bevande analcoliche", sotto2: "Tonica" },
-  { keywords: ["ginger ale", "ginger beer", "schweppes ginger", "fever tree ginger"], sotto1: "Bevande analcoliche", sotto2: "Ginger" },
-  { keywords: ["coca cola", "coca-cola", "coca cola zero", "coca cola light", "coca cola sleek"], sotto1: "Bevande analcoliche", sotto2: "Cola" },
-  { keywords: ["fanta", "fanta arancia", "fanta lattina", "fanta sleek"], sotto1: "Bevande analcoliche", sotto2: "Bibite" },
-  { keywords: ["sprite", "sprite lattina"], sotto1: "Bevande analcoliche", sotto2: "Bibite" },
-  { keywords: ["pepsi", "pepsi cola", "pepsi max"], sotto1: "Bevande analcoliche", sotto2: "Cola" },
-  { keywords: ["aranciata", "aranciata san pellegrino", "chinotto"], sotto1: "Bevande analcoliche", sotto2: "Bibite" },
-  { keywords: ["limonata", "limonata san pellegrino", "cedrata"], sotto1: "Bevande analcoliche", sotto2: "Bibite" },
-  { keywords: ["red bull", "red bull energy"], sotto1: "Bevande analcoliche", sotto2: "Energy Drink" },
-  { keywords: ["monster energy", "rockstar", "energy drink"], sotto1: "Bevande analcoliche", sotto2: "Energy Drink" },
-  { keywords: ["lipton ice tea", "the freddo", "fuzetea", "nestea"], sotto1: "Bevande analcoliche", sotto2: "Tè Freddo" },
-  { keywords: ["succo di frutta", "succo arancia", "succo pesca", "succo ace", "succo mela", "yoga succo", "skipper succo"], sotto1: "Bevande analcoliche", sotto2: "Succhi" },
-  { keywords: ["sciroppo di menta", "sciroppo grenadine", "sciroppo monin", "sciroppo amarena"], sotto1: "Bevande analcoliche", sotto2: "Sciroppi" },
-  { keywords: ["succo yuzu", "yuzu"], sotto1: "Bevande analcoliche", sotto2: "Succhi" },
+  { nome: "Acqua Minerale", testo: "varianti: naturale, frizzante, effervescente naturale | formato: PET 0,5L, 1,5L, CT 6x1,5L, CT 24x50cl | marchi: S.Benedetto, Guizza, Ecogreen, Soleila", sotto1: "Bevande analcoliche", sotto2: "Acqua", unit: "l" },
+  { nome: "Bibite", testo: "alias: bevanda gassata, soft drink | varianti: Coca Cola, Fanta, Sprite, Pepsi, chinotto, aranciata, limonata, tonica | formato: lattina 33cl, PET 1,5L, CT 24x33cl | marchi: Coca Cola, Schweppes, S.Benedetto, Lemonsoda", sotto1: "Bevande analcoliche", sotto2: "Bibite", unit: "l" },
+  { nome: "Succo Frutta", testo: "alias: succo di frutta, succo polpa, nettare | varianti: arancia, pesca, pera, albicocca, ACE, ananas | formato: brick 200ml, bottiglia 1L, CT 8x1L | marchi: GDS, Boero", sotto1: "Bevande analcoliche", sotto2: "Succhi", unit: "l" },
+  { nome: "The", testo: "alias: tè, ice tea, bevanda al tè | varianti: limone, pesca, verde | formato: lattina 33cl, PET 1,5L, brick 200ml | marchi: Estathé, Lipton, S.Benedetto", sotto1: "Bevande analcoliche", sotto2: "Bibite", unit: "l" },
+  { nome: "Sciroppo", testo: "alias: sciroppo bar, mixyfruit | varianti: amarena, fragola, lampone, granatina, latte mandorle, zucchero, zucchero di canna, menta, arancia | formato: bottiglia 750ml, 1,25kg, 1,3kg | marchi: Fabbri, Toschi, Boero", sotto1: "Bevande analcoliche", sotto2: "Sciroppi", unit: "l" },
+  { nome: "Bevanda Soia", testo: "alias: latte di soia, bevanda avena, latte vegetale | varianti: soia, avena, mandorla, riso | formato: bottiglia 1L, brick 500ml | marchi: Alpro, Orasi", sotto1: "Bevande analcoliche", sotto2: "Bevande Vegetali", unit: "l" },
+  { nome: "Energy Drink", testo: "alias: energy drink, bevanda energetica | varianti: classica | formato: lattina 250ml, CT 24x250ml | marchi: Red Bull", sotto1: "Bevande analcoliche", sotto2: "Bibite", unit: "l" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // BEVANDE ALCOLICHE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["birra menabrea", "birra moretti", "birra peroni", "nastro azzurro", "birra heineken", "birra corona", "birra beck"], sotto1: "Bevande alcoliche", sotto2: "Birra" },
-  { keywords: ["birra artigianale", "birra ipa", "birra ale", "birra weiss", "birra lager", "birra radler", "birra doppio malto"], sotto1: "Bevande alcoliche", sotto2: "Birra" },
-  { keywords: ["birra analcolica", "birra senza alcol"], sotto1: "Bevande alcoliche", sotto2: "Birra" },
-  { keywords: ["aperol", "campari", "aperitivo veneziano", "cynar"], sotto1: "Bevande alcoliche", sotto2: "Aperitivi" },
-  { keywords: ["martini bianco", "martini rosso", "martini extra dry", "vermouth"], sotto1: "Bevande alcoliche", sotto2: "Vermouth" },
-  { keywords: ["prosecco sfuso", "vino sfuso"], sotto1: "Bevande alcoliche", sotto2: "Vino Sfuso" },
+  { nome: "Birra", testo: "varianti: lager, pilsner, IPA, weizen, rossa, senza glutine, artigianale | formato: bottiglia 33cl, 50cl, 66cl, lattina 33cl, CT 24x33cl | marchi: Moretti, Heineken, Beck's, Peroni, Ichnusa, Menabrea, Tennent's, Asahi, Sapporo, Ceres, Daura, Bitburger", sotto1: "Bevande alcoliche", sotto2: "Birra", unit: "l" },
+  { nome: "Vino da Cucina", testo: "alias: vino per cucinare, vino sfuso, Marsala, vino bianco cucina, vino rosso cucina | varianti: bianco, rosso, Marsala, brik | formato: brik, bottiglia, fusto | marchi: vari", sotto1: "Bevande alcoliche", sotto2: "Vino", unit: "l" },
+  { nome: "Porto", testo: "alias: vino di Porto, porto Ruby, porto White | varianti: Ruby, White, Tawny | formato: bottiglia 75cl | marchi: Sandeman", sotto1: "Bevande alcoliche", sotto2: "Vini Liquorosi", unit: "l" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // SUPERALCOLICI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["gin", "gin hendricks", "gin bombay", "gin tanqueray", "gin gordon", "gin beefeater", "gin malfy"], sotto1: "Superalcolici", sotto2: "Gin" },
-  { keywords: ["vodka", "vodka absolut", "vodka grey goose", "vodka smirnoff", "vodka ketel one"], sotto1: "Superalcolici", sotto2: "Vodka" },
-  { keywords: ["rum", "rum bacardi", "rum havana", "rum diplomatico", "rum appleton"], sotto1: "Superalcolici", sotto2: "Rum" },
-  { keywords: ["whisky", "whiskey", "scotch whisky", "bourbon", "jack daniels", "jameson", "johnnie walker", "glenfiddich"], sotto1: "Superalcolici", sotto2: "Whisky" },
-  { keywords: ["tequila", "tequila patron", "mezcal"], sotto1: "Superalcolici", sotto2: "Tequila" },
-  { keywords: ["brandy", "cognac", "hennessy", "remy martin", "calvados", "armagnac"], sotto1: "Superalcolici", sotto2: "Cognac" },
-  { keywords: ["grappa", "grappa di barolo", "grappa di moscato", "acquavite"], sotto1: "Superalcolici", sotto2: "Grappa" },
-  { keywords: ["limoncello", "limoncello di sorrento"], sotto1: "Superalcolici", sotto2: "Liquori" },
-  { keywords: ["sambuca", "amaretto disaronno", "disaronno", "baileys", "cointreau", "maraschino", "kahlua"], sotto1: "Superalcolici", sotto2: "Liquori" },
-  { keywords: ["amaro montenegro", "fernet branca", "averna", "ramazzotti", "jagermeister", "amaro del capo"], sotto1: "Superalcolici", sotto2: "Amari" },
-  { keywords: ["mirto", "nocino", "liquore alla noce"], sotto1: "Superalcolici", sotto2: "Liquori" },
+  { nome: "Rum", testo: "varianti: bianco, scuro, invecchiato | formato: bottiglia 70cl, 1L | marchi: vari", sotto1: "Superalcolici", sotto2: "Rum", unit: "l" },
+  { nome: "Grappa", testo: "varianti: giovane, invecchiata, aromatica | formato: bottiglia 70cl | marchi: vari", sotto1: "Superalcolici", sotto2: "Grappa", unit: "l" },
+  { nome: "Brandy", testo: "alias: cognac, Armagnac | formato: bottiglia 70cl | marchi: vari", sotto1: "Superalcolici", sotto2: "Brandy", unit: "l" },
+  { nome: "Amaro", testo: "alias: liquore amaro, aperitivo | varianti: classico, alle erbe | formato: bottiglia 70cl, 1L | marchi: vari", sotto1: "Superalcolici", sotto2: "Amaro", unit: "l" },
+  { nome: "Liquore", testo: "varianti: limoncello, arancello, fragolino, nocino, sambuca, amaretto | formato: bottiglia 70cl, 1L | marchi: vari", sotto1: "Superalcolici", sotto2: "Liquore", unit: "l" },
+  { nome: "Alcool", testo: "alias: alcool puro, alcool alimentare, alcool etilico | formato: bottiglia, fusto | uso: pasticceria, conserve, fiamme", sotto1: "Superalcolici", sotto2: "Alcool", unit: "l" },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // DETERSIVI
+  // DETERSIVI E PRODOTTI PULIZIA
   // ══════════════════════════════════════════════════════════════════════════
 
-  { keywords: ["detersivo lavastoviglie", "detergente lavastoviglie", "piatti concentrato", "detersivo piatti"], sotto1: "Detersivi", sotto2: "Lavastoviglie" },
-  { keywords: ["brillantante lavastoviglie", "brillantante"], sotto1: "Detersivi", sotto2: "Lavastoviglie" },
-  { keywords: ["sale per lavastoviglie", "sale rigenerante"], sotto1: "Detersivi", sotto2: "Lavastoviglie" },
-  { keywords: ["tabs lavastoviglie", "pastiglie lavastoviglie", "capsule lavastoviglie"], sotto1: "Detersivi", sotto2: "Lavastoviglie" },
-  { keywords: ["sgrassatore", "sgrassatore professionale", "sgrassatore cucina", "multiuso prof"], sotto1: "Detersivi", sotto2: "Pulizia" },
-  { keywords: ["detergente multiuso", "spray multiuso", "detergente superfici", "detergente cucina"], sotto1: "Detersivi", sotto2: "Pulizia" },
-  { keywords: ["detersivo pavimenti", "detergente pavimenti", "piastrelle e pavimenti"], sotto1: "Detersivi", sotto2: "Pulizia" },
-  { keywords: ["wc gel", "gel wc", "disincrostante wc", "disincrostante"], sotto1: "Detersivi", sotto2: "Bagno" },
-  { keywords: ["candeggina", "varechina", "ipoclorito di sodio"], sotto1: "Detersivi", sotto2: "Igiene" },
-  { keywords: ["disinfettante", "igienizzante", "alcool denaturato"], sotto1: "Detersivi", sotto2: "Igiene" },
-  { keywords: ["sapone mani", "detergente mani", "sapone liquido", "gel mani"], sotto1: "Detersivi", sotto2: "Igiene" },
-  { keywords: ["carta igienica", "rotoli carta"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["bobina", "carta cucina", "rotolo cucina", "bobina everyday"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["tovaglioli carta", "tovaglioli di carta"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["rotolo alluminio", "carta stagnola", "pellicola trasparente", "carta forno"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["sacchi neri", "sacchi spazzatura", "sacchi immondizia", "sacchi 90l", "sacchi 70l"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["guanti nitrile", "guanti nitrile neri", "guanti nitrile monouso"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["guanti lattice", "guanti vinile", "guanti monouso"], sotto1: "Detersivi", sotto2: "Consumabili" },
-  { keywords: ["spugna abrasiva", "scotch brite", "paglietta acciaio"], sotto1: "Detersivi", sotto2: "Pulizia" },
-  { keywords: ["strofinaccio", "panno microfibra", "panni multiuso"], sotto1: "Detersivi", sotto2: "Pulizia" },
-  { keywords: ["buste sottovuoto", "sacchi sottovuoto", "contenitori gn", "vaschette alluminio"], sotto1: "Detersivi", sotto2: "Consumabili" },
+  { nome: "Detersivo Piatti", testo: "alias: detergente stoviglie, lavastoviglie, sgrassatore cucina | varianti: manuale, lavastoviglie, sgrassatore | formato: flacone, tanica, secchio | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "l" },
+  { nome: "Candeggina", testo: "alias: ipoclorito di sodio, varechina | formato: bottiglia, tanica | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
+  { nome: "Sapone Mani", testo: "alias: sapone liquido mani, igienizzante | formato: flacone, dispenser | marchi: vari", sotto1: "Detersivi", sotto2: "Igiene Personale", unit: "l" },
+  { nome: "Carta Igienica", testo: "alias: carta igienica professionale, rotoli | formato: confezione 4, 8, 12 rotoli, mini jumbo | marchi: vari", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
+  { nome: "Tovaglioli", testo: "alias: tovaglioli carta, tovaglioli tessuto | varianti: 33x33, 40x40, 2 veli, 3 veli | formato: confezione, pacco | marchi: vari", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
+  { nome: "Pellicola", testo: "alias: pellicola trasparente, film alimentare, carta stagnola, carta forno | varianti: PVC, PE, alluminio, carta forno | formato: rotolo | marchi: vari", sotto1: "Detersivi", sotto2: "Imballaggi", unit: "pz" },
 ]
