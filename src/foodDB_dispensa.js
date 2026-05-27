@@ -122,10 +122,44 @@ export const DISPENSA_DB = [
   // DETERSIVI E PRODOTTI PULIZIA
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Detersivo Piatti", testo: "alias: detergente stoviglie, lavastoviglie, sgrassatore cucina | varianti: manuale, lavastoviglie, sgrassatore | formato: flacone, tanica, secchio | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "l" },
-  { nome: "Candeggina", testo: "alias: ipoclorito di sodio, varechina | formato: bottiglia, tanica | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
-  { nome: "Sapone Mani", testo: "alias: sapone liquido mani, igienizzante | formato: flacone, dispenser | marchi: vari", sotto1: "Detersivi", sotto2: "Igiene Personale", unit: "l" },
-  { nome: "Carta Igienica", testo: "alias: carta igienica professionale, rotoli | formato: confezione 4, 8, 12 rotoli, mini jumbo | marchi: vari", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
-  { nome: "Tovaglioli", testo: "alias: tovaglioli carta, tovaglioli tessuto | varianti: 33x33, 40x40, 2 veli, 3 veli | formato: confezione, pacco | marchi: vari", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
-  { nome: "Pellicola", testo: "alias: pellicola trasparente, film alimentare, carta stagnola, carta forno | varianti: PVC, PE, alluminio, carta forno | formato: rotolo | marchi: vari", sotto1: "Detersivi", sotto2: "Imballaggi", unit: "pz" },
+  // ── PRODOTTI PULIZIA CUCINA ──────────────────────────────────────────────────
+  { nome: "Detersivo Lavastoviglie", testo: "alias: lavastoviglie liquido, deterg.lavast, gel lavastoviglie, deterg.clorato lavast | formato: tanica 6kg, 12kg, flacone | marchi: MARR, CIF, vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "kg" },
+  { nome: "Disincrostante", testo: "alias: disincrostante lavastoviglie, detart, anticalcare lavastoviglie, jonmatic anticalc | formato: tanica 5L, 6kg | marchi: MARR, Jonmatic", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "l" },
+  { nome: "Brillantante", testo: "alias: brillantante lavastoviglie, sgocciolatante | formato: tanica 5kg | marchi: MARR", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "kg" },
+  { nome: "Sgrassatore", testo: "alias: sgrassatore cucina, sgrassatore marsiglia, sgrass cleaner, deterg.mult.cucina, pulitutto igieniz, detergente multiuso cucina, CIF sgrassatore | formato: flacone 750ml, tanica 5L | marchi: CIF, SAI, MARR, G8", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "l" },
+  { nome: "Detersivo Pavimenti", testo: "alias: deterg.pavim, nettapavimenti, floor surface, Xense | formato: tanica 5L, flacone | marchi: MARR, Xense, vari", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
+  { nome: "Detergente Idroalcolico", testo: "alias: det.idroalcol, alcol igienizzante, igienizzante superfici, ALO33 | formato: flacone 750ml, tanica | marchi: MARR, vari", sotto1: "Detersivi", sotto2: "Igiene Ambienti", unit: "l" },
+  { nome: "Candeggina", testo: "alias: candeggiante cloro, candeggina profumata, ipoclorito di sodio, varechina, CIF gel candeggina | formato: bottiglia 2L, 2,5L, 5kg | marchi: MARR, SAI, CIF, Scala", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
+  { nome: "Ammorbidente", testo: "alias: ammorbidente bucato | formato: tanica 4kg | marchi: MARR", sotto1: "Detersivi", sotto2: "Bucato", unit: "kg" },
+  { nome: "Anticalcare", testo: "alias: anticalcare bagno, CIF anticalcare, rimozione calcare | formato: flacone 1L | marchi: CIF", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
+
+  // ── IGIENE PERSONALE ──────────────────────────────────────────────────────
+  { nome: "Sapone Mani", testo: "alias: sapone liquido mani, gel igienizzante mani, saponette hotel | varianti: liquido, gel, solido | formato: flacone 1L, 5L, 500ml, saponetta | marchi: MARR, Milmil, Daily, Flowpack", sotto1: "Detersivi", sotto2: "Igiene Personale", unit: "l" },
+  { nome: "Guanti", testo: "alias: guanti lattice, guanti nitrile, guanti vinile | varianti: lattice, nitrile neri, vinile, monouso | taglie: S, M, L, XL | formato: scatola 10pz, 100pz | marchi: Contract, Reflex, Solo", sotto1: "Detersivi", sotto2: "Igiene Personale", unit: "pz" },
+
+  // ── SPUGNE E STRACCI ─────────────────────────────────────────────────────
+  { nome: "Spugna", testo: "alias: spugna abrasiva, spugna acciaio, spugna cucina, pannospugna | varianti: abrasiva, acciaio, accoppiata | formato: pz, confezione 10pz, 25pz | marchi: Vileda, Arix, Astree, Spongyl", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "pz" },
+  { nome: "Strofinaccio", testo: "alias: strofinaccio asciugapiatti, strofinaccio scozia, canovaccio | formato: pz, confezione 10pz, 50x70cm, 45x60cm | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "pz" },
+
+  // ── CARTA E IMBALLAGGI ───────────────────────────────────────────────────
+  { nome: "Carta Igienica", testo: "alias: carta ig, rotoli carta igienica, carta interfoliata, jumbo, mini jumbo, carta igienica everyday | varianti: 2 veli, 3 veli, jumbo 300m, mini 150m, intercalata | formato: rotolo, confezione 4pz, 8pz, 10pz, pacco 24pz | marchi: Everyday, Bliss", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
+  { nome: "Tovaglia", testo: "alias: tovaglietta carta, tovagliolo carta, tovaglia rotolo | varianti: 100x100, 30x40, 35x50 | formato: rotolo 50m, confezione 100pz, 250pz | marchi: vari | bianca", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
+  { nome: "Pellicola", testo: "alias: pellicola trasparente, pellicola PVC, film alimentare, pellicola microonde | varianti: PVC, microonde, trasparente | formato: rotolo 300m, 450mm H | marchi: vari | AST", sotto1: "Detersivi", sotto2: "Imballaggi", unit: "pz" },
+  { nome: "Sacchi Immondizia", testo: "alias: sacchi neri, sacchi biodegradabili, sacchi azzurri, sacchi gialli, sacchi neutri | varianti: neri, biodegradabili, colorati | formato: rotolo 10pz, 20pz, 30pz | dimensioni: 45x55, 55x70, 70x110, 75x110, 90x120, 92x105 | marchi: vari", sotto1: "Detersivi", sotto2: "Imballaggi", unit: "pz" },
+  { nome: "Carta Forno", testo: "alias: carta da forno, carta antiaderente, cartaforno | formato: rotolo, fogli | marchi: vari", sotto1: "Detersivi", sotto2: "Imballaggi", unit: "pz" },
+  { nome: "Carta Alluminio", testo: "alias: carta stagnola, foglio alluminio, alluminio alimentare | formato: rotolo | marchi: vari", sotto1: "Detersivi", sotto2: "Imballaggi", unit: "pz" },
+
+  // ── PULIZIA PROFESSIONALE ─────────────────────────────────────────────────
+  { nome: "Deodorante Ambiente", testo: "alias: deodorante, deodoforante, profumatore ambiente, air freshener, deofor, deodorante wc, deodorante cucina, deodorante pavimenti | varianti: spray, liquido, solido, WC, cucina, ambienti | formato: flacone, barattolo | marchi: vari", sotto1: "Detersivi", sotto2: "Igiene Ambienti", unit: "pz" },
+  { nome: "Detergente WC", testo: "alias: detergente bagno, gel wc, anticalcare wc, ducale wc, net wc | varianti: gel, liquido, tavoletta | formato: flacone, flacone curvo | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
+  { nome: "Detergente Inox", testo: "alias: lucido inox, lucidante acciaio inox, pulitore inox, nettainox | formato: flacone, spray | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "l" },
+  { nome: "Caustica", testo: "alias: soda caustica, detergente caustificante, decapante forni, pulisci forno caustico, detergente alcalino forno, Rational | varianti: gel, liquida, in pastiglie | formato: tanica, flacone, pastiglie | marchi: Rational, vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "kg" },
+  { nome: "Detergente Forno", testo: "alias: pulisci forno, detergente forni, desgrassante forno, rational tabs, rational liquido | varianti: spray, liquido, pastiglie, tab | formato: flacone, confezione pastiglie | marchi: Rational, vari", sotto1: "Detersivi", sotto2: "Pulizia Cucina", unit: "pz" },
+  { nome: "Lucido Superfici", testo: "alias: lucido multiuso, lucidante superfici, cera pavimenti | formato: flacone, tanica | marchi: vari", sotto1: "Detersivi", sotto2: "Pulizia Ambienti", unit: "l" },
+
+  // ── ATTREZZATURE PULIZIA ─────────────────────────────────────────────────
+  { nome: "Secchio", testo: "alias: secchio pulizie, secchio con strizzatore, secchio plastica | varianti: con strizzatore, senza, doppio | formato: 10L, 15L, 25L | marchi: vari", sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
+  { nome: "Mocio", testo: "alias: mop, mocio lavapavimenti, frange mocio, ricambio mocio | varianti: cotone, microfibra, ricambio | formato: pz | marchi: Vileda, vari", sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
+  { nome: "Scopa", testo: "alias: scopa, spazzolone, granata, spazzolone pavimenti | varianti: classica, con manico, raccoglipolvere | formato: pz | marchi: vari", sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
+  { nome: "Carta Asciugamani", testo: "alias: carta mani, asciugamani carta, carta interfogliata, carta rotolo, carta bobina | varianti: Z-fold, interfogliata, rotolo, bobina | formato: confezione, pacco | marchi: Everyday, vari", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
 ]
