@@ -1977,10 +1977,10 @@ PRODOTTI:
       const wineByName = isLikelyWine(p.nome)
       const skipFood = wineByName || aiCat === "Vini" || learnedMatch?.cat === "Vini"
       const dbMatch = !learnedMatch && !skipFood ? lookupFood(p.nome) : null
-      // PRIORITÀ: learned > vino > AI > DB locale (AI capisce il contesto meglio del DB su prodotti trasformati)
-      const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || aiCat || (dbMatch ? dbMatch.cat : null)
-      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || p.sotto1 || (dbMatch ? dbMatch.sotto1 : "") || ""
-      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || p.sotto2 || (dbMatch ? dbMatch.sotto2 : "") || ""
+      // PRIORITÀ: learned > vino > DB locale > AI (DB più affidabile per categorizzazione)
+      const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
+      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
+      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
       const dbUnit = (learnedMatch ? learnedMatch.unit : null) || (dbMatch ? dbMatch.unit : null)
       const nameLower = normNameForMatch(p.nome)
       const existing = ings.find(i => {
