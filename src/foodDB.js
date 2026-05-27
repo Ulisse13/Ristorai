@@ -1,16 +1,14 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // foodDB.js — Database unificato prodotti per Ristorai
-// Importa tutti i database e esporta lookupFood(nome)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { CARNI_DB }        from "./foodDB_carni"
-import { PESCE_DB }        from "./foodDB_pesce"
+import { CARNI_DB }         from "./foodDB_carni"
+import { PESCE_DB }         from "./foodDB_pesce"
 import { FRUTTAVERDURA_DB } from "./foodDB_fruttaverdura"
-import { FRESCHI_DB }      from "./foodDB_freschi"
-import { SURGELATI_DB }    from "./foodDB_surgelati"
-import { DISPENSA_DB }     from "./foodDB_dispensa"
+import { FRESCHI_DB }       from "./foodDB_freschi"
+import { SURGELATI_DB }     from "./foodDB_surgelati"
+import { DISPENSA_DB }      from "./foodDB_dispensa"
 
-// ── Mappa categoria → DB ────────────────────────────────────────────────────
 const ALL_DB = [
   { cat: "Carni",            db: CARNI_DB },
   { cat: "Pesce",            db: PESCE_DB },
@@ -20,42 +18,46 @@ const ALL_DB = [
   { cat: "Dispensa",         db: DISPENSA_DB },
 ]
 
-// ── Risolvi unità base per ogni prodotto ────────────────────────────────────
-// Regole in ordine di priorità: keywords > sotto1 > cat
+// ── Rileva unità base dal prodotto ───────────────────────────────────────────
 function resolveUnit(cat, sotto1, sotto2, keywords) {
   const kws = (keywords || []).join(" ").toLowerCase()
 
-  // Uova intere → pz | ovoprodotti (tuorlo, albume, misto) → kg
+  // ── FRESCHI ─────────────────────────────────────────────────────────────
   if (sotto2 === "Uova" || kws.match(/\buova\b|\buovo\b/)) return "pz"
   if (sotto2 === "Ovoprodotti" || kws.match(/tuorlo|albume|misto.?uovo|ovoprodotto|uova pastorizzate/)) return "kg"
-
-  // Latte e bevande liquide → l
   if (/\blatte\b/.test(kws) && !kws.includes("cioccolato al latte")) return "l"
-  if (/panna/.test(kws)) return "l"
-  if (/kefir/.test(kws)) return "l"
-
-  // Dispensa: liquidi → l
-  if (cat === "Dispensa") {
-    if (sotto1 === "Bevande analcoliche" || sotto1 === "Bevande alcoliche" || sotto1 === "Superalcolici") return "l"
-    if (sotto2 === "Olio" || sotto2 === "Aceto") return "l"
-    if (/\bolio\b|aceto|salsa di soia|worcest|tabasco|sriracha|ketchup|worcest/.test(kws)) return "l"
-    if (/\bacqua\b|birra|vino|liquore|grappa|amaro|rum|gin |vodka|whisky|whiskey/.test(kws)) return "l"
-    // Detersivi liquidi → l
-    if (sotto1 === "Detersivi" && /liquid|gel|detergente|ammorbident|candegg|sgrassat/.test(kws)) return "l"
-    return "kg"
-  }
-
-  // Freschi: latticini liquidi
+  if (/\bpanna\b/.test(kws)) return "l"
+  if (/\bkefir\b/.test(kws)) return "l"
   if (cat === "Freschi" && sotto1 === "Latticini") {
     if (/\blatte\b|panna|kefir/.test(kws)) return "l"
     return "kg"
   }
 
-  // Tutto il resto → kg
+  // ── DISPENSA ─────────────────────────────────────────────────────────────
+  if (cat === "Dispensa") {
+
+    // Bevande → l
+    if (sotto1 === "Bevande analcoliche" || sotto1 === "Bevande alcoliche" || sotto1 === "Superalcolici") return "l"
+    if (/\bacqua\b|birra|\bvino\b|liquore|grappa|amaro|\brum\b|\bgin\b|\bvodka\b|whisky|whiskey|cognac|brandy|sciroppo|succo|the\b|tè\b/.test(kws)) return "l"
+
+    // Condimenti liquidi → l
+    if (/\bolio\b|aceto|salsa di soia|worcest|tabasco|sriracha|ketchup|maionese|mirin|ponzu|tahini/.test(kws)) return "l"
+
+    // Detersivi liquidi → l
+    if (sotto1 === "Detersivi" && /liquid|gel|detergente|ammorbident|candegg|sgrassat/.test(kws)) return "l"
+
+    // Packaging liquido → l
+    // PET, BOTT(iglia) → probabile liquido
+    if (/\bpet\b|\bbott\b/.test(kws)) return "l"
+
+    // Tutto il resto Dispensa → kg
+    return "kg"
+  }
+
   return "kg"
 }
 
-// ── Indice: keyword → { cat, sotto1, sotto2, unit } ─────────────────────────
+// ── Indice keyword → { cat, sotto1, sotto2, unit } ──────────────────────────
 const INDEX = {}
 
 for (const { cat, db } of ALL_DB) {
@@ -64,12 +66,7 @@ for (const { cat, db } of ALL_DB) {
     for (const kw of entry.keywords) {
       const key = kw.toLowerCase().trim()
       if (key && key.length >= 2 && !INDEX[key]) {
-        INDEX[key] = {
-          cat,
-          sotto1: entry.sotto1 || "",
-          sotto2: entry.sotto2 || "",
-          unit
-        }
+        INDEX[key] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit }
       }
     }
   }
@@ -79,34 +76,147 @@ for (const { cat, db } of ALL_DB) {
 function norm(s) {
   return s.toLowerCase()
     .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/[^a-z0-9\s/]/g, " ")
     .replace(/\s+/g, " ").trim()
 }
 
-/**
- * Cerca un prodotto nel database.
- * @param {string} nome - Nome del prodotto dalla fattura
- * @returns {{ cat, sotto1, sotto2, unit } | null}
- */
-export function lookupFood(nome) {
-  if (!nome || nome.length < 2) return null
+// ── Rileva surgelato/congelato ovunque nel nome ──────────────────────────────
+// Parole complete + S/C isolate alla fine (convenzione MARR/Selecta)
+// F isolata alla fine = fresco → NON surgelato
+function isSurgelato(n) {
+  // Parole complete ovunque nel nome
+  if (/\b(iqf|gelo|frozen|ultra.?frozen|superfrozen|surgelato|surgelata|surgelati|surgelate|congelato|congelata|congelati|congelate|abbattuto|abbattuta|glass|glassato|glassata)\b/.test(n)) return true
+  // IQF può essere attaccato a numeri/unità (es. 6kgIQF)
+  if (/(iqf|gelo|frozen|superfrozen|surgelat|congelat|abbattut|glassato|glassata)/.test(n)) return true
+  // S o C isolate come ultima parola (convenzione MARR/Selecta)
+  if (/\b[sc]$/.test(n.trim())) return true
+  // -18 indica conservazione a temperatura di surgelazione
+  if (/-18/.test(n)) return true
+  return false
+}
 
-  const n = norm(nome)
+// ── Rileva stato prodotto dal nome ───────────────────────────────────────────
+// Usato per arricchire il risultato con info di stato
+function detectStato(n) {
+  const stato = {}
 
-  // 1. Match esatto
+  // Temperatura
+  if (/\bf\b/.test(n) || /\bfresco\b|\bfresca\b|\bfreschi\b|\bfresche\b/.test(n)) stato.temp = "fresco"
+  else if (isSurgelato(n)) stato.temp = "surgelato"
+
+  // Pulizia pesce
+  if (/\bpul\b|\bpulito\b|\bpulita\b|\bpuliti\b|\bpulite\b|\bmondato\b|\bsgusciato\b|\bdecorticato\b/.test(n)) stato.pulizia = "pulito"
+  else if (/\bsporco\b|\bsporca\b|\bsporchi\b|\bsporche\b/.test(n)) stato.pulizia = "sporco"
+  else if (/\bintero\b|\bintera\b|\binteri\b|\bintere\b/.test(n)) stato.pulizia = "intero"
+
+  // Taglio pesce
+  if (/\bfilett[oi]\b/.test(n)) stato.taglio = "filetto"
+  else if (/\bfiloni?\b/.test(n)) stato.taglio = "filone"
+  else if (/\btranci[oa]\b/.test(n)) stato.taglio = "trancio"
+  else if (/\bcode?\b/.test(n)) stato.taglio = "code"
+  else if (/\btubi\b/.test(n)) stato.taglio = "tubi"
+  else if (/\banelli\b/.test(n)) stato.taglio = "anelli"
+
+  // Osso carni
+  if (/\bc\/o\b|con osso/.test(n)) stato.osso = "con osso"
+  else if (/\bs\/o\b|senza osso|disossato/.test(n)) stato.osso = "senza osso"
+
+  // Packaging
+  if (/\batm\b/.test(n)) stato.pack = "ATM"
+  else if (/\bs\/v\b|sottovuoto/.test(n)) stato.pack = "S/V"
+  else if (/\bconf\b/.test(n)) stato.pack = "CONF"
+  else if (/\blatta\b/.test(n)) stato.pack = "LATTA"
+  else if (/\bbarattolo\b/.test(n)) stato.pack = "BARATTOLO"
+  else if (/\bvaso\b|\bvasetto\b/.test(n)) stato.pack = "VASO"
+  else if (/\bpet\b/.test(n)) stato.pack = "PET"
+  else if (/\bbott\b|\bbottigli/.test(n)) stato.pack = "BOTTIGLIA"
+
+  // Lavorazione
+  if (/\bnat\b|\bnaturale\b/.test(n)) stato.lavorazione = "naturale"
+  else if (/\bpronto\b|\bpronta\b|\bpronti\b|\bpronte\b/.test(n)) stato.lavorazione = "pronto"
+  else if (/\bprecotto\b|\bprecotta\b|\bprecotti\b|\bprecotte\b/.test(n)) stato.lavorazione = "precotto"
+  else if (/\bcotto\b|\bcotta\b/.test(n)) stato.lavorazione = "cotto"
+  else if (/\baffumicat/.test(n)) stato.lavorazione = "affumicato"
+  else if (/\bmarinato\b|\bmarinata\b/.test(n)) stato.lavorazione = "marinato"
+
+  // ── FRESCHI ────────────────────────────────────────────────────────────────
+
+  // Formaggi — formato
+  if (/forma intera/.test(n)) stato.formato = "forma intera"
+  else if (/mezza forma/.test(n)) stato.formato = "mezza forma"
+  else if (/\bspicchio\b/.test(n)) stato.formato = "spicchio"
+  else if (/grattugiato|grattuggiato/.test(n)) stato.formato = "grattugiato"
+  else if (/a fette/.test(n)) stato.formato = "a fette"
+  else if (/\bcubetti\b/.test(n)) stato.formato = "cubetti"
+
+  // Formaggi — stagionatura
+  const mesiMatch = n.match(/\b(\d+)\s*mesi\b/)
+  if (mesiMatch) stato.stagionatura = mesiMatch[1] + " mesi"
+  else if (/stravecchio/.test(n)) stato.stagionatura = "stravecchio"
+  else if (/stagionato|stagionata/.test(n)) stato.stagionatura = "stagionato"
+  else if (/semistagionato/.test(n)) stato.stagionatura = "semistagionato"
+
+  // Certificazioni
+  if (/\bdop\b/.test(n)) stato.cert = "DOP"
+  else if (/\bigp\b/.test(n)) stato.cert = "IGP"
+  if (/\bbio\b/.test(n)) stato.bio = true
+
+  // Latticini — tipo
+  if (/\buht\b/.test(n)) stato.tipo = "UHT"
+  else if (/da cucina/.test(n)) stato.tipo = "da cucina"
+  else if (/da montare/.test(n)) stato.tipo = "da montare"
+  else if (/\bacida\b/.test(n)) stato.tipo = "acida"
+  else if (/chiarificat/.test(n)) stato.tipo = "chiarificato"
+  else if (/demi.?sel/.test(n)) stato.tipo = "demi-sel"
+  else if (/\bscremato\b/.test(n)) stato.tipo = "scremato"
+
+  // ── SURGELATI — tipo prodotto ───────────────────────────────────────────────
+  if (stato.temp === "surgelato" || /\bgelato\b|\bsorbetto\b|\bsemifreddo\b|\bgranita\b/.test(n)) {
+    // Dolci — anche senza indicatori gelo nel nome
+    if (/\bgelato\b|\bsorbetto\b|\bsemifreddo\b|\bgranita\b/.test(n)) stato.tipo_surg = "dolce"
+    // Impanati — include abbreviazioni tipo crocc
+    else if (/\bimpanato\b|\bpanato\b|\bcrocc\b|\bcroccante\b|\bin pastella\b|\btempura\b/.test(n)) stato.tipo_surg = "impanato"
+    // Preparati
+    else if (/\blasagne\b|\bcannelloni\b|\barancin[oi]\b|\bcrocchett/.test(n)) stato.tipo_surg = "preparato"
+    else if (/\bpizza\b|\bbastoncini\b|\bbauletti\b/.test(n)) stato.tipo_surg = "preparato"
+    // Blocco
+    else if (/\bblocco\b/.test(n)) stato.tipo_surg = "blocco"
+    // Mix verdure
+    else if (/mix verdure|misto verdure/.test(n)) stato.tipo_surg = "mix verdure"
+    // -18
+    if (/-18/.test(n)) stato.conservazione = "-18"
+  }
+
+  // ── FRUTTA E VERDURA ───────────────────────────────────────────────────────
+  if (/\bserra\b/.test(n)) stato.coltivazione = "serra"
+  if (/\bnovell[oa]\b/.test(n)) stato.tipo = "novella"
+
+  // ── SALUMI ─────────────────────────────────────────────────────────────────
+  if (/\bcrudo\b|\bcruda\b/.test(n)) stato.salume = "crudo"
+  else if (/\bcotto\b|\bcotta\b/.test(n)) stato.salume = "cotto"
+
+  // Salumi — formato
+  if (/\baffettato\b|a fette/.test(n)) stato.taglio_salume = "affettato"
+  else if (/\bmet[aà]\b/.test(n)) stato.taglio_salume = "metà"
+
+  // Uova — allevamento e calibro
+  if (/a terra/.test(n)) stato.allevamento = "a terra"
+  else if (/free range/.test(n)) stato.allevamento = "free range"
+  const calibroUova = n.match(/\b(xl|xtra large|large|\bl\b|medium|\bm\b|small|\bs\b)\b/)
+  if (calibroUova && /uov/.test(n)) stato.calibro = calibroUova[1].toUpperCase()
+
+  return stato
+}
+
+// ── Lookup base ──────────────────────────────────────────────────────────────
+function lookupFoodBase(n) {
   if (INDEX[n]) return INDEX[n]
-
-  // 2. Match per keyword contenuta nel nome (dal più lungo al più corto)
   const keys = Object.keys(INDEX).sort((a, b) => b.length - a.length)
   for (const kw of keys) {
     if (n.includes(kw) && kw.length >= 4) return INDEX[kw]
   }
-
-  // 3. Match parziale — ogni parola del nome cerca nel dizionario
   const words = n.split(" ").filter(w => w.length >= 4)
-  let best = null
-  let bestScore = 0
-
+  let best = null, bestScore = 0
   for (const [kw, data] of Object.entries(INDEX)) {
     let score = 0
     for (const word of words) {
@@ -115,9 +225,31 @@ export function lookupFood(nome) {
     }
     if (score > bestScore) { bestScore = score; best = data }
   }
+  return bestScore >= 5 ? best : null
+}
 
-  if (bestScore >= 5) return best
-  return null
+// ── Lookup principale ────────────────────────────────────────────────────────
+export function lookupFood(nome) {
+  if (!nome || nome.length < 2) return null
+
+  const n = norm(nome)
+  const stato = detectStato(n)
+
+  // Surgelato → cerca prima nel DB surgelati, poi forza categoria
+  if (stato.temp === "surgelato") {
+    const surgelatiKeys = Object.keys(INDEX)
+      .filter(k => INDEX[k].cat === "Surgelati")
+      .sort((a, b) => b.length - a.length)
+    for (const kw of surgelatiKeys) {
+      if (n.includes(kw) && kw.length >= 4) return { ...INDEX[kw], stato }
+    }
+    const baseMatch = lookupFoodBase(n)
+    if (baseMatch) return { ...baseMatch, cat: "Surgelati", stato }
+  }
+
+  const result = lookupFoodBase(n)
+  if (!result) return null
+  return { ...result, stato }
 }
 
 export function getSotto1ByCat(cat) {
@@ -130,8 +262,6 @@ export function getSotto1ByCat(cat) {
 export function getSotto2ByCat(cat, sotto1) {
   const { db } = ALL_DB.find(d => d.cat === cat) || {}
   if (!db) return []
-  const set = new Set(
-    db.filter(e => e.sotto1 === sotto1).map(e => e.sotto2).filter(Boolean)
-  )
+  const set = new Set(db.filter(e => e.sotto1 === sotto1).map(e => e.sotto2).filter(Boolean))
   return [...set]
 }
