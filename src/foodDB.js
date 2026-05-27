@@ -103,6 +103,9 @@ function isSurgelato(n) {
   if (/(iqf|gelo|frozen|superfrozen|surgelat|congelat|abbattut|glassato|glassata)/.test(n)) return true
   // S o C isolate come ultima parola (convenzione MARR/Selecta)
   if (/\b[sc]$/.test(n.trim())) return true
+  // S o C attaccati a unità di misura (es. 2,5kgS, 3pzC, 5kgS)
+  // Escludi cls (centilitri), mls (millilitri), pcs (pezzi) che finiscono con s legittimamente
+  if (/\d(kg|g|pz|lt|l)[sc]$/.test(n.trim())) return true
   // -18 indica conservazione a temperatura di surgelazione
   if (/-18/.test(n)) return true
   return false
@@ -230,12 +233,22 @@ for (const { cat, db } of ALL_DB) {
     const unit = entry.keywords
       ? resolveUnit(cat, entry.sotto1, entry.sotto2, entry.keywords)
       : resolveUnit(cat, entry.sotto1, entry.sotto2, [entry.nome || "", entry.testo || ""])
-    // Estrai parole chiave dal testo (alias, abbreviazioni, marchi)
-    const testoNorm = norm(entry.testo)
-    const testoWords = testoNorm.split(/[\s|,]+/).filter(w => w.length >= 3)
-    for (const tw of testoWords) {
-      if (!TEXT_INDEX[tw]) {
-        TEXT_INDEX[tw] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, nomeBase: entry.nome || "" }
+    // Estrai SOLO le parole dagli alias espliciti (dopo "alias:")
+    // NON indicizzare tutto il testo per evitare falsi positivi
+    const aliasMatch = (entry.testo || "").match(/alias:\s*([^|]+)/i)
+    if (aliasMatch) {
+      const aliasText = norm(aliasMatch[1])
+      // Prendi solo frasi alias complete (non singole parole generiche)
+      const aliases = aliasText.split(",").map(a => a.trim()).filter(a => a.length >= 5)
+      for (const alias of aliases) {
+        if (!TEXT_INDEX[alias]) {
+          TEXT_INDEX[alias] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, nomeBase: entry.nome || "" }
+        }
+        // Aggiungi anche prima parola dell'alias se >= 6 caratteri
+        const firstWord = alias.split(" ")[0]
+        if (firstWord.length >= 6 && !TEXT_INDEX[firstWord]) {
+          TEXT_INDEX[firstWord] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, nomeBase: entry.nome || "" }
+        }
       }
     }
   }

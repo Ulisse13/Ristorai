@@ -85,6 +85,9 @@ export const FRESCHI_DB = [
   // ══════════════════════════════════════════════════════════════════════════
 
   { nome: "Uova", testo: "alias: uova fresche, uova di gallina, uova Cat A, uova biologiche, uova allevate a terra | calibri: S, M, L, XL | formato: cartone 6, 10, 12, 30 pz | BIO, free range, allevate a terra, allevamento intensivo", sotto1: "Altri Freschi", sotto2: "Uova", unit: "pz" },
+  { nome: "Misto Uovo", testo: "alias: pasta d'uovo, misto d'uovo, pasta uovo gialla, pasta uovo AIA, uovo intero pastorizzato, uovo liquido, ovoprodotto misto | marchi: AIA, Eurovo, Sanovo | formato: busta 1kg, 5kg, 10kg, sacchetto | surgelato, refrigerato", sotto1: "Altri Freschi", sotto2: "Ovoprodotti", unit: "kg" },
+  { nome: "Tuorlo Pastorizzato", testo: "alias: pasta tuorlo, tuorlo liquido, pasta gialla, egg yolk | marchi: AIA, Eurovo | formato: busta 1kg, 5kg", sotto1: "Altri Freschi", sotto2: "Ovoprodotti", unit: "kg" },
+  { nome: "Albume Pastorizzato", testo: "alias: pasta albume, albume liquido, bianco d'uovo pastorizzato, egg white | marchi: AIA, Eurovo | formato: busta 1kg, 5kg", sotto1: "Altri Freschi", sotto2: "Ovoprodotti", unit: "kg" },
   { nome: "Lievito di Birra", testo: "alias: lievito fresco, lievito di birra fresco | formato: panetto 25g, 500g, 1kg | S/V", sotto1: "Altri Freschi", sotto2: "Lievito di Birra", unit: "kg" },
   { nome: "Pasta Fresca", testo: "alias: tagliatelle fresche, pappardelle, fettuccine, tagliolini, lasagne, sfoglia fresca | all'uovo, di semola | formato: vaschetta, busta, sfusa | S/V, ATM", sotto1: "Altri Freschi", sotto2: "Pasta Fresca", unit: "kg" },
   { nome: "Gnocchi Freschi", testo: "alias: gnocchi di patate freschi | varianti: classici, al farro | formato: vaschetta, busta | S/V, ATM", sotto1: "Altri Freschi", sotto2: "Gnocchi Freschi", unit: "kg" },
