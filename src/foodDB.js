@@ -259,13 +259,29 @@ function lookupFoodBase(n) {
   // 1. Match esatto su nome
   if (INDEX[n]) return INDEX[n]
 
-  // 2. Match nome contenuto nel prodotto (dal più lungo al più corto)
-  const keys = Object.keys(INDEX).sort((a, b) => b.length - a.length)
-  for (const kw of keys) {
-    if (n.includes(kw) && kw.length >= 4) return INDEX[kw]
+  // 2. INDEX e TEXT_INDEX cercano insieme — vince il match più lungo
+  // Questo evita che parole corte (es. "pasta", "limone", "tartufo") in INDEX
+  // battano frasi più specifiche in TEXT_INDEX (es. "pasta gialla", "lipton ice tea limone")
+  let bestMatch = null
+  let bestLen = 0
+
+  for (const [kw, data] of Object.entries(INDEX)) {
+    if (kw.length >= 4 && n.includes(kw) && kw.length > bestLen) {
+      bestMatch = data
+      bestLen = kw.length
+    }
   }
 
-  // 3. Match parziale su nome
+  for (const [tw, data] of Object.entries(TEXT_INDEX)) {
+    if (tw.length >= 4 && n.includes(tw) && tw.length > bestLen) {
+      bestMatch = data
+      bestLen = tw.length
+    }
+  }
+
+  if (bestMatch) return bestMatch
+
+  // 3. Match parziale su nome (word scoring)
   const words = n.split(" ").filter(w => w.length >= 4)
   let best = null, bestScore = 0
   for (const [kw, data] of Object.entries(INDEX)) {
@@ -277,12 +293,6 @@ function lookupFoodBase(n) {
     if (score > bestScore) { bestScore = score; best = data }
   }
   if (bestScore >= 5) return best
-
-  // 4. Fallback: match su testo (alias, abbreviazioni, marchi)
-  const textKeys = Object.keys(TEXT_INDEX).sort((a, b) => b.length - a.length)
-  for (const tw of textKeys) {
-    if (n.includes(tw) && tw.length >= 4) return TEXT_INDEX[tw]
-  }
 
   return null
 }
