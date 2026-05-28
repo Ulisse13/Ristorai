@@ -557,15 +557,13 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
 
   // Back button: naviga tra i livelli magazzino
   useEffect(() => {
-    if (!selCat && !selTipo) { clearNavBack?.(); return }
+    if (!selCat) { clearNavBack?.(); return }
     setNavBack?.(() => {
       if (selSotto1) setSelSotto1(null)
-      else if (selRegione) setSelRegione(null)
-      else if (selTipo) setSelTipo(null)
       else setSelCat(null)
     })
     return () => { clearNavBack?.() }
-  }, [selCat, selSotto1, selTipo, selRegione])
+  }, [selCat, selSotto1])
 
   //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
@@ -2080,7 +2078,8 @@ PRODOTTI:
                           onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value, sotto1: "", sotto2: "", catChanged: e.target.value !== x.catOriginal } : x))}>
                           {CATS.map(c => <option key={c}>{c}</option>)}
                         </select>
-                      </div>) : SOTTO1_ORDER[p.cat] ? (
+                      </div>
+                      {SOTTO1_ORDER[p.cat] ? (
                         <div>
                           <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Sottocategoria</label>
                           <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
