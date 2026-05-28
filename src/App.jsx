@@ -1092,9 +1092,6 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
               
               <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{cat}</div>
               <div style={{ fontSize: 12, color: STYLE.t3 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
-              
-                </div>
-              )}
               {overTarget > 0 && <div style={{ fontSize: 10, color: STYLE.red, marginTop: 4 }}>! {overTarget} sopra target</div>}
             </div>
           )
