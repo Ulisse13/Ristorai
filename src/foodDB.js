@@ -233,18 +233,17 @@ for (const { cat, db } of ALL_DB) {
     const unit = entry.keywords
       ? resolveUnit(cat, entry.sotto1, entry.sotto2, entry.keywords)
       : resolveUnit(cat, entry.sotto1, entry.sotto2, [entry.nome || "", entry.testo || ""])
-    // Estrai SOLO le parole dagli alias espliciti (dopo "alias:")
-    // NON indicizzare tutto il testo per evitare falsi positivi
+    // Estrai alias espliciti (dopo "alias:") — split PRIMA di norm per preservare virgole
     const aliasMatch = (entry.testo || "").match(/alias:\s*([^|]+)/i)
     if (aliasMatch) {
-      const aliasText = norm(aliasMatch[1])
-      // Prendi solo frasi alias complete (non singole parole generiche)
-      const aliases = aliasText.split(",").map(a => a.trim()).filter(a => a.length >= 5)
-      for (const alias of aliases) {
-        if (!TEXT_INDEX[alias]) {
+      // Split per virgola PRIMA di norm — altrimenti norm rimuove le virgole
+      const rawAliases = aliasMatch[1].split(",")
+      for (const rawAlias of rawAliases) {
+        const alias = norm(rawAlias.trim())
+        if (alias.length >= 5 && !TEXT_INDEX[alias]) {
           TEXT_INDEX[alias] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, nomeBase: entry.nome || "" }
         }
-        // Aggiungi anche prima parola dell'alias se >= 6 caratteri
+        // Aggiungi anche prima parola se >= 6 caratteri
         const firstWord = alias.split(" ")[0]
         if (firstWord.length >= 6 && !TEXT_INDEX[firstWord]) {
           TEXT_INDEX[firstWord] = { cat, sotto1: entry.sotto1 || "", sotto2: entry.sotto2 || "", unit, nomeBase: entry.nome || "" }
