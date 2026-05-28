@@ -1,24 +1,5 @@
 import { useState, useEffect, useRef, Component } from "react"
-import { lookupWine } from "./winesDB"
 
-function isLikelyWine(name) {
-  const n = name.toLowerCase()
-  const currentYear = new Date().getFullYear()
-  // Annata dinamica: 1960 → anno corrente +5
-  if (/(19[6-9]\d|20\d{2})/.test(n)) {
-    const year = parseInt(n.match(/(19[6-9]\d|20\d{2})/)[0])
-    if (year >= 1960 && year <= currentYear + 5) return true
-  }
-  // Denominazioni
-  if (/(doc|docg|igt|classico|superiore|riserva|gran selezione)/.test(n)) return true
-  // Produttore/azienda
-  if (/(cantina|tenuta|podere|castello|fattoria|vigna|vigneto|cantine)/.test(n)) return true
-  // Termini enologici
-  if (/(brut|demi.sec|blanc|cru|millesimato|cuv[eé]e|barrique|bollicine|metodo classico|metodo charmat|ros[eé]|spumante|frizzante|passito|vendemmia tardiva)/.test(n)) return true
-  // Tipologie note
-  if (/(prosecco|franciacorta|barolo|barbaresco|brunello|chianti|amarone|ripasso|soave|pinot|chardonnay|cabernet|merlot|sangiovese|nebbiolo|vermentino|falanghina|greco di tufo|fiano|nero d.avola|montepulciano|barbera|dolcetto|corvina|gewurztraminer|riesling|sauvignon|viognier|syrah|primitivo|negroamaro|aglianico)/.test(n)) return true
-  return false
-}
 
 function simFornitore(a, b) {
   const na = normFornitore(a)
@@ -413,21 +394,8 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
 }
 
 function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, pushHistory }) {
-  const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Surgelati", "Dispensa", "Vini"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
-  const VINO_REGIONI_ORDER = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-  }
-  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
-  const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
-  const [selTipo, setSelTipo] = useState(null)
-  const [selRegione, setSelRegione] = useState(null)
+  const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Surgelati", "Dispensa"]
   const [selSotto1, setSelSotto1] = useState(null)
-  const [editVino, setEditVino] = useState(null) // vino in modifica
-  const [editVinoForm, setEditVinoForm] = useState({ name: "", tipoVino: "Rossi", regioneVino: "Piemonte", produttore: "", cur: "" })
   // Trova prezzi per fornitore per un ingrediente
   function prezziPerFornitore(ing) {
     const normN = s => s.toLowerCase().replace(/\./g, "").replace(/\s+/g, " ").trim()
@@ -461,7 +429,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
   const [open, setOpen]         = useState(false)
   const [delTarget, setDelTarget] = useState(null)
   const [edit, setEdit]         = useState(null)
-  const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
+  const [form, setForm]         = useState({ name: "", cat: "Carni", unit: "kg", cur: "", confPrice: "", confWeight: "" })
   const [err, setErr]           = useState({})
 
   const ingsByCat = cat => ings.filter(i => i.cat === cat)
@@ -473,7 +441,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
 
   function openAdd() {
     setEdit(null)
-    setForm({ name: "", cat: selCat || "Carni", sotto1: "", sotto2: "", unit: "kg", cur: "", confPrice: "", confWeight: "", tipoVino: "Rossi", regioneVino: "Toscana" })
+    setForm({ name: "", cat: selCat || "Carni", sotto1: "", sotto2: "", unit: "kg", cur: "", confPrice: "", confWeight: "" })
     setErr({})
     setOpen(true)
   }
@@ -540,7 +508,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
       prev: edit ? edit.cur : finalCur,
       prezzi: finalPrezzi,
       ...(form.unit === "confezione" ? { confPrice: +form.confPrice, confWeight: +form.confWeight } : {}),
-      ...(form.cat === "Vini" ? { tipoVino: form.tipoVino, regioneVino: form.regioneVino } : {})
+
     }
     if (edit) {
       setIngs(prev => {
@@ -661,20 +629,6 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                   </select>
                 </Fld>
               )}
-              {form.cat === "Vini" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <Fld label="Tipologia">
-                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.tipoVino} onChange={e => setForm(f => ({ ...f, tipoVino: e.target.value }))}>
-                      {VINO_TIPI.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </Fld>
-                  <Fld label="Regione">
-                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.regioneVino} onChange={e => setForm(f => ({ ...f, regioneVino: e.target.value }))}>
-                      {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
-                    </select>
-                  </Fld>
-                </div>
-              )}
               {edit && form.prezzi && form.prezzi.length > 0 ? (
                 <div style={{ marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
@@ -750,171 +704,6 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
     </div>
   )
 
-  //  -  -  VINI VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
-  if (selCat === "Vini") {
-    const vini = ingsByCat("Vini")
-    // If no tipo selected, show tipo cards
-    if (!selTipo) return (
-      <div>
-        <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => { setSelCat(null); setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Vini</span>
-        </div>
-        <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 16 }}>{vini.length} vini totali</div>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
-          {VINO_TIPI.map(tipo => {
-            const count = vini.filter(v => v.tipoVino === tipo).length
-            return (
-              <div key={tipo} onClick={() => { pushHistory?.(); setSelTipo(tipo); setSelRegione(null) }}
-                style={card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
-                <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{tipo}</div>
-                <div style={{ fontSize: 12, color: STYLE.t3 }}>{count} vini</div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    )
-    // Tipo selected
-    const byTipo = vini.filter(v => v.tipoVino === selTipo)
-    const REGIONI_IT_ING = {
-      Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-      Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-      "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
-      Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    }
-    const regioniOrdinate = (REGIONI_IT_ING[selTipo] || VINO_REGIONI).filter(r => byTipo.some(v => v.regioneVino === r))
-
-    // Level 2: regione not selected → show regione CARDS
-    if (!selRegione) return (
-      <div>
-        <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => { setSelCat(null); setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <button onClick={() => { setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selTipo}</span>
-        </div>
-        {byTipo.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>Nessun vino in questa tipologia</div>
-        ) : (
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 12 }}>
-            {regioniOrdinate.map(reg => {
-              const count = byTipo.filter(v => v.regioneVino === reg).length
-              return (
-                <div key={reg} onClick={() => { pushHistory?.(); setSelRegione(reg) }}
-                  style={card({ padding: "16px 14px", cursor: "pointer", position: "relative", overflow: "hidden" })}>
-                  <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.3 }} />
-                  <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 4 }}>{reg}</div>
-                  <div style={{ fontSize: 11, color: STYLE.t3 }}>{count} vini</div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </div>
-    )
-
-    // Level 3: regione selected → show wines
-    const byRegione = byTipo.filter(v => v.regioneVino === selRegione)
-    return (
-      <div>
-        <div style={row({ marginBottom: 16 })}>
-          <button onClick={() => { setSelCat(null); setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Magazzino</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <button onClick={() => { setSelTipo(null); setSelRegione(null) }} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>Vini</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <button onClick={() => setSelRegione(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>{selTipo}</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{selRegione}</span>
-        </div>
-        {byRegione.map(ing => (
-          <div key={ing.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }), display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: ing.produttore ? 2 : 0 }}>{ing.name}</div>
-              {ing.produttore && <div style={{ fontSize: 11, color: STYLE.ac, fontStyle: "italic", marginBottom: 2 }}>{ing.produttore}</div>}
-              <div style={{ fontSize: 11, color: STYLE.t3 }}>{formatEuro(ing.cur)}/{ing.unit}</div>
-            </div>
-            <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-              <button onClick={() => { setEditVino(ing); setEditVinoForm({ name: ing.name, tipoVino: ing.tipoVino || "Rossi", regioneVino: ing.regioneVino || "Piemonte", produttore: ing.produttore || "", cur: String(ing.cur) }) }}
-                style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, padding: "4px 10px", color: STYLE.t2, fontFamily: "inherit", fontSize: 11, cursor: "pointer" }}>Modifica</button>
-              <button onClick={() => setDelTarget(ing)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 15, padding: "0 4px" }}></button>
-            </div>
-          </div>
-        ))}
-        {/* Modal modifica vino */}
-        {editVino && (
-          <div onClick={e => e.target === e.currentTarget && setEditVino(null)}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-            <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 16, width: "100%", maxWidth: 440 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 22px 0" }}>
-                <span style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>Modifica vino</span>
-                <button onClick={() => setEditVino(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: STYLE.r, width: 28, height: 28, cursor: "pointer", color: STYLE.t3 }}>x</button>
-              </div>
-              <div style={{ padding: "16px 22px" }}>
-                <Fld label="Nome">
-                  <input style={inp()} value={editVinoForm.name} onChange={e => setEditVinoForm(f => ({ ...f, name: e.target.value }))} />
-                </Fld>
-                <Fld label="Produttore / Cantina">
-                  <input style={inp()} value={editVinoForm.produttore} onChange={e => setEditVinoForm(f => ({ ...f, produttore: e.target.value }))} placeholder="es. Giacomo Conterno" />
-                </Fld>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <Fld label="Tipologia">
-                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={editVinoForm.tipoVino} onChange={e => setEditVinoForm(f => ({ ...f, tipoVino: e.target.value }))}>
-                      {["Rossi","Bianchi","Rosé","Bollicine"].map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </Fld>
-                  <Fld label="Regione">
-                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={editVinoForm.regioneVino} onChange={e => setEditVinoForm(f => ({ ...f, regioneVino: e.target.value }))}>
-                      {["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"].map(r => <option key={r}>{r}</option>)}
-                    </select>
-                  </Fld>
-                </div>
-                <Fld label="Prezzo attuale (v/bottiglia)">
-                  <input style={inp()} type="number" step="0.01" value={editVinoForm.cur} onChange={e => setEditVinoForm(f => ({ ...f, cur: e.target.value }))} placeholder="0.00" />
-                </Fld>
-              </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, padding: "0 22px 18px" }}>
-                <button style={btn("g")} onClick={() => setEditVino(null)}>Annulla</button>
-                <button style={btn("p")} onClick={() => {
-                  const newCur = parseFloat(editVinoForm.cur) || editVino.cur
-                  const newAvg = Math.round(((editVino.avg * 0.7) + (newCur * 0.3)) * 100) / 100
-                  setIngs(prev => prev.map(i => i.id === editVino.id ? {
-                    ...i,
-                    name: editVinoForm.name.trim() || i.name,
-                    tipoVino: editVinoForm.tipoVino,
-                    regioneVino: editVinoForm.regioneVino,
-                    produttore: editVinoForm.produttore.trim(),
-                    cur: newCur,
-                    avg: newCur !== editVino.cur ? newAvg : i.avg,
-                    prev: newCur !== editVino.cur ? editVino.cur : i.prev,
-                  } : i))
-                  setEditVino(null)
-                  setSelTipo(null)
-                }}>Salva</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {delTarget && (
-          <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
-            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-            <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-              <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 8 }}>Elimina ingrediente</div>
-              <div style={{ fontSize: 13.5, color: STYLE.t2, lineHeight: 1.6, marginBottom: 20 }}>Sei sicuro di voler eliminare <strong style={{ color: STYLE.t1 }}>{delTarget.name}</strong>?</div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-                <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-                <button style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={() => { setIngs(prev => prev.filter(i => i.id !== delTarget.id)); setDelTarget(null) }}>Elimina</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    )
-  }
 
   //  -  -  INGREDIENT LIST VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const catIngs = ingsByCat(selCat)
@@ -1000,20 +789,6 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
                     {SOTTO1_ORDER[form.cat].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </Fld>
-              )}
-              {form.cat === "Vini" && (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-                  <Fld label="Tipologia">
-                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.tipoVino} onChange={e => setForm(f => ({ ...f, tipoVino: e.target.value }))}>
-                      {VINO_TIPI.map(t => <option key={t}>{t}</option>)}
-                    </select>
-                  </Fld>
-                  <Fld label="Regione">
-                    <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.regioneVino} onChange={e => setForm(f => ({ ...f, regioneVino: e.target.value }))}>
-                      {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
-                    </select>
-                  </Fld>
-                </div>
               )}
               {edit && form.prezzi && form.prezzi.length > 0 ? (
                 <div style={{ marginBottom: 12 }}>
@@ -1254,17 +1029,8 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
 }
 
 function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNavBack, clearNavBack, pushHistory }) {
-  const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Vini", "Cocktail", "Bevande"]
+  const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
-  const VINO_REGIONI_ORDER = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-  }
-  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
-  const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
 
   const [selCat, setSelCat]       = useState(null)
   const [detail, setDetail]       = useState(null)
@@ -1279,7 +1045,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
     if (cat === "Secondi")   return c === "secondo"  || c === "secondi"
     if (cat === "Dolci")     return c === "dolce"    || c === "dolci"
     if (cat === "Speciali")  return c === "speciale" || c === "speciali"
-    if (cat === "Vini")      return c === "vino"     || c === "vini"
+
     if (cat === "Cocktail")  return c === "cocktail"
     if (cat === "Dispensa")   return c === "dispensa" || c === "scatolame" || c === "bevande" || c === "detersivi"
     return false
@@ -1318,8 +1084,6 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
         {CATS.map(cat => {
           const list = dishesByCat(cat)
           const overTarget = list.filter(d => d.fc > 0 && d.fc > d.target).length
-          const isVini = cat === "Vini"
-          const tipiCount = isVini ? ["Rossi","Bianchi","Rosé","Bollicine"].map(t => ({ t, n: list.filter(v => v.tipoVino === t).length })).filter(x => x.n > 0) : []
           return (
             <div key={cat} onClick={() => { pushHistory?.(); setSelCat(cat) }}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
@@ -1327,12 +1091,8 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
               <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: overTarget > 0 ? "linear-gradient(90deg," + STYLE.red + ",transparent)" : "linear-gradient(90deg," + STYLE.ac + ",transparent)", opacity: 0.4 }} />
               
               <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 4 }}>{cat}</div>
-              <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: isVini && tipiCount.length > 0 ? 6 : 0 }}>{list.length} {isVini ? "vini" : "piatt" + (list.length !== 1 ? "i" : "o")}</div>
-              {isVini && tipiCount.length > 0 && (
-                <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                  {tipiCount.map(({ t, n }) => (
-                    <div key={t} style={{ fontSize: 10, color: STYLE.t3 }}>{t}: {n}</div>
-                  ))}
+              <div style={{ fontSize: 12, color: STYLE.t3 }}>{list.length} piatt{list.length !== 1 ? "i" : "o"}</div>
+              
                 </div>
               )}
               {overTarget > 0 && <div style={{ fontSize: 10, color: STYLE.red, marginTop: 4 }}>! {overTarget} sopra target</div>}
@@ -1343,104 +1103,6 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
     </div>
   )
 
-  //  -  -  VINI VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
-  if (selCat === "Vini") {
-    const vini = dishesByCat("Vini")
-    return (
-      <div>
-        <div style={row({ marginBottom: 20 })}>
-          <button onClick={() => setSelCat(null)} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}> Piatti</button>
-          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
-          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Vini</span>
-        </div>
-        {vini.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "48px 0", color: STYLE.t3, fontSize: 13 }}>
-            Nessun vino presente  -  aggiungili dalla sezione Drink Cost
-          </div>
-        ) : (
-          VINO_TIPI.map(tipo => {
-            const byTipo = vini.filter(v => v.tipoVino === tipo)
-            if (byTipo.length === 0) return null
-            return (
-              <div key={tipo} style={{ marginBottom: 28 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: STYLE.t2, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12, paddingBottom: 6, borderBottom: STYLE.bds }}>{tipo}</div>
-                {(() => {
-                  const REGIONI_IT_D = {
-                    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-                    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Veneto","Friuli Venezia Giulia","Sicilia","Liguria","Campania","Sardegna","Lombardia","Puglia","Calabria","Altre regioni","Francia"],
-                    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
-                    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-                  }
-                  return (REGIONI_IT_D[tipo] || VINO_REGIONI)
-                })().map(reg => {
-                  const byReg = byTipo.filter(v => v.regioneVino === reg)
-                  if (byReg.length === 0) return null
-                  return (
-                    <div key={reg} style={{ marginBottom: 14 }}>
-                      <div style={{ fontSize: 11, color: STYLE.t3, marginBottom: 6, paddingLeft: 2, fontStyle: "italic" }}>{reg}</div>
-                      {byReg.map(v => (
-                        <div key={v.id} style={{ ...card({ padding: "12px 14px", marginBottom: 8 }) }}>
-                          <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
-                            <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 14, fontWeight: 600, color: STYLE.t1, marginBottom: v.produttore ? 2 : 6 }}>{v.name}</div>
-                              {v.produttore && <div style={{ fontSize: 11, color: STYLE.ac, fontStyle: "italic", marginBottom: 6 }}>{v.produttore}</div>}
-                              {/* KPI vino */}
-                              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 6, marginBottom: 8 }}>
-                                {[
-                                  { l: "Costo bottiglia", v: v.bottlePrice > 0 ? formatEuro(v.bottlePrice) : (v.cost > 0 ? formatEuro(r2(v.cost * (v.calici || 6))) : " - "), c: STYLE.t2 },
-                                  { l: "Vendita bottiglia", v: v.priceBottle > 0 ? formatEuro(v.priceBottle) : " - ", c: STYLE.ac },
-                                  { l: "Margine", v: v.priceBottle > 0 && v.bottlePrice > 0 ? formatEuro(r2(v.priceBottle - v.bottlePrice)) : " - ", c: STYLE.green },
-                                  { l: "Prezzo calice", v: v.priceCalice > 0 ? formatEuro(v.priceCalice) : " - ", c: STYLE.t1 },
-                                ].map((k, i) => (
-                                  <div key={i} style={{ background: STYLE.el, borderRadius: 6, padding: "6px 8px" }}>
-                                    <div style={{ fontSize: 8.5, textTransform: "uppercase", letterSpacing: "0.06em", color: STYLE.t3, fontWeight: 600, marginBottom: 2 }}>{k.l}</div>
-                                    <div style={{ fontSize: 12, fontWeight: 600, color: k.c, fontVariantNumeric: "tabular-nums" }}>{k.v}</div>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                            <div style={{ display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end", marginLeft: 8, flexShrink: 0 }}>
-                              <button onClick={() => setDelTarget(v)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 16, padding: "0 4px" }}></button>
-                              <button onClick={() => { if(setEditDish && setPage) { setEditDish(v); setPage("fc") } }}
-                                style={{ background: "none", border: "1px solid #2a2a31", color: STYLE.t2, cursor: "pointer", fontSize: 11, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r }}>Modifica</button>
-                            </div>
-                          </div>
-                          {/* Food cost bar */}
-                          {v.priceBottle > 0 && v.cost > 0 && (() => {
-                            const fc = v.cost / v.priceBottle
-                            return (
-                              <div style={{ height: 3, background: STYLE.el, borderRadius: 999, overflow: "hidden" }}>
-                                <div style={{ height: "100%", width: Math.min(fc * 100, 100) + "%", background: fc > 0.4 ? STYLE.red : fc > 0.3 ? STYLE.ac : STYLE.green, borderRadius: 999 }} />
-                              </div>
-                            )
-                          })()}
-                        </div>
-                      ))}
-                    </div>
-                  )
-                })}
-              </div>
-            )
-          })
-        )}
-{delTarget && (
-        <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
-          <div style={{ background: STYLE.surf, border: STYLE.bd, borderRadius: 14, width: "100%", maxWidth: 380, padding: "24px 24px 20px" }}>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 17, color: STYLE.t1, marginBottom: 8 }}>Elimina piatto</div>
-            <div style={{ fontSize: 13.5, color: STYLE.t2, lineHeight: 1.6, marginBottom: 20 }}>
-              Sei sicuro di voler eliminare <strong style={{ color: STYLE.t1 }}>{delTarget.name}</strong>? L'azione non    reversibile.
-            </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-              <button style={btn("g")} onClick={() => setDelTarget(null)}>Annulla</button>
-              <button style={{ ...btn("s"), background: STYLE.rd, color: STYLE.red, borderColor: "rgba(248,113,113,0.3)" }} onClick={doDelete}>Elimina definitivamente</button>
-            </div>
-          </div>
-        </div>
-      )}
-      </div>
-    )
-  }
 
   //  -  -  DISH LIST VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const list = dishesByCat(selCat)
@@ -1525,7 +1187,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
 function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile, setNavBack, clearNavBack, pushHistory }) {
-  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
   const [selFornitore, setSelFornitore] = useState(null)
@@ -1772,8 +1434,8 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
         setProg(45); setProgLabel("Categorizzazione AI in corso...")
         const PROMPT_CAT = `Categorizza questi prodotti alimentari. Restituisci SOLO JSON valido.
 Per ogni prodotto: categoria, sotto1, sotto2, unita.
-CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Vini, Bevande, Scatolame, Detersivi.
-VINI - sotto1=Rossi/Bianchi/Rosé/Bollicine, sotto2=regione (Piemonte/Toscana/Veneto/Sicilia/Trentino Alto Adige/etc).
+CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Dispensa.
+
 SURGELATI: prodotti con asterisco C*** S*** o parola surgelato/gelo/congelato/IQF/glassato/glassat/abbattuto/ABB/GLASS/GL.
 UNITA - usa SEMPRE l'UM fornito convertito in minuscolo: KG→kg, LT/LITRI→l, PZ/NR→pz, ML→ml. Se UM è KG o simile metti sempre kg. Solo per vini/bottiglie usa bottiglia. Default kg per carni/pesce/formaggi/verdura, l per liquidi, pz solo per uova/limoni/dadi/pezzi interi.
 {"fornitore":"","numero":"","data":"","prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","unita":"kg o pz o l o bottiglia"}]}
@@ -1884,7 +1546,7 @@ PRODOTTI:
       if (/surgelat|gelo|frozen|\biqf\b|glass|abbattut|\babb\b/.test(n)) return "Surgelati"
       if (/pelati|passata|conserva|tonno scatol|sardine scatol|fagioli scatol|ceci scatol|lenticchie|acciughe scatol|sugo pronto|legumi in/.test(n)) return "Dispensa"
       if (/birra|beer|lager|ipa|weiss|radler|corona|heineken|peroni|moretti|acqua mineral|coca.cola|fanta|sprite|succo|aranciata|limonata|energy drink|red bull|tonica|ginger|schweppes|gin |vodka|rum |whisky|whiskey|amaro|grappa|limoncello|aperol|campari|cynar|fernet|sambuca|brandy|cognac|calvados|tequila|mezcal|lipton|baileys/.test(n)) return "Dispensa"
-      if (/barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|chablis|bollicine|spumante|cava|docg|doc |igt |cantina|tenuta|donnafugata|antinori|gaja|sassicaia|conterno|giacosa|ceretto/.test(n)) return "Vini"
+      if (/barolo|barbaresco|barbera|nebbiolo|chianti|brunello|amarone|prosecco|franciacorta|pinot grigio|pinot nero|vermentino|nero d.avola|primitivo|sangiovese|soave|lugana|gewurz|riesling|chardonnay|sauvignon|merlot|cabernet|syrah|champagne|bordeaux|borgogna|alsace|chablis|bollicine|spumante|cava|docg|doc |igt |cantina|tenuta|donnafugata|antinori|gaja|sassicaia|conterno|giacosa|ceretto/.test(n)) return "Dispensa"
       if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|cinghiale|anatra|piccione|quaglia|girello|fesa|bistecca|braciola|arrosto|spezzatino|macinato/.test(n)) return "Carni"
       if (/prosciutto|salame|mortadella|bresaola|coppa|speck|affettat|salumi|uova|uovo|pastorizzat|tuorlo|albume|wurstel|strutto/.test(n)) return "Freschi"
       if (/pesce|merluzzo|salmone|tonno fresc|branzino|orata|sogliola|baccala|cozze|vongole|gamberi|scampi|calamari|polpo|seppia|aragosta|astice|granchio|dentice|spigola/.test(n)) return "Pesce"
@@ -1893,67 +1555,9 @@ PRODOTTI:
       return "Dispensa"
     }
 
-    // Pulisce il nome del vino rimuovendo codici articolo, quantità, annate, formati
-    function cleanWineName(nome) {
-      return nome
-        .replace(/PAC|B[0-9]+V[A-Z]+Q?|[A-Z]{2,6}[0-9]{5,}/g, "") // codici articolo
-        .replace(/(CART|AST\.CT|CT|CASSA|ASTUCCIO|SCATOLA|CS)\.?\s*\d+/gi, "") // cartoni
-        .replace(/\d{3,4}\s*ML|\d{1,2}[.,]\d\s*L|750|375|1500|1\.5/gi, "") // formati
-        .replace(/(19|20)\d{2}/g, "") // annate
-        .replace(/(MILLESIMATO|MILLESIM|MILL)/gi, "millesimato")
-        .replace(/\s+/g, " ").trim()
-    }
 
-    // Normalizza tipologia vino dall'AI
-    function normTipoVino(s) {
-      if (!s) return null
-      const t = s.toLowerCase().trim()
-      if (/rosso|rossi|red|rouge/.test(t)) return "Rossi"
-      if (/bianco|bianchi|white|blanc/.test(t)) return "Bianchi"
-      if (/ros[eé]|rosato|rosé|pink/.test(t)) return "Rosé"
-      if (/bollic|spumant|brut|prosecco|franciacorta|champagne|crémant|cremant/.test(t)) return "Bollicine"
-      return null
-    }
 
-    // Normalizza regione vino dall'AI
-    function normRegioneVino(s) {
-      if (!s) return null
-      const REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
-      const t = s.toLowerCase().trim()
-      for (const r of REGIONI) {
-        if (t.includes(r.toLowerCase()) || r.toLowerCase().includes(t)) return r
-      }
-      return null
-    }
 
-    function guessTipoVino(nome) {
-      const n = nome.toLowerCase()
-      if (/prosecco|franciacorta|spumante|bollicine|champagne|cava|metodo classico|trento doc|asti spumante|moscato spumante|millesimato|brut|demi.sec|metodo charmat|cuv[eé]e/.test(n)) return "Bollicine"
-      if (/rosato|rose|cerasuolo|ramato|chiaretto/.test(n)) return "Rosé"
-      if (/bianco|pinot grigio|vermentino|soave|chardonnay|sauvignon|gewurz|riesling|vernaccia|trebbiano|greco|fiano|falanghina|arneis|gavi|ribolla|grillo|catarratto|nuragus|verdicchio/.test(n)) return "Bianchi"
-      return "Rossi"
-    }
-
-    function guessRegioneVino(nome) {
-      const cleaned = cleanWineName(nome)
-      const n = nome.toLowerCase()
-      // Controlla prima il nome direttamente (più affidabile per nomi lunghi)
-      if (/sicilia|etna|nero d.avola|nerello|marsala/i.test(nome)) return "Sicilia"
-      if (/piemonte|barolo|barbaresco|barbera|nebbiolo|moscato d.asti|langhe|gavi|arneis|dolcetto/i.test(nome)) return "Piemonte"
-      if (/toscana|chianti|brunello|vernaccia|bolgheri|montalcino|montepulciano|maremma/i.test(nome)) return "Toscana"
-      if (/prosecco|soave|amarone|valpolicella|veneto|lugana|bardolino|custoza/i.test(nome)) return "Veneto"
-      if (/franciacorta|lombardia|valtellina|oltrepo/i.test(nome)) return "Lombardia"
-      if (/friuli|collio|ribolla|ramato/i.test(nome)) return "Friuli Venezia Giulia"
-      if (/trentino|alto adige|trento doc|teroldego|lagrein|müller|muller/i.test(nome)) return "Trentino Alto Adige"
-      if (/aglianico|taurasi|greco di tufo|fiano|falanghina|campania/i.test(nome)) return "Campania"
-      if (/sardegna|vermentino di sardegna|cannonau|carignano/i.test(nome)) return "Sardegna"
-      if (/champagne|bordeaux|borgogna|alsace|france|loire|chablis|rhone/i.test(nome)) return "Francia"
-      if (/valle d.aosta|valdostano/i.test(nome)) return "Valle d'Aosta"
-      if (/liguria|riviera ligure|pigato|rossese/i.test(nome)) return "Liguria"
-      if (/puglia|primitivo|negroamaro|salice salentino/i.test(nome)) return "Puglia"
-      if (/calabria|ciro|gaglioppo/i.test(nome)) return "Calabria"
-      return "Altre regioni"
-    }
 
     const fatturaData = {
       sup:   parsed.fornitore || "",
@@ -1973,14 +1577,14 @@ PRODOTTI:
       const learnedMatch = learned && learned[nomeKey]
       // 2. Determina categoria AI
       const aiCat = normCat(p.categoria) || guessCat(p.nome)
-      // 3. Se il nome ha indicatori vino → forza Vini e salta lookupFood sempre
-      const wineByName = isLikelyWine(p.nome)
-      const skipFood = wineByName || aiCat === "Vini" || learnedMatch?.cat === "Vini"
-      const dbMatch = !learnedMatch && !skipFood ? lookupFood(p.nome) : null
-      // PRIORITÀ: learned > vino > DB locale > AI (DB più affidabile per categorizzazione)
-      const cat = (learnedMatch ? learnedMatch.cat : null) || (wineByName ? "Vini" : null) || (dbMatch ? dbMatch.cat : null) || aiCat
-      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || p.sotto1 || ""
-      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || p.sotto2 || ""
+      // DB lookup per categoria e unità
+      const dbMatch = !learnedMatch ? lookupFood(p.nome) : null
+      // PRIORITÀ: learned > DB locale > AI
+      const rawCat = (learnedMatch ? learnedMatch.cat : null) || (dbMatch ? dbMatch.cat : null) || aiCat
+      // Vini da bere → Dispensa/Bevande alcoliche (sezione Vini non attiva)
+      const cat = rawCat === "Vini" ? "Dispensa" : rawCat
+      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || (rawCat === "Vini" ? "Bevande alcoliche" : p.sotto1) || ""
+      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || (rawCat === "Vini" ? "" : p.sotto2) || ""
       const dbUnit = (learnedMatch ? learnedMatch.unit : null) || (dbMatch ? dbMatch.unit : null)
       const nameLower = normNameForMatch(p.nome)
       const existing = ings.find(i => {
@@ -2028,11 +1632,7 @@ PRODOTTI:
         ingId: existing ? existing.id : null,
         ingName: existing ? existing.name : null,
         cat, include: true,
-        ...(cat === "Vini" ? {
-          tipoVino: normTipoVino(p.sotto1) || guessTipoVino(p.nome),
-          regioneVino: normRegioneVino(p.sotto2) || guessRegioneVino(p.nome),
-          produttore: p.produttore || ""
-        } : {})
+
       }
     })
 
@@ -2051,7 +1651,7 @@ PRODOTTI:
     if (c.includes("latticin")) return "Freschi"
     if (c.includes("fresco") || c.includes("freschi")) return "Freschi"
     if (c.includes("surgel")) return "Surgelati"
-    if (c.includes("vino") || c.includes("vini")) return "Vini"
+    if (c.includes("vino") || c.includes("vini")) return "Dispensa"
     if (c.includes("bevand")) return "Dispensa"
     if (c.includes("scatol")) return "Dispensa"
     if (c.includes("detersiv")) return "Dispensa"
@@ -2093,13 +1693,8 @@ PRODOTTI:
         const newPrezzi = oldPrezzi.slice(0, 5)
         const bestPrice = newPrezzi[0].price
         const newAvg = Math.round(((ing.avg * 0.7) + (bestPrice * 0.3)) * 100) / 100
-        const vinoFields = ing.cat === "Vini" ? {
-          ...(match.tipoVino ? { tipoVino: match.tipoVino } : {}),
-          ...(match.regioneVino ? { regioneVino: match.regioneVino } : {}),
-          ...(match.produttore ? { produttore: match.produttore } : {}),
-        } : {}
         const catFields = match.cat && match.cat !== ing.cat ? { cat: match.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" } : {}
-        return { ...ing, prezzi: newPrezzi, prev: ing.cur, cur: bestPrice, avg: newAvg, ...vinoFields, ...catFields }
+        return { ...ing, prezzi: newPrezzi, prev: ing.cur, cur: bestPrice, avg: newAvg, ...catFields }
       }))
     }
 
@@ -2110,13 +1705,13 @@ PRODOTTI:
         id: "i" + uid(),
         name: (p.nomeEdit || p.nome).trim(),
         cat: p.cat,
-        unit: p.cat === "Vini" ? "bottiglia" : (p.confUnit || (["kg","l","litri","pz","ml","g"].includes((p.unita||"").toLowerCase()) ? (p.unita === "litri" ? "l" : p.unita.toLowerCase()) : "kg")),
+        unit: p.confUnit || (["kg","l","litri","pz","ml","g"].includes((p.unita||"").toLowerCase()) ? (p.unita === "litri" ? "l" : p.unita.toLowerCase()) : "kg"),
         cur: p.prezzoUnitario,
         avg: p.prezzoUnitario,
         prezzi: p.prezzoUnitario > 0 ? [{ sup: fattura.sup.trim() || "Fornitore", price: p.prezzoUnitario, date: fattura.date }] : [],
         sotto1: p.sotto1 || "",
         sotto2: p.sotto2 || "",
-        ...(p.cat === "Vini" ? { tipoVino: p.tipoVino || "Rossi", regioneVino: p.regioneVino || "Altre regioni", produttore: p.produttore || "" } : {})
+
       }))
       setIngs(prev => [...prev, ...newIngs])
     }
@@ -2353,24 +1948,36 @@ PRODOTTI:
           {ocrError && (
             <div style={{ marginBottom: 14, padding: "10px 14px", background: STYLE.rd, border: "1px solid rgba(248,113,113,0.3)", borderRadius: 6, fontSize: 13, color: STYLE.red }}>{ocrError}</div>
           )}
-          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 28, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {/* Fotocamera diretta */}
+            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 24, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
               <input type="file" accept="image/*" capture="environment"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
                 style={{ display: "none" }}
               />
-              <div style={{ fontSize: 32, marginBottom: 8 }}></div>
-              <div style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1, marginBottom: 4 }}>Scatta una foto</div>
-              <div style={{ fontSize: 12, color: STYLE.t3 }}>Apre direttamente la fotocamera</div>
+              <div style={{ fontSize: 28, marginBottom: 6 }}>📷</div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>Fotocamera</div>
+              <div style={{ fontSize: 11, color: STYLE.t3 }}>Scatta direttamente</div>
             </label>
+            {/* Galleria foto */}
             <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
-              <input type="file" accept="image/*,.pdf"
+              <input type="file" accept="image/jpeg,image/png,image/webp"
                 onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
                 style={{ display: "none" }}
               />
-              <div style={{ fontSize: 22, marginBottom: 6 }}></div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 2 }}>Scegli dalla galleria o PDF</div>
-              <div style={{ fontSize: 11, color: STYLE.t3 }}>JPG, PNG o PDF</div>
+              <div style={{ fontSize: 24, marginBottom: 6 }}>🖼️</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 2 }}>Galleria foto</div>
+              <div style={{ fontSize: 11, color: STYLE.t3 }}>JPG o PNG dalla galleria</div>
+            </label>
+            {/* PDF */}
+            <label style={{ display: "block", border: "2px dashed #2a2a31", borderRadius: 10, padding: 20, textAlign: "center", cursor: "pointer", background: STYLE.el }}>
+              <input type="file" accept="application/pdf,.pdf"
+                onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+                style={{ display: "none" }}
+              />
+              <div style={{ fontSize: 24, marginBottom: 6 }}>📄</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t2, marginBottom: 2 }}>File PDF</div>
+              <div style={{ fontSize: 11, color: STYLE.t3 }}>Apre direttamente i file</div>
             </label>
             <div style={{ fontSize: 11, color: STYLE.t3, textAlign: "center" }}>Le immagini vengono compresse automaticamente</div>
           </div>
@@ -2476,28 +2083,7 @@ PRODOTTI:
                           onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, cat: e.target.value, sotto1: "", sotto2: "", catChanged: e.target.value !== x.catOriginal } : x))}>
                           {CATS.map(c => <option key={c}>{c}</option>)}
                         </select>
-                      </div>
-                      {p.cat === "Vini" ? (
-                        <>
-                          <div>
-                            <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Tipologia</label>
-                            <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
-                              value={p.tipoVino || "Rossi"}
-                              onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, tipoVino: e.target.value } : x))}>
-                              {["Rossi","Bianchi","Rosé","Bollicine"].map(t => <option key={t}>{t}</option>)}
-                            </select>
-                          </div>
-                          <div>
-                            <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Regione</label>
-                            <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
-                              value={p.regioneVino || "Altre regioni"}
-                              onChange={e => setFound(prev => prev.map((x, j) => j === i ? { ...x, regioneVino: e.target.value } : x))}>
-                              {["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"].map(r => <option key={r}>{r}</option>)}
-                            </select>
-                          </div>
-
-                        </>
-                      ) : SOTTO1_ORDER[p.cat] ? (
+                      </div>) : SOTTO1_ORDER[p.cat] ? (
                         <div>
                           <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>Sottocategoria</label>
                           <select style={inp({ appearance: "none", cursor: "pointer", fontSize: 12 })}
@@ -2771,15 +2357,12 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, set
   }, [sel])
 
   if (sel === "food") return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} defaultTab="food" onBack={() => setSel(null)} />
-  if (sel === "drink") return <FoodCost dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} defaultTab="drink" onBack={() => setSel(null)} />
 
-  const foodCount  = dishes.filter(d => !["vino","bevanda","cocktail"].includes(d.cat)).length
-  const drinkCount = dishes.filter(d => ["vino","bevanda","cocktail"].includes(d.cat)).length
-
+  const foodCount  = dishes.filter(d => d.cat !== "vino" && d.cat !== "bevanda" && d.cat !== "cocktail").length
   return (
     <div>
       <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 4 }}>Ricette</div>
-      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 24 }}>Gestisci food cost e drink cost</div>
+      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 24 }}>Gestisci food cost e ricette</div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr 1fr", gap: 16 }}>
         <div onClick={() => { pushHistory?.(); setSel("food") }}
           style={{ ...card({ padding: "28px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }) }}>
@@ -2789,14 +2372,7 @@ function Ricette({ dishes, setDishes, ings, isMobile, editDish, setEditDish, set
           <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 12 }}>Ricette cucina, costo piatti, margini</div>
           <div style={{ fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>{foodCount} piatt{foodCount !== 1 ? "i" : "o"}</div>
         </div>
-        <div onClick={() => { pushHistory?.(); setSel("drink") }}
-          style={{ ...card({ padding: "28px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }) }}>
-          <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
-          <div style={{ fontSize: 28, marginBottom: 12 }}></div>
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 6 }}>Drink Cost</div>
-          <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 12 }}>Vini, cocktail, bevande</div>
-          <div style={{ fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>{drinkCount} voc{drinkCount !== 1 ? "i" : "e"}</div>
-        </div>
+
       </div>
     </div>
   )
@@ -2807,15 +2383,6 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 
   //  -  -  Shared  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const FOOD_CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
-  const VINO_TIPI = ["Rossi", "Bianchi", "Rosé", "Bollicine"]
-  const VINO_REGIONI_ORDER = {
-    Rossi:    ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    Bianchi:  ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-    "Rosé":   ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Altre regioni","Francia"],
-    Bollicine:["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"],
-  }
-  function getRegioniOrder(tipo) { return VINO_REGIONI_ORDER[tipo] || VINO_REGIONI }
-  const VINO_REGIONI = ["Piemonte","Valle d'Aosta","Toscana","Trentino Alto Adige","Friuli Venezia Giulia","Sicilia","Campania","Veneto","Liguria","Lombardia","Sardegna","Puglia","Calabria","Altre regioni","Francia"]
   const UNITS = ["g", "kg", "ml", "l", "pz"]
   const r2 = n => Math.round(n * 100) / 100
   const uid2 = () => Math.random().toString(36).slice(2, 7)
@@ -2953,82 +2520,6 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     setTimeout(() => setFSaved(false), 3000)
   }
 
-  //  -  -  DRINK COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
-  const [dForm, setDForm] = useState({
-    name: "", tipo: "Rossi", regione: "Toscana",
-    bottlePrice: "", iva: "10", ricarico: "200",
-    calici: "6", isVino: true, selIngId: ""
-  })
-  const [dErr, setDErr]   = useState({})
-  const [dSaved, setDSaved] = useState(false)
-
-  const viniIng = ings.filter(i => i.cat === "Vini")
-  const bevIng  = ings.filter(i => i.cat === "Dispensa")
-
-  // When an ingredient vino is selected, auto-fill price, tipo, regione
-  function onSelIngVino(ingId) {
-    const ing = ings.find(i => i.id === ingId)
-    if (!ing) { setDForm(f => ({ ...f, selIngId: "", bottlePrice: "", name: "" })); return }
-    setDForm(f => ({
-      ...f,
-      selIngId: ingId,
-      name: ing.name,
-      bottlePrice: String(ing.cur),
-      tipo: ing.tipoVino || "Rossi",
-      regione: ing.regioneVino || "Altre regioni",
-    }))
-  }
-
-  // When a bevanda ingredient is selected, auto-fill price and name
-  function onSelIngBev(ingId) {
-    const ing = ings.find(i => i.id === ingId)
-    if (!ing) { setDForm(f => ({ ...f, selIngId: "", bottlePrice: "", name: "" })); return }
-    setDForm(f => ({
-      ...f,
-      selIngId: ingId,
-      name: ing.name,
-      bottlePrice: String(ing.cur),
-    }))
-  }
-
-  // Prezzo bottiglia inserito = prezzo NETTO (IVA esclusa)
-  // Costo totale = prezzo netto + IVA
-  const dPriceNet   = dForm.bottlePrice ? +dForm.bottlePrice : 0
-  const dPriceGross = r2(dPriceNet * (1 + (+dForm.iva || 0) / 100))
-  const dSellBottle = r2(dPriceNet * ((+dForm.ricarico || 200) / 100)) // moltiplicatore: 200% =  --2
-  const dSellCalice = dForm.calici > 0 ? r2(dSellBottle / +dForm.calici) : 0
-
-  function dSave() {
-    const e = {}
-    if (!dForm.name.trim()) e.name = "Obbligatorio"
-    if (!dForm.bottlePrice || +dForm.bottlePrice <= 0) e.bottlePrice = "Prezzo > 0"
-    if (Object.keys(e).length) { setDErr(e); return }
-
-    const isVino = !["Cocktail", "Bevanda"].includes(dForm.tipo)
-    setDishes(prev => [...prev, {
-      id: "d" + uid2(),
-      name: dForm.name.trim(),
-      cat: isVino ? "vino" : dForm.tipo === "Bevanda" ? "bevanda" : "cocktail",
-      price: isVino ? dSellCalice : dSellBottle,
-      priceBottle: dSellBottle,
-      priceCalice: dSellCalice,
-      cost: r2(dPriceNet / (isVino ? +dForm.calici : 1)),
-      fc: 0, margin: r2(dSellBottle - dPriceNet),
-      ricarico: +dForm.ricarico,
-      target: 0,
-      tipoVino: isVino ? dForm.tipo : null,
-      regioneVino: isVino ? dForm.regione : null,
-      stagioni: [],
-      bottlePrice: +dForm.bottlePrice,
-      iva: +dForm.iva,
-      ricarico: +dForm.ricarico,
-      calici: +dForm.calici,
-    }])
-    setDForm({ name: "", tipo: "Rossi", regione: "Toscana", bottlePrice: "", iva: "10", ricarico: "200", calici: "6", isVino: true, selIngId: "" })
-    setDErr({})
-    setDSaved(true)
-    setTimeout(() => setDSaved(false), 3000)
-  }
 
   //  -  -  RENDER  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   return (
@@ -3042,7 +2533,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
               <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
             </>
           )}
-          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>{tab === "food" ? "Food Cost" : "Drink Cost"}</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1 }}>"Food Cost"</div>
         </div>
       </div>
 
@@ -3306,130 +2797,6 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
         </div>
       )}
 
-      {/*  -  -  TAB: DRINK COST  -  -  */}
-      {tab === "drink" && (
-        <div style={{ maxWidth: 600 }}>
-          {dSaved && (
-            <div style={{ marginBottom: 16, padding: "10px 14px", background: STYLE.gd, border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>
-              Voce salvata e aggiunta alla sezione Piatti -
-            </div>
-          )}
-
-          <div style={card({ padding: 16, marginBottom: 14 })}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Dati voce</div>
-
-            <Fld label="Nome *">
-              <input style={inp()} value={dForm.name}
-                onChange={e => {
-                  const nome = e.target.value
-                  const isVino = !["Cocktail","Bevanda"].includes(dForm.tipo)
-                  if (isVino && nome.length > 3) {
-                    const dbRes    = lookupWine(nome)
-                    const tipoGuess = dbRes ? dbRes.tipo    : guessTipoVino(nome)
-                    const regGuess  = dbRes ? dbRes.regione : guessRegioneVino(nome)
-                    const prodGuess = dbRes?.produttore || f.selIngId ? f.produttore : ""
-                    setDForm(f => ({ ...f, name: nome, tipo: tipoGuess, regione: regGuess, ...(prodGuess ? { produttore: prodGuess } : {}) }))
-                  } else {
-                    setDForm(f => ({ ...f, name: nome }))
-                  }
-                }}
-                placeholder="es. Barolo Giacomo Conterno 2018" />
-              {dErr.name && <span style={{ fontSize: 11, color: STYLE.red }}>{dErr.name}</span>}
-            </Fld>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-              <Fld label="Tipologia">
-                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.tipo}
-                  onChange={e => setDForm(f => ({ ...f, tipo: e.target.value, isVino: e.target.value !== "Cocktail" }))}>
-                  {[...VINO_TIPI, "Cocktail", "Bevanda"].map(t => <option key={t}>{t}</option>)}
-                </select>
-              </Fld>
-              {!["Cocktail","Bevanda"].includes(dForm.tipo) && (
-                <Fld label="Regione">
-                  <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.regione} onChange={e => setDForm(f => ({ ...f, regione: e.target.value }))}>
-                    {VINO_REGIONI.map(r => <option key={r}>{r}</option>)}
-                  </select>
-                </Fld>
-              )}
-            </div>
-
-            {/* Collegamento a ingrediente vino */}
-            {!["Cocktail", "Bevanda"].includes(dForm.tipo) && viniIng.length > 0 && (
-              <Fld label="Seleziona da magazzino vini">
-                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngVino(e.target.value)}>
-                  <option value=""> -  oppure inserisci manualmente  - </option>
-                  {viniIng.map(i => {
-                    const alreadyDone = dishes.some(d => (d.cat === "vino") && (d.name === i.name || (d.bottlePrice && d.bottlePrice === i.cur)))
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "- " : ""}{i.name} . {formatEuro(i.cur)}/bottiglia</option>
-                  })}
-                </select>
-              </Fld>
-            )}
-
-            {/* Collegamento a ingrediente bevanda */}
-            {dForm.tipo === "Bevanda" && bevIng.length > 0 && (
-              <Fld label="Seleziona da magazzino bevande">
-                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.selIngId} onChange={e => onSelIngBev(e.target.value)}>
-                  <option value=""> -  oppure inserisci manualmente  - </option>
-                  {bevIng.map(i => {
-                    const alreadyDone = dishes.some(d => d.cat === "bevanda" && d.name === i.name)
-                    return <option key={i.id} value={i.id}>{alreadyDone ? "- " : ""}{i.name} . {formatEuro(i.cur)}/{i.unit}</option>
-                  })}
-                </select>
-              </Fld>
-            )}
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
-              <Fld label="Prezzo bottiglia IVA esclusa (v) *">
-                <input style={inp()} type="number" step="0.01" value={dForm.bottlePrice} onChange={e => setDForm(f => ({ ...f, bottlePrice: e.target.value, selIngId: "" }))} placeholder="0.00" />
-                {dErr.bottlePrice && <span style={{ fontSize: 11, color: STYLE.red }}>{dErr.bottlePrice}</span>}
-              </Fld>
-              <Fld label="IVA %">
-                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.iva} onChange={e => setDForm(f => ({ ...f, iva: e.target.value }))}>
-                  {["4", "10", "22"].map(v => <option key={v}>{v}</option>)}
-                </select>
-              </Fld>
-              <Fld label="Ricarico %">
-                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.ricarico} onChange={e => setDForm(f => ({ ...f, ricarico: e.target.value }))}>
-                  {["100","150","200","250","300","350","400","450","500"].map(v => <option key={v}>{v}</option>)}
-                </select>
-              </Fld>
-            </div>
-
-            {!["Cocktail","Bevanda"].includes(dForm.tipo) && (
-              <Fld label="Calici per bottiglia">
-                <select style={inp({ appearance: "none", cursor: "pointer" })} value={dForm.calici} onChange={e => setDForm(f => ({ ...f, calici: e.target.value }))}>
-                  {["4","5","6","7","8"].map(v => <option key={v}>{v}</option>)}
-                </select>
-              </Fld>
-            )}
-          </div>
-
-          {/* Calcolo automatico drink */}
-          {dForm.bottlePrice && +dForm.bottlePrice > 0 && (
-            <div style={card({ padding: 14, marginBottom: 16 })}>
-              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>Calcolo automatico</div>
-              <div style={{ display: "grid", gridTemplateColumns: !["Cocktail","Bevanda"].includes(dForm.tipo) ? "1fr 1fr 1fr 1fr" : "1fr 1fr 1fr", gap: 8 }}>
-                {[
-                  { l: "Costo netto (IVA esclusa)", v: formatEuro(r2(dPriceNet)), c: STYLE.t1 },
-                  { l: "Costo lordo (IVA inclusa)", v: formatEuro(dPriceGross), c: STYLE.t2 },
-                  { l: "Prezzo vendita bottiglia", v: formatEuro(dSellBottle), c: STYLE.ac },
-                  ...(!["Cocktail","Bevanda"].includes(dForm.tipo) ? [{ l: "Prezzo al calice", v: formatEuro(dSellCalice), c: STYLE.green }] : []),
-                ].map((k, i) => (
-                  <div key={i} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, padding: "12px 12px" }}>
-                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.07em", color: STYLE.t3, fontWeight: 600, marginBottom: 4 }}>{k.l}</div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: k.c }}>{k.v}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: "12px" }} onClick={dSave}>
-            Salva e invia a Piatti
-          </button>
-        </div>
-      )}
     </div>
   )
 }
@@ -3573,7 +2940,7 @@ function LoginPage() {
 
 
 function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, clearNavBack, pushHistory }) {
-  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa", "Vini"]
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
   const uid2 = () => Math.random().toString(36).slice(2, 7)
@@ -3775,7 +3142,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
               <div style={{ marginBottom: 16 }}>
                 <label style={{ fontSize: 11, color: STYLE.t3, display: "block", marginBottom: 6 }}>Cosa inviare:</label>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-                  {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa","Vini"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
+                  {["Tutto", ...["Carni","Pesce","Frutta e Verdura","Freschi","Surgelati","Dispensa"].filter(c => spesa.some(s => !s.done && s.cat === c))].map(cat => (
                     <button key={cat} onClick={() => setSendCat(cat)}
                       style={{ ...btn(sendCat === cat ? "p" : "g", { fontSize: 11, padding: "4px 10px" }) }}>{cat}</button>
                   ))}
