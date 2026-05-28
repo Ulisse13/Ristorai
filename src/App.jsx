@@ -1026,13 +1026,14 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
   )
 }
 
-function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNavBack, clearNavBack, pushHistory }) {
+function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editDish, setNavBack, clearNavBack, pushHistory }) {
   const CATS = ["Speciali", "Antipasti", "Primi", "Secondi", "Dolci", "Cocktail", "Bevande"]
   const STAGIONI = ["Primavera", "Estate", "Autunno", "Inverno"]
 
   const [selCat, setSelCat]       = useState(null)
   const [detail, setDetail]       = useState(null)
   const [delTarget, setDelTarget] = useState(null)
+  const [showFC, setShowFC]       = useState(false)
 
   const r2 = n => Math.round(n * 100) / 100
 
@@ -1063,20 +1064,33 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
     setDetail(null)
   }
 
-  // Back button: torna alla lista categorie piatti
+  // Back button
   useEffect(() => {
-    if (!selCat) { clearNavBack?.(); return }
-    setNavBack?.(() => { setSelCat(null) })
+    if (!selCat && !showFC) { clearNavBack?.(); return }
+    setNavBack?.(() => {
+      if (showFC) setShowFC(false)
+      else setSelCat(null)
+    })
     return () => { clearNavBack?.() }
-  }, [selCat])
+  }, [selCat, showFC])
+
+  // Mostra FoodCost quando richiesto
+  if (showFC) return <FoodCost
+    dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile}
+    editDish={editDish} setEditDish={setEditDish} defaultTab="food"
+    onBack={() => setShowFC(false)}
+  />
 
 
   //  -  -  CATEGORY VIEW  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   if (!selCat) return (
     <div>
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 2 }}>Piatti</div>
-        <div style={{ fontSize: 12, color: STYLE.t3 }}>{dishes.length} piatti nel menu  -  aggiunti dalla sezione Ricette</div>
+      <div style={row({ justifyContent: "space-between", marginBottom: 20, alignItems: "flex-start" })}>
+        <div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 2 }}>Ricette</div>
+          <div style={{ fontSize: 12, color: STYLE.t3 }}>{dishes.length} piatti nel menu</div>
+        </div>
+        <button style={btn("p")} onClick={() => { pushHistory?.(); setShowFC(true) }}>+ Food Cost</button>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
         {CATS.map(cat => {
@@ -1129,7 +1143,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, setNa
                   </div>
                 </div>
                 <div style={row({ gap: 8 })}>
-                  <button onClick={() => { if(setEditDish && setPage) { setEditDish(d); setPage("fc") } }}
+                  <button onClick={() => { setEditDish?.(d); setShowFC(true) }}
                     style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
                   <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}></button>
                 </div>
@@ -3333,7 +3347,7 @@ function NavIcon({ id }) {
   const s = { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.5, strokeLinecap: "round", strokeLinejoin: "round" }
   if (id === "inv")    return <svg {...s}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="12" y2="17"/></svg>
   if (id === "ing")    return <svg {...s}><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27,6.96 12,12.01 20.73,6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-  if (id === "fc")     return <svg {...s}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+  if (id === "dishes_fc" || id === "fc") return <svg {...s}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
   if (id === "dishes") return <svg {...s}><circle cx="12" cy="12" r="9"/><path d="M9 7v10M15 7v4a2 2 0 0 1-4 0V7"/></svg>
   if (id === "dash")   return <svg {...s}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
   if (id === "spesa")  return <svg {...s}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
@@ -3343,8 +3357,7 @@ function NavIcon({ id }) {
 const NAV = [
   { id: "inv",    label: "Forniture", group: "Gestione" },
   { id: "ing",    label: "Magazzino", group: "Gestione" },
-  { id: "fc",     label: "Ricette",   group: "Gestione" },
-  { id: "dishes", label: "Piatti",    group: "Gestione" },
+  { id: "dishes", label: "Ricette",   group: "Gestione" },
   { id: "dash",   label: "Dashboard", group: "Gestione" },
   { id: "spesa",  label: "Spesa",     group: "Gestione" },
 ]
@@ -3683,7 +3696,6 @@ export default function App() {
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
-        case "fc":     return <Ricette dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} editDish={editDish} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
