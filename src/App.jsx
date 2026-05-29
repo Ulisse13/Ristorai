@@ -147,7 +147,7 @@ const SOTTO1_ORDER = {
   "Dispensa":         ["Conserve", "Condimenti", "Secchi", "Bevande analcoliche", "Bevande alcoliche", "Superalcolici", "Detersivi"],
 }
 
-function Dashboard({ ings, dishes, invs, isMobile }) {
+function Dashboard({ ings, dishes, invs, isMobile, setPage }) {
   const [selIng, setSelIng] = useState(null)
 
   const now = new Date()
@@ -254,18 +254,42 @@ function Dashboard({ ings, dishes, invs, isMobile }) {
 
       {/* KPI rapidi */}
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4,1fr)", gap: 10 }}>
-        {[
-          { l: "Ingredienti", v: ings.length, sub: "in magazzino", c: STYLE.ac },
-          { l: "Food cost medio", v: avgFC > 0 ? avgFC + "%" : "—", sub: avgFC > 35 ? " alto" : avgFC > 0 ? " nella norma" : "nessun piatto", c: avgFC > 35 ? STYLE.red : avgFC > 0 ? STYLE.green : STYLE.t2 },
-          { l: "Piatti da rivedere", v: overTarget.length, sub: "sopra food cost target", c: overTarget.length > 0 ? STYLE.red : STYLE.green },
-          { l: "Prezzi aumentati", v: ingsConAumento.length, sub: "dalla scorsa fattura", c: ingsConAumento.length > 0 ? STYLE.red : STYLE.green },
-        ].map((k, i) => (
-          <div key={i} style={card({ padding: "14px 16px" })}>
-            <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 700 }}>{k.l}</div>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: k.c, lineHeight: 1 }}>{k.v}</div>
-            <div style={{ fontSize: 10, color: STYLE.t3, marginTop: 4 }}>{k.sub}</div>
+        {/* Ingredienti - informativo */}
+        <div style={card({ padding: "14px 16px" })}>
+          <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 700 }}>Ingredienti</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: STYLE.ac, lineHeight: 1 }}>{ings.length}</div>
+          <div style={{ fontSize: 10, color: STYLE.t3, marginTop: 4 }}>in magazzino</div>
+        </div>
+        {/* Food cost medio - informativo */}
+        <div style={card({ padding: "14px 16px" })}>
+          <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 700 }}>Food cost medio</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: avgFC > 35 ? STYLE.red : avgFC > 0 ? STYLE.green : STYLE.t2, lineHeight: 1 }}>{avgFC > 0 ? avgFC + "%" : "—"}</div>
+          <div style={{ fontSize: 10, color: STYLE.t3, marginTop: 4 }}>{avgFC > 35 ? "alto" : avgFC > 0 ? "nella norma" : "nessun piatto"}</div>
+        </div>
+        {/* Piatti da rivedere - cliccabile se > 0 */}
+        <div
+          onClick={() => overTarget.length > 0 && setPage("dishes")}
+          style={card({ padding: "14px 16px", cursor: overTarget.length > 0 ? "pointer" : "default", position: "relative", overflow: "hidden",
+            ...(overTarget.length > 0 ? { borderColor: "rgba(248,113,113,0.3)" } : {}) })}>
+          {overTarget.length > 0 && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.red + ",transparent)" }} />}
+          <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 700 }}>Piatti da rivedere</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: overTarget.length > 0 ? STYLE.red : STYLE.green, lineHeight: 1 }}>{overTarget.length}</div>
+          <div style={{ fontSize: 10, color: overTarget.length > 0 ? STYLE.red : STYLE.t3, marginTop: 4 }}>
+            {overTarget.length > 0 ? "→ tocca per vedere" : "tutto ok"}
           </div>
-        ))}
+        </div>
+        {/* Prezzi aumentati - cliccabile se > 0 */}
+        <div
+          onClick={() => ingsConAumento.length > 0 && setPage("ing")}
+          style={card({ padding: "14px 16px", cursor: ingsConAumento.length > 0 ? "pointer" : "default", position: "relative", overflow: "hidden",
+            ...(ingsConAumento.length > 0 ? { borderColor: "rgba(248,113,113,0.3)" } : {}) })}>
+          {ingsConAumento.length > 0 && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.red + ",transparent)" }} />}
+          <div style={{ fontSize: 10, color: STYLE.t3, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6, fontWeight: 700 }}>Prezzi aumentati</div>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: ingsConAumento.length > 0 ? STYLE.red : STYLE.green, lineHeight: 1 }}>{ingsConAumento.length}</div>
+          <div style={{ fontSize: 10, color: ingsConAumento.length > 0 ? STYLE.red : STYLE.t3, marginTop: 4 }}>
+            {ingsConAumento.length > 0 ? "→ tocca per vedere" : "nessun aumento"}
+          </div>
+        </div>
       </div>
 
       {/* Alert piatti da rivedere */}
@@ -1210,6 +1234,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
   const [prog, setProg]           = useState(0)
   const [progLabel, setProgLabel] = useState("")
   const [ocrError, setOcrError]   = useState(null)
+  const [priceAlerts, setPriceAlerts] = useState([]) // alert prezzi anomali
 
   // dati fattura
   const [fattura, setFattura] = useState(() => {
@@ -1234,7 +1259,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
   function reset() {
     setStep("list"); setProg(0); setProgLabel(""); setOcrError(null)
     setFattura({ sup: "", num: "", date: "", total: "", vat: "" })
-    setFattErr({}); setFound([])
+    setFattErr({}); setFound([]); setPriceAlerts([])
   }
 
   //  -  -  Comprimi immagine  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
@@ -1646,6 +1671,40 @@ PRODOTTI:
     })
 
     setFound(foundList)
+
+    // ── Rilevamento anomalie prezzi ──────────────────────────────────────────
+    const alerts = []
+    foundList.forEach(p => {
+      if (!p.include || !p.prezzoUnitario || p.tipo !== "update" || !p.ingId) return
+      const ing = ings.find(i => i.id === p.ingId)
+      if (!ing || !ing.cur || ing.cur <= 0) return
+      const pct = Math.round(((p.prezzoUnitario - ing.cur) / ing.cur) * 100)
+      if (pct <= 5) return // sotto soglia, nessun alert
+      let livello, colore, emoji
+      if (pct <= 10) { livello = "Aumento"; colore = "#e8a838"; emoji = "🟡" }
+      else if (pct <= 25) { livello = "Aumento rilevante"; colore = "#f97316"; emoji = "🟠" }
+      else { livello = "Aumento preoccupante"; colore = "#f87171"; emoji = "🔴" }
+      alerts.push({
+        nome: p.nomeEdit || p.nome,
+        prezzoVecchio: ing.cur,
+        prezzoNuovo: p.prezzoUnitario,
+        unit: ing.unit || p.unita || "kg",
+        pct,
+        livello,
+        colore,
+        emoji
+      })
+    })
+
+    if (alerts.length > 0) {
+      // Vibrazione: più intensa per aumenti preoccupanti
+      const hasGrave = alerts.some(a => a.pct > 25)
+      if (navigator.vibrate) {
+        navigator.vibrate(hasGrave ? [200, 100, 200, 100, 200] : [150, 100, 150])
+      }
+      setPriceAlerts(alerts)
+    }
+
     setProg(100); setProgLabel("Completato!")
     setStep("review")
   }
@@ -2008,6 +2067,46 @@ PRODOTTI:
       {/*  -  -  STEP: REVIEW  -  -  */}
       {step === "review" && (
         <div style={{ maxWidth: 600 }}>
+
+          {/* ── MODAL ALERT PREZZI ANOMALI ── */}
+          {priceAlerts.length > 0 && (
+            <div style={{ marginBottom: 16, background: "#1a0a00", border: "1px solid #f97316", borderRadius: 12, overflow: "hidden" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(249,115,22,0.3)", background: "rgba(249,115,22,0.1)" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 18 }}>⚠️</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: "#f97316" }}>
+                    {priceAlerts.length === 1 ? "Anomalia prezzo rilevata" : `${priceAlerts.length} anomalie prezzi rilevate`}
+                  </span>
+                </div>
+                <button onClick={() => setPriceAlerts([])}
+                  style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px" }}>✕</button>
+              </div>
+              <div style={{ padding: "8px 0" }}>
+                {priceAlerts.map((a, i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: i < priceAlerts.length - 1 ? "1px solid rgba(249,115,22,0.15)" : "none" }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 3 }}>
+                        {a.emoji} {a.nome}
+                      </div>
+                      <div style={{ fontSize: 11, color: STYLE.t3 }}>
+                        Storico: <span style={{ color: STYLE.green, fontWeight: 600 }}>€{a.prezzoVecchio.toFixed(2)}/{a.unit}</span>
+                        <span style={{ margin: "0 6px", color: STYLE.t3 }}>→</span>
+                        Nuovo: <span style={{ color: a.colore, fontWeight: 600 }}>€{a.prezzoNuovo.toFixed(2)}/{a.unit}</span>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0, marginLeft: 12 }}>
+                      <div style={{ fontSize: 16, fontWeight: 700, color: a.colore }}>+{a.pct}%</div>
+                      <div style={{ fontSize: 10, color: a.colore, fontWeight: 600 }}>{a.livello}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding: "10px 16px", background: "rgba(249,115,22,0.05)", borderTop: "1px solid rgba(249,115,22,0.15)" }}>
+                <div style={{ fontSize: 11, color: STYLE.t3 }}>Verifica i prezzi qui sotto prima di salvare. Puoi modificarli direttamente nel campo prezzo.</div>
+              </div>
+            </div>
+          )}
+
           {/* Riepilogo */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
             {[
@@ -2058,7 +2157,8 @@ PRODOTTI:
                 Prodotti trovati in fattura
               </div>
               {found.map((p, i) => (
-                <div key={i} style={{ padding: "12px 0", borderBottom: i < found.length - 1 ? STYLE.bds : "none" }}>
+                <div key={i} style={{ padding: "12px 0", borderBottom: i < found.length - 1 ? STYLE.bds : "none",
+                  ...((() => { const a = priceAlerts.find(a => a.nome === (p.nomeEdit || p.nome)); return a ? { background: "rgba(249,115,22,0.05)", borderLeft: "3px solid " + a.colore, paddingLeft: 8, marginLeft: -8 } : {} })()) }}>
                   <div style={row({ justifyContent: "space-between", marginBottom: 8, alignItems: "flex-start" })}>
                     <div style={{ flex: 1 }}>
                       <div style={row({ gap: 6, marginBottom: 6 })}>
@@ -3692,7 +3792,7 @@ export default function App() {
   function renderPage() {
     try {
       switch(page) {
-        case "dash":   return <Dashboard ings={ings} dishes={dishes} invs={invs} isMobile={isMobile} />
+        case "dash":   return <Dashboard ings={ings} dishes={dishes} invs={invs} isMobile={isMobile} setPage={navTo} />
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
