@@ -66,6 +66,29 @@ function normFornitore(s) {
 }
 
 
+// Determina se mostrare il riquadro "Contenuto confezione"
+function needsConfezione(cat, sotto1, unita) {
+  const u = (unita || "").toLowerCase()
+  // Se l'unità è già kg o l non serve mai il riquadro
+  if (["kg","l","litri","g","ml"].includes(u)) return false
+  // Categorie sempre disabilitate
+  if (cat === "Carni") return false
+  if (cat === "Pesce") return false
+  // Freschi: dipende dalla sotto1
+  if (cat === "Freschi") {
+    if (sotto1 === "Formaggi Nobili") return false
+    if (sotto1 === "Salumi") return false
+    return true // Latticini, Altri Freschi
+  }
+  // Dispensa: disabilita solo Detersivi
+  if (cat === "Dispensa") {
+    if (sotto1 === "Detersivi") return false
+    return true
+  }
+  // Frutta e Verdura, Surgelati → sempre abilitato
+  return true
+}
+
 class ErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { err: null } }
   static getDerivedStateFromError(e) { return { err: e } }
@@ -603,7 +626,7 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
         {CATS.map(cat => {
           const count = ingsByCat(cat).length
-          const spiked = ingsByCat(cat).filter(i => (i.cur - i.avg) / i.avg > 0.10).length
+          const spiked = recentAlerts.filter(r => r.cat === cat).length
           return (
             <div key={cat} onClick={() => { pushHistory?.(); setSelCat(cat) }}
               style={{ ...card({ padding: "20px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
@@ -748,15 +771,19 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
               const count = items.length
               const hasSpiked = items.some(i => i.avg > 0 && (i.cur - i.avg) / i.avg > 0.10)
               return (
-                <div key={s1} onClick={() => { pushHistory?.(); setSelSotto1(s1) }}
+                <div key={s1} onClick={() => {
+                  pushHistory?.()
+                  setSelSotto1(s1)
+                  if (setRecentAlerts) setRecentAlerts(prev => prev.filter(r => !(r.cat === selCat && r.sotto1 === s1)))
+                }}
                   style={{ ...card({ padding: "18px 16px", cursor: "pointer", position: "relative", overflow: "hidden" }),
-                    borderColor: hasSpiked ? "rgba(248,113,113,0.3)" : "#1f1f25" }}>
+                    borderColor: recentAlerts.some(r => r.cat === selCat && r.sotto1 === s1) ? "rgba(248,113,113,0.4)" : "#1f1f25" }}>
                   <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2,
                     background: hasSpiked ? "linear-gradient(90deg," + STYLE.red + ",transparent)" : "linear-gradient(90deg," + STYLE.ac + ",transparent)",
                     opacity: 0.4 }} />
                   <div style={{ fontFamily: "'Georgia',serif", fontSize: 15, color: STYLE.t1, marginBottom: 4 }}>{s1}</div>
                   <div style={{ fontSize: 12, color: STYLE.t3 }}>{count} ingredient{count !== 1 ? "i" : "e"}</div>
-                  {hasSpiked && <div style={{ fontSize: 10, color: STYLE.red, marginTop: 4 }}>↑ prezzi aumentati</div>}
+                  {recentAlerts.some(r => r.cat === selCat && r.sotto1 === s1) && <div style={{ fontSize: 10, color: STYLE.red, marginTop: 4, fontWeight: 600 }}>↑ prezzo aumentato</div>}
                 </div>
               )
             })}
@@ -1186,7 +1213,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
                 <div style={row({ gap: 8 })}>
                   <button onClick={() => { setEditDish?.(d); setShowFC(true) }}
                     style={{ background: "none", border: "none", color: STYLE.t2, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r, border: "1px solid #2a2a31" }}>Modifica</button>
-                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}></button>
+                  <button onClick={() => setDelTarget(d)} style={{ background: "none", border: "1px solid rgba(248,113,113,0.3)", color: STYLE.red, cursor: "pointer", fontSize: 12, fontFamily: "inherit", padding: "2px 6px", borderRadius: STYLE.r }}>Elimina</button>
                 </div>
               </div>
               {/* Food cost bar */}
@@ -1252,6 +1279,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
   const [progLabel, setProgLabel] = useState("")
   const [ocrError, setOcrError]   = useState(null)
   const [priceAlerts, setPriceAlerts] = useState([]) // alert prezzi anomali
+  const [recentAlerts, setRecentAlerts] = useState([]) // { ingId, cat, sotto1 } - temporaneo fino a visione
 
   // dati fattura
   const [fattura, setFattura] = useState(() => {
@@ -1692,10 +1720,14 @@ PRODOTTI:
     // ── Rilevamento anomalie prezzi ──────────────────────────────────────────
     const alerts = []
     foundList.forEach(p => {
-      if (!p.include || !p.prezzoUnitario || p.tipo !== "update" || !p.ingId) return
+      if (!p.include || !p.prezzoUnitario || !p.ingId) return
       const ing = ings.find(i => i.id === p.ingId)
-      if (!ing || !ing.cur || ing.cur <= 0) return
-      const pct = Math.round(((p.prezzoUnitario - ing.cur) / ing.cur) * 100)
+      if (!ing) return
+      // Prendo il prezzo MINIMO tra tutti i fornitori esistenti
+      const prezziEsistenti = (ing.prezzi || []).map(x => x.price).filter(x => x > 0)
+      const prezzoRif = prezziEsistenti.length > 0 ? Math.min(...prezziEsistenti) : ing.cur
+      if (!prezzoRif || prezzoRif <= 0) return
+      const pct = Math.round(((p.prezzoUnitario - prezzoRif) / prezzoRif) * 100)
       if (pct <= 5) return // sotto soglia, nessun alert
       let livello, colore, emoji
       if (pct <= 10) { livello = "Aumento"; colore = "#e8a838"; emoji = "🟡" }
@@ -1703,7 +1735,7 @@ PRODOTTI:
       else { livello = "Aumento preoccupante"; colore = "#f87171"; emoji = "🔴" }
       alerts.push({
         nome: p.nomeEdit || p.nome,
-        prezzoVecchio: ing.cur,
+        prezzoVecchio: prezzoRif,
         prezzoNuovo: p.prezzoUnitario,
         unit: ing.unit || p.unita || "kg",
         pct,
@@ -1837,7 +1869,45 @@ PRODOTTI:
     }
 
     try { localStorage.removeItem("fm_ocr_fattura") } catch(e) {}
-    reset()
+
+    // ── Alert prezzi post-salvataggio ────────────────────────────────────────
+    const newAlerts = []
+    found.filter(p => p.include && p.prezzoUnitario > 0 && p.ingId).forEach(p => {
+      const ing = ings.find(i => i.id === p.ingId)
+      if (!ing) return
+      const prezziEsistenti = (ing.prezzi || []).map(x => x.price).filter(x => x > 0)
+      const prezzoRif = prezziEsistenti.length > 0 ? Math.min(...prezziEsistenti) : ing.cur
+      if (!prezzoRif || prezzoRif <= 0) return
+      const pct = Math.round(((p.prezzoUnitario - prezzoRif) / prezzoRif) * 100)
+      if (pct <= 5) return
+      let livello, colore, emoji
+      if (pct <= 10) { livello = "Aumento"; colore = "#e8a838"; emoji = "🟡" }
+      else if (pct <= 25) { livello = "Aumento rilevante"; colore = "#f97316"; emoji = "🟠" }
+      else { livello = "Aumento preoccupante"; colore = "#f87171"; emoji = "🔴" }
+      newAlerts.push({
+        nome: p.nomeEdit || p.nome,
+        prezzoVecchio: prezzoRif,
+        prezzoNuovo: p.prezzoUnitario,
+        unit: p.unitaBase || p.unita || "kg",
+        pct, livello, colore, emoji
+      })
+    })
+    if (newAlerts.length > 0) {
+      const hasGrave = newAlerts.some(a => a.pct > 25)
+      if (navigator.vibrate) {
+        navigator.vibrate(hasGrave ? [200, 100, 200, 100, 200] : [150, 100, 150])
+      }
+      setPriceAlerts(newAlerts)
+      // Popola recentAlerts con cat+sotto1 degli ingredienti aumentati
+      const recents = found.filter(p => p.include && p.ingId && newAlerts.some(a => a.nome === (p.nomeEdit || p.nome))).map(p => {
+        const ing = ings.find(i => i.id === p.ingId)
+        return { ingId: p.ingId, cat: ing?.cat || p.cat, sotto1: ing?.sotto1 || p.sotto1 || "" }
+      })
+      setRecentAlerts(recents)
+      setStep("alerts")
+    } else {
+      reset()
+    }
   }
 
   //  -  -  RENDER  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
@@ -2082,6 +2152,50 @@ PRODOTTI:
       )}
 
       {/*  -  -  STEP: REVIEW  -  -  */}
+      {/* STEP: ALERTS POST-SALVATAGGIO */}
+      {step === "alerts" && priceAlerts.length > 0 && (
+        <div style={{ maxWidth: 600 }}>
+          <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 4 }}>Fattura salvata ✓</div>
+          <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 20 }}>Rilevate variazioni di prezzo sui dati confermati</div>
+
+          <div style={{ marginBottom: 16, background: "#1a0a00", border: "1px solid #f97316", borderRadius: 12, overflow: "hidden" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderBottom: "1px solid rgba(249,115,22,0.3)", background: "rgba(249,115,22,0.1)" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 18 }}>⚠️</span>
+                <span style={{ fontSize: 14, fontWeight: 700, color: "#f97316" }}>
+                  {priceAlerts.length === 1 ? "1 aumento di prezzo rilevato" : priceAlerts.length + " aumenti di prezzo rilevati"}
+                </span>
+              </div>
+            </div>
+            <div style={{ padding: "8px 0" }}>
+              {priceAlerts.map((a, i) => (
+                <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 16px", borderBottom: i < priceAlerts.length - 1 ? "1px solid rgba(249,115,22,0.15)" : "none" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 3 }}>{a.emoji} {a.nome}</div>
+                    <div style={{ fontSize: 11, color: STYLE.t3 }}>
+                      Prezzo migliore: <span style={{ color: STYLE.green, fontWeight: 600 }}>€{a.prezzoVecchio.toFixed(2)}/{a.unit}</span>
+                      <span style={{ margin: "0 6px" }}>→</span>
+                      Nuovo: <span style={{ color: a.colore, fontWeight: 600 }}>€{a.prezzoNuovo.toFixed(2)}/{a.unit}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "right", marginLeft: 12 }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: a.colore }}>+{a.pct}%</div>
+                    <div style={{ fontSize: 10, color: a.colore, fontWeight: 600 }}>{a.livello}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding: "10px 16px", background: "rgba(249,115,22,0.05)", borderTop: "1px solid rgba(249,115,22,0.15)", fontSize: 11, color: STYLE.t3 }}>
+              I prezzi sono già stati aggiornati in magazzino.
+            </div>
+          </div>
+
+          <button style={{ ...btn("p"), width: "100%", justifyContent: "center" }} onClick={reset}>
+            Chiudi
+          </button>
+        </div>
+      )}
+
       {step === "review" && (
         <div style={{ maxWidth: 600 }}>
 
@@ -2223,7 +2337,7 @@ PRODOTTI:
                       ) : null}
                       <div>
                         <label style={{ fontSize: 10, color: STYLE.t2, marginBottom: 3, display: "block" }}>
-                          {!["kg","l","litri"].includes((p.unita||"").toLowerCase()) ? "Prezzo confezione €" : "Prezzo unitario €"}
+                          {needsConfezione(p.cat, p.sotto1, p.unita) ? "Prezzo confezione €" : "Prezzo unitario €"}
                         </label>
                         <input type="text" inputMode="decimal"
                           style={inp({ fontSize: 12, padding: "5px 8px" })}
@@ -2250,8 +2364,8 @@ PRODOTTI:
                         />
                         {p.sconto && <div style={{ fontSize: 9, color: STYLE.t3, marginTop: 2 }}>sconto: {p.sconto}</div>}
                       </div>
-                      {/* Campo contenuto confezione - solo per unità non kg/l */}
-                      {!["kg","l","litri"].includes((p.unita||"").toLowerCase()) && (
+                      {/* Campo contenuto confezione - solo per categorie/unità abilitate */}
+                      {needsConfezione(p.cat, p.sotto1, p.unita) && (
                         <div style={{ gridColumn: "1 / -1" }}>
                           <div style={{ background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: STYLE.r, padding: "8px 12px" }}>
                             <label style={{ fontSize: 10, color: STYLE.ac, fontWeight: 700, display: "block", marginBottom: 6 }}>
@@ -2930,53 +3044,83 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 
 
 // ──────────────────────────────────────────────────────────────────────────────
-// FOOD COST AI — Calcolo automatico grammature con AI
+// FOOD COST AI — Calcolo grammature con selezione magazzino + AI
 // ──────────────────────────────────────────────────────────────────────────────
 
 function FoodCostAI({ ings, dishes, setDishes, isMobile, onBack }) {
   const uid2 = () => Math.random().toString(36).slice(2, 7)
   const r2 = n => Math.round(n * 100) / 100
 
+  const CATS_ING = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
+  const UNITS = ["g", "kg", "ml", "l", "pz"]
+
   const [step, setStep] = useState("form") // "form" | "loading" | "review"
-  const [form, setForm] = useState({ name: "", cat: "Secondi", ingredienti: "", ricarico: "300" })
-  const [aiRecipe, setAiRecipe] = useState([]) // [{ nome, qty, unit, waste, ingId, cur, lineCost }]
+  const [form, setForm] = useState({ name: "", cat: "Secondi", ricarico: "300" })
+  const [rows, setRows] = useState([]) // ingredienti selezionati: { id, ingId, ingName, ingUnit, cur, qty, unit, waste, _open, _cat, _sotto1, lineCost }
   const [error, setError] = useState("")
   const [saved, setSaved] = useState(false)
 
-  const CATS = ["Antipasti", "Primi", "Secondi", "Dolci", "Speciali", "Cocktail", "Bevande"]
+  const DISH_CATS = ["Antipasti", "Primi", "Secondi", "Dolci", "Speciali", "Cocktail", "Bevande"]
 
-  const GRAMMATURE_PROMPT = {
-    Antipasti: "Antipasto: ingrediente principale 90-130g. Ingredienti secondari proporzionali.",
-    Primi: "Primo piatto: pasta 90g oppure riso 80g. Condimento/sugo 50-80g. Ingredienti secondari proporzionali.",
-    Secondi: "Secondo piatto: proteina principale 150-220g. Contorno 100-200g. Ingredienti secondari proporzionali.",
-    Dolci: "Dolce: peso totale 80-120g. Distribuisci proporzionalmente tra gli ingredienti.",
-    Speciali: "Preparazione speciale/base: calcola le grammature in base al tipo di piatto descritto.",
-    Cocktail: "Cocktail: base alcolica 4-6cl, ingredienti secondari proporzionali in ml.",
-    Bevande: "Bevanda: calcola in ml proporzionalmente agli ingredienti."
+  const GRAMMATURE_HINT = {
+    Antipasti: "Antipasto: ingrediente principale 90-130g. Ingredienti secondari proporzionali. Decorativi (insalate, erbette, fiori): 5-10g.",
+    Primi: "Primo piatto: pasta 90g oppure riso 80g. Condimento/sugo 50-80g. Ingredienti secondari proporzionali. Decorativi: 5-10g.",
+    Secondi: "Secondo piatto: proteina principale 150-220g. Contorno 100-200g. Ingredienti secondari proporzionali. Decorativi: 5-10g.",
+    Dolci: "Dolce: peso totale 80-120g distribuito tra gli ingredienti.",
+    Speciali: "Preparazione base: calcola grammature realistiche in base al tipo di piatto.",
+    Cocktail: "Cocktail: base alcolica 4-6cl, ingredienti secondari in ml proporzionali.",
+    Bevande: "Bevanda: calcola in ml proporzionalmente."
+  }
+
+  function addRow() {
+    setRows(prev => [...prev, { id: uid2(), ingId: null, ingName: "", ingUnit: "kg", cur: 0, qty: 0, unit: "g", waste: 5, decorativo: false, _open: false, _cat: null, _sotto1: null, lineCost: 0 }])
+  }
+
+  function removeRow(id) { setRows(prev => prev.filter(r => r.id !== id)) }
+
+  function updateRow(id, patch) {
+    setRows(prev => prev.map(r => {
+      if (r.id !== id) return r
+      const u = { ...r, ...patch }
+      if (u.ingId && u.cur > 0 && u.qty > 0) {
+        const qKg = u.unit === "g" ? u.qty / 1000 : u.unit === "ml" ? u.qty / 1000 : u.qty
+        const wm = 1 / (1 - (u.waste || 0) / 100)
+        u.lineCost = r2(qKg * u.cur * wm)
+      } else { u.lineCost = 0 }
+      return u
+    }))
+  }
+
+  function selectIng(rowId, ing) {
+    setRows(prev => prev.map(r => r.id !== rowId ? r : {
+      ...r, ingId: ing.id, ingName: ing.name, ingUnit: ing.unit, cur: ing.cur,
+      unit: ing.unit === "kg" ? "g" : ing.unit === "l" ? "ml" : ing.unit,
+      _open: false, lineCost: 0
+    }))
   }
 
   async function calcolaAI() {
+    const selezionati = rows.filter(r => r.ingId)
     if (!form.name.trim()) { setError("Inserisci il nome del piatto"); return }
-    if (!form.ingredienti.trim()) { setError("Inserisci almeno un ingrediente"); return }
+    if (selezionati.length === 0) { setError("Seleziona almeno un ingrediente dal magazzino"); return }
     setError("")
     setStep("loading")
 
-    const ingredientiList = form.ingredienti.split(/[,\n]+/).map(s => s.trim()).filter(Boolean)
-    const grammature = GRAMMATURE_PROMPT[form.cat] || GRAMMATURE_PROMPT.Secondi
+    const listaIng = selezionati.map(r => r.ingName).join(", ")
+    const hint = GRAMMATURE_HINT[form.cat] || GRAMMATURE_HINT.Secondi
 
-    const prompt = `Sei un cuoco professionista italiano. Calcola le grammature per porzione singola del piatto: "${form.name}" (categoria: ${form.cat}).
+    const prompt = `Sei un cuoco professionista italiano. Calcola le grammature per porzione singola.
 
-REGOLE GRAMMATURE:
-${grammature}
-- Ingredienti decorativi (insalata, erbette, fiori edibili, microgreens, foglie decorative): assegna 5-10g e marcali con "decorativo: true"
-- NON includere ingredienti non elencati
-- Usa unità professionali: g per solidi, ml per liquidi
+PIATTO: "${form.name}" (${form.cat})
+REGOLE: ${hint}
+NOTA: ingredienti decorativi (insalate, erbette, fiori, microgreens) → qty 5-10g, decorativo: true
 
-INGREDIENTI DA CALCOLARE:
-${ingredientiList.map((ing, i) => `${i+1}. ${ing}`).join("\n")}
+INGREDIENTI (calcola grammature per TUTTI):
+${selezionati.map((r, i) => `${i+1}. ${r.ingName}`).join("
+")}
 
-Restituisci SOLO JSON valido senza markdown:
-{"ingredienti":[{"nome":"","qty":0,"unit":"g o ml","waste":5,"decorativo":false}]}`
+Restituisci SOLO JSON:
+{"grammature":[{"nome":"","qty":0,"unit":"g","waste":5,"decorativo":false}]}`
 
     try {
       const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -2984,7 +3128,7 @@ Restituisci SOLO JSON valido senza markdown:
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
           model: "meta-llama/llama-4-scout-17b-16e-instruct",
-          max_tokens: 1024,
+          max_tokens: 512,
           messages: [{ role: "user", content: prompt }]
         })
       })
@@ -2994,45 +3138,21 @@ Restituisci SOLO JSON valido senza markdown:
       const match = raw.match(/\{[\s\S]*\}/)
       if (!match) throw new Error("Risposta AI non valida")
       const parsed = JSON.parse(match[0])
+      const grammature = parsed.grammature || []
 
-      // Matcha con magazzino
-      const normN = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim()
-      const recipe = (parsed.ingredienti || []).map(item => {
-        const nItem = normN(item.nome)
-        const ingMatch = ings.find(i => {
-          const nIng = normN(i.name)
-          if (nIng === nItem) return true
-          const aW = nIng.split(/\s+/).filter(w => w.length >= 4)
-          const bW = nItem.split(/\s+/).filter(w => w.length >= 4)
-          if (!aW.length || !bW.length) return false
-          const common = aW.filter(w => bW.includes(w))
-          return common.length / new Set([...aW, ...bW]).size >= 0.6
-        })
-
-        // Calcola costo linea
-        let lineCost = 0
-        if (ingMatch && ingMatch.cur > 0) {
-          const qtyKg = item.unit === "g" ? item.qty / 1000 : item.unit === "ml" ? item.qty / 1000 : item.qty
-          const wasteMult = 1 / (1 - (item.waste || 0) / 100)
-          lineCost = r2(qtyKg * ingMatch.cur * wasteMult)
-        }
-
-        return {
-          id: uid2(),
-          nome: item.nome,
-          qty: item.qty,
-          unit: item.unit || "g",
-          waste: item.waste || 5,
-          decorativo: item.decorativo || false,
-          ingId: ingMatch ? ingMatch.id : null,
-          ingName: ingMatch ? ingMatch.name : null,
-          cur: ingMatch ? ingMatch.cur : 0,
-          ingUnit: ingMatch ? ingMatch.unit : "kg",
-          lineCost
-        }
-      })
-
-      setAiRecipe(recipe)
+      // Applica grammature agli ingredienti selezionati
+      setRows(prev => prev.map((r, i) => {
+        if (!r.ingId) return r
+        const g = grammature[i] || grammature.find(x => x.nome?.toLowerCase().includes(r.ingName.toLowerCase().split(" ")[0])) || {}
+        const qty = g.qty || 0
+        const unit = g.unit || (r.ingUnit === "kg" ? "g" : r.ingUnit === "l" ? "ml" : r.ingUnit)
+        const waste = g.waste || 5
+        const decorativo = g.decorativo || false
+        const qKg = unit === "g" ? qty / 1000 : unit === "ml" ? qty / 1000 : qty
+        const wm = 1 / (1 - waste / 100)
+        const lineCost = r.cur > 0 && qty > 0 ? r2(qKg * r.cur * wm) : 0
+        return { ...r, qty, unit, waste, decorativo, lineCost }
+      }))
       setStep("review")
     } catch(e) {
       setError("Errore AI: " + e.message)
@@ -3040,29 +3160,16 @@ Restituisci SOLO JSON valido senza markdown:
     }
   }
 
-  // Ricalcola costo quando cambiano qty/waste
-  function updateRow(id, patch) {
-    setAiRecipe(prev => prev.map(r => {
-      if (r.id !== id) return r
-      const updated = { ...r, ...patch }
-      if (updated.ingId && updated.cur > 0) {
-        const qtyKg = updated.unit === "g" ? updated.qty / 1000 : updated.unit === "ml" ? updated.qty / 1000 : updated.qty
-        const wasteMult = 1 / (1 - (updated.waste || 0) / 100)
-        updated.lineCost = r2(qtyKg * updated.cur * wasteMult)
-      }
-      return updated
-    }))
-  }
-
-  const totalCost = r2(aiRecipe.reduce((s, r) => s + (r.lineCost || 0), 0))
+  const totalCost = r2(rows.reduce((s, r) => s + (r.lineCost || 0), 0))
   const ricarico = parseFloat(form.ricarico) || 300
   const sugPrice = r2(totalCost * (ricarico / 100))
   const fcPct = sugPrice > 0 ? r2(totalCost / sugPrice * 100) : 0
 
   function salvaRicetta() {
     const catMap = { Antipasti: "antipasto", Primi: "primo", Secondi: "secondo", Dolci: "dolce", Speciali: "speciale", Cocktail: "cocktail", Bevande: "bevanda" }
-    const recipe = aiRecipe.filter(r => r.ingId).map(r => ({
-      ingId: r.ingId, ingType: "ing", qty: r.unit === "g" ? r.qty / 1000 : r.unit === "ml" ? r.qty / 1000 : r.qty,
+    const recipe = rows.filter(r => r.ingId && r.qty > 0).map(r => ({
+      ingId: r.ingId, ingType: "ing",
+      qty: r.unit === "g" ? r.qty / 1000 : r.unit === "ml" ? r.qty / 1000 : r.qty,
       unit: r.ingUnit || "kg", waste: String(r.waste || 0)
     }))
     setDishes(prev => [...prev, {
@@ -3073,75 +3180,42 @@ Restituisci SOLO JSON valido senza markdown:
       ricarico, recipe, stagioni: []
     }])
     setSaved(true)
-    setTimeout(() => { setSaved(false); setStep("form"); setForm({ name: "", cat: "Secondi", ingredienti: "", ricarico: "300" }); setAiRecipe([]) }, 2500)
+    setTimeout(() => {
+      setSaved(false); setStep("form")
+      setForm({ name: "", cat: "Secondi", ricarico: "300" }); setRows([])
+    }, 2500)
   }
 
-  // ── FORM ──
-  if (step === "form") return (
-    <div style={{ maxWidth: 560 }}>
-      <div style={row({ alignItems: "center", gap: 10, marginBottom: 20 })}>
-        <button onClick={onBack} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Ricette</button>
-        <span style={{ color: STYLE.t3 }}>/</span>
-        <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Food Cost AI</span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 999, padding: "2px 10px", fontSize: 10, color: STYLE.ac, fontWeight: 700, letterSpacing: "0.1em" }}>⚡ PLUS</span>
-      </div>
-
-      {saved && <div style={{ marginBottom: 16, padding: "10px 14px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>✓ Piatto salvato!</div>}
-      {error && <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.red }}>{error}</div>}
-
-      <div style={card({ padding: 20, marginBottom: 14 })}>
-        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 14 }}>Dati piatto</div>
-        <Fld label="Nome piatto *">
-          <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Risotto ai Porcini" />
-        </Fld>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Fld label="Categoria">
-            <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
-              {CATS.map(c => <option key={c}>{c}</option>)}
-            </select>
-          </Fld>
-          <Fld label="Ricarico %">
-            <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.ricarico} onChange={e => setForm(f => ({ ...f, ricarico: e.target.value }))}>
-              {[["100","×1.0"],["150","×1.5"],["200","×2.0"],["250","×2.5"],["300","×3.0"],["350","×3.5"],["400","×4.0"],["450","×4.5"],["500","×5.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
-            </select>
-          </Fld>
-        </div>
-        <Fld label="Ingredienti (uno per riga o separati da virgola) *">
-          <textarea
-            style={{ ...inp({ resize: "vertical", minHeight: 120, fontFamily: "inherit" }) }}
-            value={form.ingredienti}
-            onChange={e => setForm(f => ({ ...f, ingredienti: e.target.value }))}
-            placeholder={"riso Carnaroli\nporcini freschi\nburro\nparmigiano\nscalogno\nvino bianco\nbrodo vegetale"}
-          />
-        </Fld>
-        <div style={{ fontSize: 11, color: STYLE.t3, marginBottom: 14 }}>L'AI calcola le grammature professionali per porzione. Potrai modificarle prima di salvare.</div>
-        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: 12 }} onClick={calcolaAI}>
-          ⚡ Calcola con AI
-        </button>
-      </div>
+  const Breadcrumb = ({ extra }) => (
+    <div style={row({ alignItems: "center", gap: 10, marginBottom: 20 })}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Ricette</button>
+      <span style={{ color: STYLE.t3 }}>/</span>
+      <span style={{ fontSize: 13, color: extra ? STYLE.ac : STYLE.t1, fontWeight: 600, cursor: extra ? "pointer" : "default" }}
+        onClick={() => extra && setStep("form")}>Food Cost AI</span>
+      {extra && <><span style={{ color: STYLE.t3 }}>/</span><span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{extra}</span></>}
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 999, padding: "2px 10px", fontSize: 10, color: STYLE.ac, fontWeight: 700, letterSpacing: "0.1em", marginLeft: 4 }}>⚡ PLUS</span>
     </div>
   )
 
   // ── LOADING ──
   if (step === "loading") return (
-    <div style={card({ padding: 40, maxWidth: 400, textAlign: "center" })}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 20 }}>L'AI sta calcolando le grammature...</div>
-      <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
-        {[0,1,2].map(n => <div key={n} style={{ width: 8, height: 8, borderRadius: "50%", background: STYLE.ac, animation: `pulse ${0.8 + n * 0.15}s ease-in-out infinite alternate` }} />)}
+    <div><Breadcrumb />
+      <div style={card({ padding: 40, maxWidth: 400, textAlign: "center" })}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 20 }}>L'AI sta calcolando le grammature...</div>
+        <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+          {[0,1,2].map(n => <div key={n} style={{ width: 8, height: 8, borderRadius: "50%", background: STYLE.ac, animation: `pulse ${0.8 + n * 0.15}s ease-in-out infinite alternate` }} />)}
+        </div>
       </div>
+      <style>{`@keyframes pulse { from { opacity:0.3; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }`}</style>
     </div>
   )
 
   // ── REVIEW ──
-  return (
+  if (step === "review") return (
     <div style={{ maxWidth: 560 }}>
-      <div style={row({ alignItems: "center", gap: 10, marginBottom: 20 })}>
-        <button onClick={() => setStep("form")} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Modifica</button>
-        <span style={{ color: STYLE.t3 }}>/</span>
-        <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{form.name}</span>
-      </div>
+      <Breadcrumb extra={form.name} />
+      {saved && <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>✓ Piatto salvato in Ricette!</div>}
 
-      {/* KPI */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
         {[
           { l: "Costo ricetta", v: "€" + totalCost.toFixed(2), c: STYLE.t1 },
@@ -3155,54 +3229,164 @@ Restituisci SOLO JSON valido senza markdown:
         ))}
       </div>
 
-      {/* Lista ingredienti modificabile */}
       <div style={card({ padding: 16, marginBottom: 14 })}>
         <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>
-          Ingredienti — modifica grammature se necessario
+          Ingredienti — modifica grammature e scarto
         </div>
-        {/* Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 60px 50px", gap: 6, padding: "4px 6px", background: STYLE.el, borderRadius: "6px 6px 0 0" }}>
-          {["Ingrediente", "Qtà", "Unità", "Scarto%"].map(h => <span key={h} style={{ fontSize: 9, fontWeight: 700, color: STYLE.ac, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>)}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 72px 52px 44px 24px", gap: 4, padding: "4px 6px", background: STYLE.el, borderRadius: "6px 6px 0 0" }}>
+          {["Ingrediente", "Qtà", "Unità", "Scarto%", ""].map(h => <span key={h} style={{ fontSize: 9, fontWeight: 700, color: STYLE.ac, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>)}
         </div>
         <div style={{ border: STYLE.bd, borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
-          {aiRecipe.map((r, i) => (
-            <div key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 60px 50px", gap: 6, padding: "8px 6px", borderBottom: i < aiRecipe.length - 1 ? STYLE.bds : "none", alignItems: "center", background: r.decorativo ? "rgba(255,255,255,0.02)" : "transparent" }}>
+          {rows.map((r, i) => (
+            <div key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr 72px 52px 44px 24px", gap: 4, padding: "8px 6px", borderBottom: i < rows.length-1 ? STYLE.bds : "none", alignItems: "center" }}>
               <div>
-                <div style={{ fontSize: 12, color: r.ingId ? STYLE.green : STYLE.red, fontWeight: r.ingId ? 600 : 400 }}>
-                  {r.ingId ? "" : "⚠ "}{r.nome}
-                </div>
+                <div style={{ fontSize: 12, color: STYLE.t1, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.ingName}</div>
                 {r.decorativo && <div style={{ fontSize: 9, color: STYLE.t3 }}>decorativo</div>}
-                {!r.ingId && <div style={{ fontSize: 9, color: STYLE.red }}>non in magazzino</div>}
                 {r.lineCost > 0 && <div style={{ fontSize: 10, color: STYLE.green }}>€{r.lineCost.toFixed(2)}</div>}
               </div>
-              <input type="number" step="1" min="0"
-                style={{ ...inp({ padding: "4px 6px", fontSize: 12, textAlign: "right" }) }}
-                value={r.qty}
-                onChange={e => updateRow(r.id, { qty: parseFloat(e.target.value) || 0 })}
-              />
-              <select style={{ ...inp({ padding: "4px 4px", fontSize: 11, appearance: "none" }) }}
-                value={r.unit}
-                onChange={e => updateRow(r.id, { unit: e.target.value })}>
-                {["g","kg","ml","l","pz"].map(u => <option key={u}>{u}</option>)}
+              <input type="number" step="1" min="0" style={{ ...inp({ padding: "4px 6px", fontSize: 12, textAlign: "right" }) }} value={r.qty} onChange={e => updateRow(r.id, { qty: parseFloat(e.target.value) || 0 })} />
+              <select style={{ ...inp({ padding: "3px 3px", fontSize: 11, appearance: "none" }) }} value={r.unit} onChange={e => updateRow(r.id, { unit: e.target.value })}>
+                {UNITS.map(u => <option key={u}>{u}</option>)}
               </select>
-              <input type="number" step="1" min="0" max="99"
-                style={{ ...inp({ padding: "4px 6px", fontSize: 12, textAlign: "center" }) }}
-                value={r.waste}
-                onChange={e => updateRow(r.id, { waste: parseFloat(e.target.value) || 0 })}
-              />
+              <input type="number" step="1" min="0" max="99" style={{ ...inp({ padding: "4px 4px", fontSize: 12, textAlign: "center" }) }} value={r.waste} onChange={e => updateRow(r.id, { waste: parseFloat(e.target.value) || 0 })} />
+              <button onClick={() => removeRow(r.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 14, padding: 0 }}>✕</button>
             </div>
           ))}
         </div>
-        {aiRecipe.some(r => !r.ingId) && (
-          <div style={{ marginTop: 10, fontSize: 11, color: STYLE.red, lineHeight: 1.6 }}>
-            ⚠ Gli ingredienti in rosso non sono nel magazzino — non influenzano il food cost. Aggiungili in Magazzino per un calcolo preciso.
-          </div>
-        )}
       </div>
 
-      <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: 12 }} onClick={salvaRicetta}>
-        Salva piatto
-      </button>
+      <div style={row({ gap: 10, marginBottom: 0 })}>
+        <button style={{ ...btn("g"), flex: 1, justifyContent: "center" }} onClick={() => setStep("form")}>← Modifica</button>
+        <button style={{ ...btn("p"), flex: 2, justifyContent: "center", padding: 12 }} onClick={salvaRicetta}>Salva piatto</button>
+      </div>
+    </div>
+  )
+
+  // ── FORM ──
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <Breadcrumb />
+      {saved && <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>✓ Piatto salvato!</div>}
+      {error && <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.red }}>{error}</div>}
+
+      <div style={card({ padding: 20, marginBottom: 14 })}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 14 }}>Dati piatto</div>
+        <Fld label="Nome piatto *">
+          <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Risotto ai Porcini" />
+        </Fld>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Fld label="Categoria">
+            <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
+              {DISH_CATS.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </Fld>
+          <Fld label="Ricarico %">
+            <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.ricarico} onChange={e => setForm(f => ({ ...f, ricarico: e.target.value }))}>
+              {[["100","×1.0"],["150","×1.5"],["200","×2.0"],["250","×2.5"],["300","×3.0"],["350","×3.5"],["400","×4.0"],["450","×4.5"],["500","×5.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
+            </select>
+          </Fld>
+        </div>
+      </div>
+
+      <div style={card({ padding: 16, marginBottom: 14 })}>
+        <div style={row({ justifyContent: "space-between", marginBottom: 10 })}>
+          <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3 }}>Ingredienti dal magazzino</div>
+          <button style={btn("g", { fontSize: 12, padding: "4px 10px" })} onClick={addRow}>+ Aggiungi</button>
+        </div>
+
+        {rows.length === 0 && (
+          <div style={{ textAlign: "center", padding: "24px 0", color: STYLE.t3, fontSize: 13 }}>
+            Tocca "+ Aggiungi" per scegliere gli ingredienti dal magazzino
+          </div>
+        )}
+
+        {rows.map((r, i) => (
+          <div key={r.id} style={{ marginBottom: 8 }}>
+            <div style={row({ gap: 8, alignItems: "center" })}>
+              <button onClick={() => updateRow(r.id, { _open: true })}
+                style={{ ...inp({ flex: 1, padding: "8px 12px", fontSize: 12, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: r.ingId ? STYLE.acg : STYLE.el, borderColor: r.ingId ? STYLE.acd : "#2a2a31" })}>
+                <span style={{ color: r.ingId ? STYLE.ac : STYLE.t3 }}>{r.ingId ? r.ingName : "Seleziona ingrediente..."}</span>
+                <span style={{ fontSize: 10, color: STYLE.t3 }}>▾</span>
+              </button>
+              <button onClick={() => removeRow(r.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 18, padding: "0 4px", flexShrink: 0 }}>✕</button>
+            </div>
+
+            {/* Modal selezione ingrediente — stesso del Food Cost manuale */}
+            {r._open && (
+              <div onClick={e => e.target === e.currentTarget && updateRow(r.id, { _open: false })}
+                style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 500, display: "flex", alignItems: "flex-end" }}>
+                <div style={{ width: "100%", background: STYLE.surf, borderRadius: "16px 16px 0 0", maxHeight: "75vh", display: "flex", flexDirection: "column" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 18px 12px", borderBottom: STYLE.bds, flexShrink: 0 }}>
+                    {r._cat ? (
+                      <button onClick={() => updateRow(r.id, { _cat: null, _sotto1: null })}
+                        style={{ background: "none", border: "none", color: STYLE.ac, fontFamily: "inherit", fontSize: 14, fontWeight: 600, cursor: "pointer", padding: 0 }}>
+                        ← {r._cat}
+                      </button>
+                    ) : (
+                      <span style={{ fontSize: 15, fontWeight: 600, color: STYLE.t1 }}>Scegli ingrediente</span>
+                    )}
+                    <button onClick={() => updateRow(r.id, { _open: false })}
+                      style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 6, width: 28, height: 28, cursor: "pointer", color: STYLE.t3, fontSize: 14 }}>✕</button>
+                  </div>
+                  <div style={{ overflowY: "auto", flex: 1 }}>
+                    {!r._cat ? (
+                      CATS_ING.filter(c => ings.some(i => i.cat === c)).map(c => (
+                        <div key={c} onClick={() => updateRow(r.id, { _cat: c, _sotto1: null })}
+                          style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                          <span style={{ fontSize: 15, color: STYLE.t1 }}>{c}</span>
+                          <span style={{ color: STYLE.t3 }}>›</span>
+                        </div>
+                      ))
+                    ) : !r._sotto1 ? (
+                      <>
+                        {[...new Set(ings.filter(i => i.cat === r._cat).map(i => i.sotto1).filter(Boolean))].sort().map(s1 => (
+                          <div key={s1} onClick={() => updateRow(r.id, { _sotto1: s1 })}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                            <span style={{ fontSize: 14, color: STYLE.t1 }}>{s1}</span>
+                            <span style={{ color: STYLE.t3 }}>›</span>
+                          </div>
+                        ))}
+                        {ings.filter(i => i.cat === r._cat && !i.sotto1).length > 0 && (
+                          <div onClick={() => updateRow(r.id, { _sotto1: "__none__" })}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer" }}>
+                            <span style={{ fontSize: 14, color: STYLE.t1 }}>Altri</span>
+                            <span style={{ color: STYLE.t3 }}>›</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <div onClick={() => updateRow(r.id, { _sotto1: null })}
+                          style={{ padding: "10px 18px", borderBottom: STYLE.bds, cursor: "pointer", fontSize: 12, color: STYLE.ac }}>← {r._cat}</div>
+                        {(r._sotto1 === "__none__"
+                          ? ings.filter(i => i.cat === r._cat && !i.sotto1)
+                          : ings.filter(i => i.cat === r._cat && i.sotto1 === r._sotto1)
+                        ).sort((a,b) => a.name.localeCompare(b.name, "it")).map(ing => (
+                          <div key={ing.id} onClick={() => selectIng(r.id, ing)}
+                            style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 18px", borderBottom: STYLE.bds, cursor: "pointer", background: r.ingId === ing.id ? STYLE.acg : "" }}>
+                            <div>
+                              <div style={{ fontSize: 14, color: r.ingId === ing.id ? STYLE.ac : STYLE.t1, fontWeight: r.ingId === ing.id ? 600 : 400 }}>{ing.name}</div>
+                              <div style={{ fontSize: 11, color: STYLE.t3 }}>{(ing.cur || 0).toFixed(2)}€/{ing.unit}</div>
+                            </div>
+                            {r.ingId === ing.id && <span style={{ color: STYLE.ac }}>✓</span>}
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {rows.filter(r => r.ingId).length > 0 && (
+        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: 12 }} onClick={calcolaAI}>
+          ⚡ Calcola grammature con AI
+        </button>
+      )}
+      <style>{`@keyframes pulse { from { opacity:0.3; transform:scale(0.8); } to { opacity:1; transform:scale(1); } }`}</style>
     </div>
   )
 }
@@ -3657,7 +3841,11 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
               const count = catIngs.filter(i => i.sotto1 === s1).length
               const inList = catIngs.filter(i => i.sotto1 === s1 && spesa.some(sp => sp.ingId === i.id)).length
               return (
-                <div key={s1} onClick={() => { pushHistory?.(); setSelSotto1(s1) }}
+                <div key={s1} onClick={() => {
+                  pushHistory?.()
+                  setSelSotto1(s1)
+                  if (setRecentAlerts) setRecentAlerts(prev => prev.filter(r => !(r.cat === selCat && r.sotto1 === s1)))
+                }}
                   style={{ ...card({ padding: "14px 12px", cursor: "pointer" }), borderColor: inList > 0 ? STYLE.acd : "#1f1f25" }}>
                   <div style={{ fontSize: 13, fontWeight: 600, color: STYLE.t1, marginBottom: 2 }}>{s1}</div>
                   <div style={{ fontSize: 11, color: STYLE.t3 }}>{count} ingredienti</div>
@@ -4309,7 +4497,7 @@ export default function App() {
     try {
       switch(page) {
         case "dash":   return <Dashboard ings={ings} dishes={dishes} invs={invs} isMobile={isMobile} setPage={navTo} />
-        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
+        case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} />
