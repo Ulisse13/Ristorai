@@ -3687,7 +3687,7 @@ function LoginPage() {
         <div style={{ width: 72, height: 72, background: STYLE.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
           <FMPercentIcon size={44} />
         </div>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 26, color: STYLE.t1, letterSpacing: "-0.02em" }}>FoodMargin</div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 2, fontSize: 26 }}><span style={{ fontFamily: "'Inter',system-ui,sans-serif", fontWeight: 600, color: STYLE.t1, letterSpacing: "-0.5px" }}>CHEF</span><span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div>
         <div style={{ fontSize: 13, color: STYLE.t3, marginTop: 4 }}>{t.appDesc}</div>
       </div>
       <div style={{ width: "100%", maxWidth: 380, background: STYLE.surf, border: STYLE.bd, borderRadius: 16, padding: "28px 24px" }}>
@@ -4077,13 +4077,13 @@ function Onboarding({ onDone }) {
   const steps = [
     {
       icon: "-- ",
-      title: "Benvenuto in FoodMargin",
+      title: "Benvenuto in Chef Z",
       desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu  -  tutto dal tuo telefono."
     },
     {
       icon: "- ",
       title: "Inizia dalle fatture",
-      desc: "Scatta una foto alla bolla del fornitore. FoodMargin legge i prodotti automaticamente, aggiorna i prezzi e popola il magazzino."
+      desc: "Scatta una foto alla bolla del fornitore. Chef Z legge i prodotti automaticamente, aggiorna i prezzi e popola il magazzino."
     },
     {
       icon: "-- ",
@@ -4100,7 +4100,7 @@ function Onboarding({ onDone }) {
     <div style={{ minHeight: "100vh", background: STYLE.bg, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: "system-ui, sans-serif" }}>
       {/* Logo */}
       <div style={{ marginBottom: 40, textAlign: "center" }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 28, color: STYLE.ac, letterSpacing: "-0.02em" }}>FoodMargin</div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 2, fontSize: 28 }}><span style={{ fontFamily: "'Inter',system-ui,sans-serif", fontWeight: 600, color: STYLE.t1, letterSpacing: "-0.5px" }}>CHEF</span><span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div>
         <div style={{ fontSize: 12, color: STYLE.t3, marginTop: 4 }}>Gestione costi per ristoratori</div>
       </div>
 
@@ -4358,7 +4358,7 @@ export default function App() {
         title: "Piano",
         items: [
           { label: "Piano attivo", value: "Professional" },
-          { label: "Versione app", value: "FoodMargin v1.0" },
+          { label: "Versione app", value: "Chef Z v1.0" },
           { label: "Dati salvati su", value: "Firebase / Google Cloud" },
         ]
       },
@@ -4466,7 +4466,7 @@ export default function App() {
           </div>
 
           <div style={{ fontSize: 11, color: STYLE.t3, textAlign: "center", paddingBottom: 24 }}>
-            FoodMargin . Tutti i dati sono crittografati e al sicuro
+            Chef Z · Tutti i dati sono crittografati e al sicuro
           </div>
 
         </div>
@@ -4476,7 +4476,7 @@ export default function App() {
 
   if (!authReady) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: "#e8a838", letterSpacing: "-0.02em" }}>FoodMargin</div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: "#e8a838", letterSpacing: "-0.02em" }}>Chef<span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div>
       <div style={{ fontSize: 12, color: "#5a5963" }}>Caricamento...</div>
     </div>
   )
@@ -4486,7 +4486,7 @@ export default function App() {
 
   if (!ready) return (
     <div style={{ display: "flex", height: "100vh", alignItems: "center", justifyContent: "center", background: "#0d0d0f", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: "#e8a838", letterSpacing: "-0.02em" }}>FoodMargin</div>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: "#e8a838", letterSpacing: "-0.02em" }}>Chef<span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div>
       <div style={{ fontSize: 12, color: "#5a5963" }}>Connessione al database...</div>
     </div>
   )
@@ -4513,7 +4513,7 @@ export default function App() {
   if (isMobile) return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: STYLE.bg, color: STYLE.t1, fontFamily: "system-ui, sans-serif" }}>
       <div style={{ height: 52, background: STYLE.surf, borderBottom: STYLE.bds, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", flexShrink: 0 }}>
-        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>FoodMargin</div>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.ac }}>Chef<span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <button onClick={() => setSettingsOpen(true)} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", width: 34, height: 34, borderRadius: "50%", overflow: "hidden", flexShrink: 0 }}>
             {user?.photoURL
@@ -4546,7 +4546,7 @@ export default function App() {
           {!collapsed && (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div style={{ width: 24, height: 24, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: STYLE.ac, flexShrink: 0 }}>-- </div>
-              <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 14, color: STYLE.t1, lineHeight: 1.1 }}>FoodMargin</div><div style={{ fontSize: 8, color: STYLE.ac, letterSpacing: "0.12em", textTransform: "uppercase" }}>SaaS</div></div>
+              <div><div style={{ fontFamily: "'Georgia',serif", fontSize: 14, color: STYLE.t1, lineHeight: 1.1 }}>Chef<span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div><div style={{ fontSize: 8, color: STYLE.ac, letterSpacing: "0.12em", textTransform: "uppercase" }}>SaaS</div></div>
             </div>
           )}
           {collapsed && <div style={{ width: 24, height: 24, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 5, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, color: STYLE.ac }}>-- </div>}
