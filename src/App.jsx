@@ -2946,7 +2946,8 @@ Per qualsiasi altra domanda (politica, sport, tecnologia generica, vita privata,
 
 Rispondi sempre in italiano. Sii diretto, pratico e professionale. Usa la terminologia del settore.`
 
-function ChefZAI({ isMobile }) {
+function ChefZAI({ isMobile, setPage, pushHistory }) {
+  const [view, setView] = useState("hub") // "hub" | "chat"
   const [messages, setMessages] = useState([
     { role: "assistant", content: "Ciao! Sono Chef Z AI, il tuo consulente di cucina e ristorazione professionale. Posso aiutarti su ingredienti, ricette, food cost, attrezzature, fornitori, HACCP e su come usare Chef Z. Come posso esserti utile?" }
   ])
@@ -2990,18 +2991,78 @@ function ChefZAI({ isMobile }) {
     setLoading(false)
   }
 
+  // HUB VIEW
+  if (view === "hub") return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: STYLE.t1, marginBottom: 4 }}>Chef Z AI</div>
+        <div style={{ fontSize: 12, color: STYLE.t3 }}>Funzioni Plus — powered by AI</div>
+      </div>
+
+      {/* Badge Plus */}
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 999, padding: "4px 14px", marginBottom: 20 }}>
+        <span style={{ fontSize: 14 }}>⚡</span>
+        <span style={{ fontSize: 11, fontWeight: 700, color: STYLE.ac, letterSpacing: "0.12em", textTransform: "uppercase" }}>Piano Plus</span>
+      </div>
+
+      {/* Card 1: Chef Z AI Chat */}
+      <div onClick={() => setView("chat")}
+        style={{ ...card({ padding: "24px 20px", cursor: "pointer", marginBottom: 16, position: "relative", overflow: "hidden" }), borderColor: STYLE.acd }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontFamily: "Georgia,serif", fontStyle: "italic", fontSize: 26, color: STYLE.ac, lineHeight: 1 }}>Z</span>
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1 }}>Chef Z AI</div>
+            <div style={{ fontSize: 12, color: STYLE.t3 }}>Consulente di cucina e ristorazione</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 13, color: STYLE.t2, lineHeight: 1.7, marginBottom: 14 }}>
+          Il tuo esperto in tasca. Chiedi tutto su ingredienti, ricette, tecniche professionali, food cost, attrezzature, fornitori, HACCP e come usare Chef Z.
+        </div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {["Tecniche cucina", "Food cost", "Ingredienti", "HACCP", "Fornitori", "Attrezzature"].map(t => (
+            <span key={t} style={{ fontSize: 10, color: STYLE.ac, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 999, padding: "2px 10px" }}>{t}</span>
+          ))}
+        </div>
+        <div style={{ marginTop: 14, fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>Inizia la chat →</div>
+      </div>
+
+      {/* Card 2: Food Cost AI */}
+      <div onClick={() => { pushHistory?.(); setPage("dishes"); }}
+        style={{ ...card({ padding: "24px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }), borderColor: STYLE.acd }}>
+        <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
+          <div style={{ width: 48, height: 48, borderRadius: 12, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>
+            🍽️
+          </div>
+          <div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1 }}>Food Cost AI</div>
+            <div style={{ fontSize: 12, color: STYLE.t3 }}>Calcolo automatico con intelligenza artificiale</div>
+          </div>
+        </div>
+        <div style={{ fontSize: 13, color: STYLE.t2, lineHeight: 1.7, marginBottom: 14 }}>
+          Inserisci solo il nome del piatto, la categoria e gli ingredienti. L'AI calcola automaticamente grammature, costi, food cost % e prezzo di vendita consigliato.
+        </div>
+        <div style={{ background: STYLE.el, borderRadius: 8, padding: "10px 14px", marginBottom: 14, fontSize: 12, color: STYLE.t3, lineHeight: 1.6 }}>
+          <span style={{ color: STYLE.t2, fontWeight: 600 }}>Prima:</span> inserisci 10 ingredienti con quantità manualmente — 20 minuti<br/>
+          <span style={{ color: STYLE.ac, fontWeight: 600 }}>Con AI:</span> scrivi nome e ingredienti — 30 secondi
+        </div>
+        <div style={{ fontSize: 13, color: STYLE.ac, fontWeight: 600 }}>Vai al Food Cost AI →</div>
+      </div>
+    </div>
+  )
+
+  // CHAT VIEW
   return (
     <div style={{ display: "flex", flexDirection: "column", height: isMobile ? "calc(100vh - 130px)" : "calc(100vh - 100px)" }}>
       {/* Header */}
       <div style={{ marginBottom: 16, flexShrink: 0 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <span style={{ fontFamily: "Georgia,serif", fontStyle: "italic", fontSize: 22, color: STYLE.ac, lineHeight: 1 }}>Z</span>
-          </div>
-          <div>
-            <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>Chef Z AI</div>
-            <div style={{ fontSize: 11, color: STYLE.t3 }}>Consulente di cucina e ristorazione professionale</div>
-          </div>
+          <button onClick={() => setView("hub")} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Chef Z AI</button>
+          <span style={{ color: STYLE.t3, fontSize: 13 }}>/</span>
+          <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Chat</span>
         </div>
       </div>
 
@@ -3955,7 +4016,7 @@ export default function App() {
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
-        case "ai":     return <ChefZAI isMobile={isMobile} />
+        case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
