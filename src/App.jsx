@@ -1058,6 +1058,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
   const [detail, setDetail]       = useState(null)
   const [delTarget, setDelTarget] = useState(null)
   const [showFC, setShowFC]       = useState(false)
+  const [showFCAI, setShowFCAI]   = useState(false)
 
   const r2 = n => Math.round(n * 100) / 100
 
@@ -1088,15 +1089,31 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
     setDetail(null)
   }
 
+  // Apri FoodCostAI se richiesto da Hub Plus
+  useEffect(() => {
+    if (sessionStorage.getItem("openFCAI") === "1") {
+      sessionStorage.removeItem("openFCAI")
+      setShowFCAI(true)
+    }
+  }, [])
+
   // Back button
   useEffect(() => {
-    if (!selCat && !showFC) { clearNavBack?.(); return }
+    if (!selCat && !showFC && !showFCAI) { clearNavBack?.(); return }
     setNavBack?.(() => {
-      if (showFC) setShowFC(false)
+      if (showFCAI) setShowFCAI(false)
+      else if (showFC) setShowFC(false)
       else setSelCat(null)
     })
     return () => { clearNavBack?.() }
-  }, [selCat, showFC])
+  }, [selCat, showFC, showFCAI])
+
+  // Mostra FoodCostAI quando richiesto
+  if (showFCAI) return <FoodCostAI
+    ings={ings} dishes={dishes} setDishes={setDishes}
+    isMobile={isMobile}
+    onBack={() => setShowFCAI(false)}
+  />
 
   // Mostra FoodCost quando richiesto
   if (showFC) return <FoodCost
@@ -2913,6 +2930,285 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 
 
 // ──────────────────────────────────────────────────────────────────────────────
+// FOOD COST AI — Calcolo automatico grammature con AI
+// ──────────────────────────────────────────────────────────────────────────────
+
+function FoodCostAI({ ings, dishes, setDishes, isMobile, onBack }) {
+  const uid2 = () => Math.random().toString(36).slice(2, 7)
+  const r2 = n => Math.round(n * 100) / 100
+
+  const [step, setStep] = useState("form") // "form" | "loading" | "review"
+  const [form, setForm] = useState({ name: "", cat: "Secondi", ingredienti: "", ricarico: "300" })
+  const [aiRecipe, setAiRecipe] = useState([]) // [{ nome, qty, unit, waste, ingId, cur, lineCost }]
+  const [error, setError] = useState("")
+  const [saved, setSaved] = useState(false)
+
+  const CATS = ["Antipasti", "Primi", "Secondi", "Dolci", "Speciali", "Cocktail", "Bevande"]
+
+  const GRAMMATURE_PROMPT = {
+    Antipasti: "Antipasto: ingrediente principale 90-130g. Ingredienti secondari proporzionali.",
+    Primi: "Primo piatto: pasta 90g oppure riso 80g. Condimento/sugo 50-80g. Ingredienti secondari proporzionali.",
+    Secondi: "Secondo piatto: proteina principale 150-220g. Contorno 100-200g. Ingredienti secondari proporzionali.",
+    Dolci: "Dolce: peso totale 80-120g. Distribuisci proporzionalmente tra gli ingredienti.",
+    Speciali: "Preparazione speciale/base: calcola le grammature in base al tipo di piatto descritto.",
+    Cocktail: "Cocktail: base alcolica 4-6cl, ingredienti secondari proporzionali in ml.",
+    Bevande: "Bevanda: calcola in ml proporzionalmente agli ingredienti."
+  }
+
+  async function calcolaAI() {
+    if (!form.name.trim()) { setError("Inserisci il nome del piatto"); return }
+    if (!form.ingredienti.trim()) { setError("Inserisci almeno un ingrediente"); return }
+    setError("")
+    setStep("loading")
+
+    const ingredientiList = form.ingredienti.split(/[,\n]+/).map(s => s.trim()).filter(Boolean)
+    const grammature = GRAMMATURE_PROMPT[form.cat] || GRAMMATURE_PROMPT.Secondi
+
+    const prompt = `Sei un cuoco professionista italiano. Calcola le grammature per porzione singola del piatto: "${form.name}" (categoria: ${form.cat}).
+
+REGOLE GRAMMATURE:
+${grammature}
+- Ingredienti decorativi (insalata, erbette, fiori edibili, microgreens, foglie decorative): assegna 5-10g e marcali con "decorativo: true"
+- NON includere ingredienti non elencati
+- Usa unità professionali: g per solidi, ml per liquidi
+
+INGREDIENTI DA CALCOLARE:
+${ingredientiList.map((ing, i) => `${i+1}. ${ing}`).join("\n")}
+
+Restituisci SOLO JSON valido senza markdown:
+{"ingredienti":[{"nome":"","qty":0,"unit":"g o ml","waste":5,"decorativo":false}]}`
+
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          max_tokens: 1024,
+          messages: [{ role: "user", content: prompt }]
+        })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error.message)
+      const raw = data.choices?.[0]?.message?.content || ""
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error("Risposta AI non valida")
+      const parsed = JSON.parse(match[0])
+
+      // Matcha con magazzino
+      const normN = s => s.toLowerCase().replace(/[^a-z0-9\s]/g, "").trim()
+      const recipe = (parsed.ingredienti || []).map(item => {
+        const nItem = normN(item.nome)
+        const ingMatch = ings.find(i => {
+          const nIng = normN(i.name)
+          if (nIng === nItem) return true
+          const aW = nIng.split(/\s+/).filter(w => w.length >= 4)
+          const bW = nItem.split(/\s+/).filter(w => w.length >= 4)
+          if (!aW.length || !bW.length) return false
+          const common = aW.filter(w => bW.includes(w))
+          return common.length / new Set([...aW, ...bW]).size >= 0.6
+        })
+
+        // Calcola costo linea
+        let lineCost = 0
+        if (ingMatch && ingMatch.cur > 0) {
+          const qtyKg = item.unit === "g" ? item.qty / 1000 : item.unit === "ml" ? item.qty / 1000 : item.qty
+          const wasteMult = 1 / (1 - (item.waste || 0) / 100)
+          lineCost = r2(qtyKg * ingMatch.cur * wasteMult)
+        }
+
+        return {
+          id: uid2(),
+          nome: item.nome,
+          qty: item.qty,
+          unit: item.unit || "g",
+          waste: item.waste || 5,
+          decorativo: item.decorativo || false,
+          ingId: ingMatch ? ingMatch.id : null,
+          ingName: ingMatch ? ingMatch.name : null,
+          cur: ingMatch ? ingMatch.cur : 0,
+          ingUnit: ingMatch ? ingMatch.unit : "kg",
+          lineCost
+        }
+      })
+
+      setAiRecipe(recipe)
+      setStep("review")
+    } catch(e) {
+      setError("Errore AI: " + e.message)
+      setStep("form")
+    }
+  }
+
+  // Ricalcola costo quando cambiano qty/waste
+  function updateRow(id, patch) {
+    setAiRecipe(prev => prev.map(r => {
+      if (r.id !== id) return r
+      const updated = { ...r, ...patch }
+      if (updated.ingId && updated.cur > 0) {
+        const qtyKg = updated.unit === "g" ? updated.qty / 1000 : updated.unit === "ml" ? updated.qty / 1000 : updated.qty
+        const wasteMult = 1 / (1 - (updated.waste || 0) / 100)
+        updated.lineCost = r2(qtyKg * updated.cur * wasteMult)
+      }
+      return updated
+    }))
+  }
+
+  const totalCost = r2(aiRecipe.reduce((s, r) => s + (r.lineCost || 0), 0))
+  const ricarico = parseFloat(form.ricarico) || 300
+  const sugPrice = r2(totalCost * (ricarico / 100))
+  const fcPct = sugPrice > 0 ? r2(totalCost / sugPrice * 100) : 0
+
+  function salvaRicetta() {
+    const catMap = { Antipasti: "antipasto", Primi: "primo", Secondi: "secondo", Dolci: "dolce", Speciali: "speciale", Cocktail: "cocktail", Bevande: "bevanda" }
+    const recipe = aiRecipe.filter(r => r.ingId).map(r => ({
+      ingId: r.ingId, ingType: "ing", qty: r.unit === "g" ? r.qty / 1000 : r.unit === "ml" ? r.qty / 1000 : r.qty,
+      unit: r.ingUnit || "kg", waste: String(r.waste || 0)
+    }))
+    setDishes(prev => [...prev, {
+      id: "d" + uid2(), name: form.name.trim(),
+      cat: catMap[form.cat] || form.cat.toLowerCase(),
+      price: sugPrice, target: fcPct / 100, cost: totalCost,
+      fc: fcPct / 100, margin: r2(sugPrice - totalCost),
+      ricarico, recipe, stagioni: []
+    }])
+    setSaved(true)
+    setTimeout(() => { setSaved(false); setStep("form"); setForm({ name: "", cat: "Secondi", ingredienti: "", ricarico: "300" }); setAiRecipe([]) }, 2500)
+  }
+
+  // ── FORM ──
+  if (step === "form") return (
+    <div style={{ maxWidth: 560 }}>
+      <div style={row({ alignItems: "center", gap: 10, marginBottom: 20 })}>
+        <button onClick={onBack} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Ricette</button>
+        <span style={{ color: STYLE.t3 }}>/</span>
+        <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>Food Cost AI</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: STYLE.acg, border: "1px solid " + STYLE.acd, borderRadius: 999, padding: "2px 10px", fontSize: 10, color: STYLE.ac, fontWeight: 700, letterSpacing: "0.1em" }}>⚡ PLUS</span>
+      </div>
+
+      {saved && <div style={{ marginBottom: 16, padding: "10px 14px", background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.green }}>✓ Piatto salvato!</div>}
+      {error && <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)", borderRadius: 8, fontSize: 13, color: STYLE.red }}>{error}</div>}
+
+      <div style={card({ padding: 20, marginBottom: 14 })}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 14 }}>Dati piatto</div>
+        <Fld label="Nome piatto *">
+          <input style={inp()} value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="es. Risotto ai Porcini" />
+        </Fld>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Fld label="Categoria">
+            <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.cat} onChange={e => setForm(f => ({ ...f, cat: e.target.value }))}>
+              {CATS.map(c => <option key={c}>{c}</option>)}
+            </select>
+          </Fld>
+          <Fld label="Ricarico %">
+            <select style={inp({ appearance: "none", cursor: "pointer" })} value={form.ricarico} onChange={e => setForm(f => ({ ...f, ricarico: e.target.value }))}>
+              {[["100","×1.0"],["150","×1.5"],["200","×2.0"],["250","×2.5"],["300","×3.0"],["350","×3.5"],["400","×4.0"],["450","×4.5"],["500","×5.0"]].map(([v,l]) => <option key={v} value={v}>{v}% ({l})</option>)}
+            </select>
+          </Fld>
+        </div>
+        <Fld label="Ingredienti (uno per riga o separati da virgola) *">
+          <textarea
+            style={{ ...inp({ resize: "vertical", minHeight: 120, fontFamily: "inherit" }) }}
+            value={form.ingredienti}
+            onChange={e => setForm(f => ({ ...f, ingredienti: e.target.value }))}
+            placeholder={"riso Carnaroli\nporcini freschi\nburro\nparmigiano\nscalogno\nvino bianco\nbrodo vegetale"}
+          />
+        </Fld>
+        <div style={{ fontSize: 11, color: STYLE.t3, marginBottom: 14 }}>L'AI calcola le grammature professionali per porzione. Potrai modificarle prima di salvare.</div>
+        <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: 12 }} onClick={calcolaAI}>
+          ⚡ Calcola con AI
+        </button>
+      </div>
+    </div>
+  )
+
+  // ── LOADING ──
+  if (step === "loading") return (
+    <div style={card({ padding: 40, maxWidth: 400, textAlign: "center" })}>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 16, color: STYLE.t1, marginBottom: 20 }}>L'AI sta calcolando le grammature...</div>
+      <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+        {[0,1,2].map(n => <div key={n} style={{ width: 8, height: 8, borderRadius: "50%", background: STYLE.ac, animation: `pulse ${0.8 + n * 0.15}s ease-in-out infinite alternate` }} />)}
+      </div>
+    </div>
+  )
+
+  // ── REVIEW ──
+  return (
+    <div style={{ maxWidth: 560 }}>
+      <div style={row({ alignItems: "center", gap: 10, marginBottom: 20 })}>
+        <button onClick={() => setStep("form")} style={{ background: "none", border: "none", color: STYLE.ac, cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: 600, padding: 0 }}>← Modifica</button>
+        <span style={{ color: STYLE.t3 }}>/</span>
+        <span style={{ fontSize: 13, color: STYLE.t1, fontWeight: 600 }}>{form.name}</span>
+      </div>
+
+      {/* KPI */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
+        {[
+          { l: "Costo ricetta", v: "€" + totalCost.toFixed(2), c: STYLE.t1 },
+          { l: "Prezzo consigliato", v: "€" + sugPrice.toFixed(2), c: STYLE.ac },
+          { l: "Food cost %", v: fcPct.toFixed(1) + "%", c: fcPct > 35 ? STYLE.red : STYLE.green },
+        ].map((k,i) => (
+          <div key={i} style={card({ padding: "12px 14px" })}>
+            <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4, fontWeight: 700 }}>{k.l}</div>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: k.c }}>{k.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Lista ingredienti modificabile */}
+      <div style={card({ padding: 16, marginBottom: 14 })}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>
+          Ingredienti — modifica grammature se necessario
+        </div>
+        {/* Header */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 80px 60px 50px", gap: 6, padding: "4px 6px", background: STYLE.el, borderRadius: "6px 6px 0 0" }}>
+          {["Ingrediente", "Qtà", "Unità", "Scarto%"].map(h => <span key={h} style={{ fontSize: 9, fontWeight: 700, color: STYLE.ac, textTransform: "uppercase", letterSpacing: "0.06em" }}>{h}</span>)}
+        </div>
+        <div style={{ border: STYLE.bd, borderTop: "none", borderRadius: "0 0 6px 6px", overflow: "hidden" }}>
+          {aiRecipe.map((r, i) => (
+            <div key={r.id} style={{ display: "grid", gridTemplateColumns: "1fr 80px 60px 50px", gap: 6, padding: "8px 6px", borderBottom: i < aiRecipe.length - 1 ? STYLE.bds : "none", alignItems: "center", background: r.decorativo ? "rgba(255,255,255,0.02)" : "transparent" }}>
+              <div>
+                <div style={{ fontSize: 12, color: r.ingId ? STYLE.green : STYLE.red, fontWeight: r.ingId ? 600 : 400 }}>
+                  {r.ingId ? "" : "⚠ "}{r.nome}
+                </div>
+                {r.decorativo && <div style={{ fontSize: 9, color: STYLE.t3 }}>decorativo</div>}
+                {!r.ingId && <div style={{ fontSize: 9, color: STYLE.red }}>non in magazzino</div>}
+                {r.lineCost > 0 && <div style={{ fontSize: 10, color: STYLE.green }}>€{r.lineCost.toFixed(2)}</div>}
+              </div>
+              <input type="number" step="1" min="0"
+                style={{ ...inp({ padding: "4px 6px", fontSize: 12, textAlign: "right" }) }}
+                value={r.qty}
+                onChange={e => updateRow(r.id, { qty: parseFloat(e.target.value) || 0 })}
+              />
+              <select style={{ ...inp({ padding: "4px 4px", fontSize: 11, appearance: "none" }) }}
+                value={r.unit}
+                onChange={e => updateRow(r.id, { unit: e.target.value })}>
+                {["g","kg","ml","l","pz"].map(u => <option key={u}>{u}</option>)}
+              </select>
+              <input type="number" step="1" min="0" max="99"
+                style={{ ...inp({ padding: "4px 6px", fontSize: 12, textAlign: "center" }) }}
+                value={r.waste}
+                onChange={e => updateRow(r.id, { waste: parseFloat(e.target.value) || 0 })}
+              />
+            </div>
+          ))}
+        </div>
+        {aiRecipe.some(r => !r.ingId) && (
+          <div style={{ marginTop: 10, fontSize: 11, color: STYLE.red, lineHeight: 1.6 }}>
+            ⚠ Gli ingredienti in rosso non sono nel magazzino — non influenzano il food cost. Aggiungili in Magazzino per un calcolo preciso.
+          </div>
+        )}
+      </div>
+
+      <button style={{ ...btn("p"), width: "100%", justifyContent: "center", padding: 12 }} onClick={salvaRicetta}>
+        Salva piatto
+      </button>
+    </div>
+  )
+}
+
+
+// ──────────────────────────────────────────────────────────────────────────────
 // CHEF Z AI — Assistente AI per la ristorazione professionale
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -3030,7 +3326,7 @@ function ChefZAI({ isMobile, setPage, pushHistory }) {
       </div>
 
       {/* Card 2: Food Cost AI */}
-      <div onClick={() => { pushHistory?.(); setPage("dishes"); }}
+      <div onClick={() => { pushHistory?.(); setPage("dishes"); sessionStorage.setItem("openFCAI", "1"); }}
         style={{ ...card({ padding: "24px 20px", cursor: "pointer", position: "relative", overflow: "hidden" }), borderColor: STYLE.acd }}>
         <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: "linear-gradient(90deg," + STYLE.ac + ",transparent)" }} />
         <div style={{ display: "flex", alignItems: "center", gap: 14, marginBottom: 12 }}>
