@@ -3303,7 +3303,7 @@ Restituisci SOLO JSON:
           <div key={r.id} style={{ marginBottom: 8 }}>
             <div style={row({ gap: 8, alignItems: "center" })}>
               <button onClick={() => updateRow(r.id, { _open: true })}
-                style={{ ...inp({ flex: 1, padding: "8px 12px", fontSize: 12, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: r.ingId ? STYLE.acg : STYLE.el, borderColor: r.ingId ? STYLE.acd : "#2a2a31" })}>
+                style={{ flex: 1, padding: "8px 12px", fontSize: 12, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: r.ingId ? STYLE.acg : STYLE.el, border: "1px solid " + (r.ingId ? STYLE.acd : "#2a2a31"), borderRadius: STYLE.r, color: STYLE.t1, fontFamily: "inherit" }}>
                 <span style={{ color: r.ingId ? STYLE.ac : STYLE.t3 }}>{r.ingId ? r.ingName : "Seleziona ingrediente..."}</span>
                 <span style={{ fontSize: 10, color: STYLE.t3 }}>▾</span>
               </button>
