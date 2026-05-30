@@ -3116,8 +3116,7 @@ REGOLE: ${hint}
 NOTA: ingredienti decorativi (insalate, erbette, fiori, microgreens) → qty 5-10g, decorativo: true
 
 INGREDIENTI (calcola grammature per TUTTI):
-${selezionati.map((r, i) => `${i+1}. ${r.ingName}`).join("
-")}
+${selezionati.map((r, i) => (i+1) + ". " + r.ingName).join("\n")}
 
 Restituisci SOLO JSON:
 {"grammature":[{"nome":"","qty":0,"unit":"g","waste":5,"decorativo":false}]}`
