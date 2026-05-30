@@ -2912,6 +2912,163 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 }
 
 
+// ──────────────────────────────────────────────────────────────────────────────
+// CHEF Z AI — Assistente AI per la ristorazione professionale
+// ──────────────────────────────────────────────────────────────────────────────
+
+const CHEFZ_SYSTEM_PROMPT = `Sei Chef Z AI, l'assistente intelligente integrato nell'app Chef Z.
+
+IDENTITÀ:
+Sei un consulente esperto di ristorazione professionale italiana a 360°. Hai conoscenza approfondita di cucina professionale, ingredienti, tecniche culinarie, gestione ristorante, food cost, fornitori, attrezzature professionali e normative del settore.
+
+COSA SAI FARE:
+- Rispondere a domande su cucina professionale italiana e internazionale
+- Spiegare tecniche culinarie, cotture, preparazioni
+- Dare consigli su ingredienti, stagionalità, abbinamenti
+- Aiutare con calcoli di food cost e gestione costi
+- Consigliare su attrezzature professionali (forni, abbattitori, sottovuoto ecc.)
+- Spiegare normative HACCP e igiene alimentare
+- Dare consigli su fornitori e gestione approvvigionamenti
+- Spiegare come funziona Chef Z in ogni sua funzione
+
+COME FUNZIONA CHEF Z (sai tutto di questa app):
+- FORNITURE: scansiona fatture con foto o PDF, AI legge prezzi e prodotti, aggiorna magazzino automaticamente, alert se prezzi aumentano oltre il 5%
+- MAGAZZINO: storico prezzi per ingrediente e fornitore, navigazione per categoria (Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Dispensa)
+- RICETTE: calcola food cost con ingredienti reali, ricarico selezionabile, prezzo di vendita consigliato automatico
+- DASHBOARD: KPI in tempo reale, piatti da rivedere cliccabili, prezzi aumentati cliccabili, grafico andamento prezzi
+- SPESA: lista della spesa dal magazzino, invio ordini via WhatsApp o email ai fornitori
+- CHEF Z AI: questo assistente, per domande su cucina e sull'app
+
+REGOLA ASSOLUTA:
+Rispondi SOLO a domande che riguardano: cucina professionale, ristorazione, ingredienti, ricette, food cost, fornitori, attrezzature, HACCP, gestione ristorante, Chef Z.
+Per qualsiasi altra domanda (politica, sport, tecnologia generica, vita privata, ecc.) rispondi SEMPRE e SOLO con:
+"Sono Chef Z AI. Posso aiutarti solo su cucina, ristorazione professionale e sull'utilizzo di Chef Z. Come posso esserti utile?"
+
+Rispondi sempre in italiano. Sii diretto, pratico e professionale. Usa la terminologia del settore.`
+
+function ChefZAI({ isMobile }) {
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Ciao! Sono Chef Z AI, il tuo consulente di cucina e ristorazione professionale. Posso aiutarti su ingredienti, ricette, food cost, attrezzature, fornitori, HACCP e su come usare Chef Z. Come posso esserti utile?" }
+  ])
+  const [input, setInput] = useState("")
+  const [loading, setLoading] = useState(false)
+  const bottomRef = useRef(null)
+  const inputRef = useRef(null)
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  async function sendMessage() {
+    const text = input.trim()
+    if (!text || loading) return
+    setInput("")
+    const newMessages = [...messages, { role: "user", content: text }]
+    setMessages(newMessages)
+    setLoading(true)
+
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          max_tokens: 1024,
+          messages: [
+            { role: "system", content: CHEFZ_SYSTEM_PROMPT },
+            ...newMessages.map(m => ({ role: m.role, content: m.content }))
+          ]
+        })
+      })
+      const data = await res.json()
+      if (data.error) throw new Error(data.error.message)
+      const reply = data.choices?.[0]?.message?.content || "Errore nella risposta."
+      setMessages(prev => [...prev, { role: "assistant", content: reply }])
+    } catch(e) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Errore di connessione. Riprova." }])
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: isMobile ? "calc(100vh - 130px)" : "calc(100vh - 100px)" }}>
+      {/* Header */}
+      <div style={{ marginBottom: 16, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <span style={{ fontFamily: "Georgia,serif", fontStyle: "italic", fontSize: 22, color: STYLE.ac, lineHeight: 1 }}>Z</span>
+          </div>
+          <div>
+            <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1 }}>Chef Z AI</div>
+            <div style={{ fontSize: 11, color: STYLE.t3 }}>Consulente di cucina e ristorazione professionale</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Messaggi */}
+      <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", gap: 12, paddingBottom: 16 }}>
+        {messages.map((m, i) => (
+          <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start" }}>
+            {m.role === "assistant" && (
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, marginRight: 8, marginTop: 4 }}>
+                <span style={{ fontFamily: "Georgia,serif", fontStyle: "italic", fontSize: 14, color: STYLE.ac }}>Z</span>
+              </div>
+            )}
+            <div style={{
+              maxWidth: "78%",
+              padding: "10px 14px",
+              borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+              background: m.role === "user" ? STYLE.ac : STYLE.surf,
+              color: m.role === "user" ? "#0d0d0f" : STYLE.t1,
+              fontSize: 14,
+              lineHeight: 1.6,
+              border: m.role === "assistant" ? STYLE.bds : "none",
+              whiteSpace: "pre-wrap"
+            }}>
+              {m.content}
+            </div>
+          </div>
+        ))}
+        {loading && (
+          <div style={{ display: "flex", justifyContent: "flex-start", alignItems: "flex-start", gap: 8 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: STYLE.acg, border: "1px solid " + STYLE.acd, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <span style={{ fontFamily: "Georgia,serif", fontStyle: "italic", fontSize: 14, color: STYLE.ac }}>Z</span>
+            </div>
+            <div style={{ padding: "12px 16px", borderRadius: "16px 16px 16px 4px", background: STYLE.surf, border: STYLE.bds, display: "flex", gap: 4, alignItems: "center" }}>
+              {[0,1,2].map(n => (
+                <div key={n} style={{ width: 6, height: 6, borderRadius: "50%", background: STYLE.ac, opacity: 0.6, animation: `pulse ${0.8 + n * 0.15}s ease-in-out infinite alternate` }} />
+              ))}
+            </div>
+          </div>
+        )}
+        <div ref={bottomRef} />
+      </div>
+
+      {/* Input */}
+      <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "12px 0 0", borderTop: STYLE.bds }}>
+        <input
+          ref={inputRef}
+          style={{ ...inp({ flex: 1, fontSize: 14, padding: "10px 14px" }), borderRadius: 12 }}
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+          placeholder="Chiedi qualcosa su cucina o Chef Z..."
+          disabled={loading}
+        />
+        <button
+          onClick={sendMessage}
+          disabled={loading || !input.trim()}
+          style={{ ...btn("p"), borderRadius: 12, padding: "10px 16px", opacity: loading || !input.trim() ? 0.5 : 1 }}>
+          ➤
+        </button>
+      </div>
+
+      <style>{`@keyframes pulse { from { opacity: 0.3; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }`}</style>
+    </div>
+  )
+}
+
+
 function FMPercentIcon({ size = 44 }) {
   const black = "#0d0d0f"
   const circleSize = size * 0.38
@@ -3450,6 +3607,7 @@ function NavIcon({ id }) {
   if (id === "dishes_fc" || id === "fc") return <svg {...s}><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
   if (id === "dishes") return <svg {...s}><circle cx="12" cy="12" r="9"/><path d="M9 7v10M15 7v4a2 2 0 0 1-4 0V7"/></svg>
   if (id === "dash")   return <svg {...s}><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+  if (id === "ai")     return <svg {...s}><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.93 4.93l2.12 2.12M16.95 16.95l2.12 2.12M4.93 19.07l2.12-2.12M16.95 7.05l2.12-2.12"/></svg>
   if (id === "spesa")  return <svg {...s}><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
   return null
 }
@@ -3460,6 +3618,7 @@ const NAV = [
   { id: "dishes", label: "Ricette",   group: "Gestione" },
   { id: "dash",   label: "Dashboard", group: "Gestione" },
   { id: "spesa",  label: "Spesa",     group: "Gestione" },
+  { id: "ai",     label: "Chef Z AI", group: "Gestione" },
 ]
 
 export default function App() {
@@ -3796,6 +3955,7 @@ export default function App() {
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "ai":     return <ChefZAI isMobile={isMobile} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
