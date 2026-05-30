@@ -1263,7 +1263,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
 
 const DL = s => new Date(s).toLocaleDateString("it-IT", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })
 
-function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile, setNavBack, clearNavBack, pushHistory }) {
+function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learned, setLearned, isMobile, setNavBack, clearNavBack, pushHistory, recentAlerts, setRecentAlerts }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
   
   const [invTab, setInvTab]         = useState("fatture") // "fatture" | "fornitori" | "banchetti"
@@ -1279,7 +1279,6 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
   const [progLabel, setProgLabel] = useState("")
   const [ocrError, setOcrError]   = useState(null)
   const [priceAlerts, setPriceAlerts] = useState([]) // alert prezzi anomali
-  const [recentAlerts, setRecentAlerts] = useState([]) // { ingId, cat, sotto1 } - temporaneo fino a visione
 
   // dati fattura
   const [fattura, setFattura] = useState(() => {
@@ -4207,6 +4206,7 @@ export default function App() {
   useEffect(() => { const h = () => setW(window.innerWidth); window.addEventListener("resize", h); return () => window.removeEventListener("resize", h) }, [])
 
   const [ings,      setIngs]      = useState([])
+  const [recentAlerts, setRecentAlerts] = useState([]) // card rosse magazzino post-fattura
   const [learned,    setLearned]   = useState({}) // prodotti imparati dall'utente
   const [dishes,    setDishes]    = useState([])
   const [invs,      setInvs]      = useState([])
@@ -4498,7 +4498,7 @@ export default function App() {
         case "dash":   return <Dashboard ings={ings} dishes={dishes} invs={invs} isMobile={isMobile} setPage={navTo} />
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
-        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
         case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
