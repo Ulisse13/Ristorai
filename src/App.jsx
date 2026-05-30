@@ -440,7 +440,7 @@ function Dashboard({ ings, dishes, invs, isMobile, setPage }) {
   )
 }
 
-function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, pushHistory }) {
+function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, pushHistory, recentAlerts = [], setRecentAlerts }) {
   const CATS = ["Carni", "Pesce", "Freschi", "Frutta e Verdura", "Surgelati", "Dispensa"]
   const [selSotto1, setSelSotto1] = useState(null)
   // Trova prezzi per fornitore per un ingrediente
