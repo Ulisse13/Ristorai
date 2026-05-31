@@ -1965,7 +1965,9 @@ PRODOTTI:
         const bestPrice = newPrezzi[0].price
         const newAvg = Math.round(((ing.avg * 0.7) + (bestPrice * 0.3)) * 100) / 100
         const catFields = match.cat && match.cat !== ing.cat ? { cat: match.cat, sotto1: match.sotto1 || "", sotto2: match.sotto2 || "" } : {}
-        return { ...ing, prezzi: newPrezzi, prev: ing.cur, cur: bestPrice, avg: newAvg, ...catFields }
+        // Aggiorna unità se l'utente ha compilato il contenuto confezione
+        const unitFields = match.confUnit ? { unit: match.confUnit } : {}
+        return { ...ing, prezzi: newPrezzi, prev: ing.cur, cur: bestPrice, avg: newAvg, ...catFields, ...unitFields }
       }))
     }
 
