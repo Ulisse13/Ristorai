@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, Component } from "react"
+import { lookupNutri, calcolaNutriPorzione } from "./nutriDB.js"
 
 
 function simFornitore(a, b) {
@@ -87,6 +88,40 @@ function needsConfezione(cat, sotto1, unita) {
   }
   // Frutta e Verdura, Surgelati → sempre abilitato
   return true
+}
+
+
+// ── Foto piatti (localStorage) ──────────────────────────────────────────────
+function saveDishPhoto(dishId, base64) {
+  try { localStorage.setItem("dish_photo_" + dishId, base64) } catch(e) {}
+}
+function getDishPhoto(dishId) {
+  try { return localStorage.getItem("dish_photo_" + dishId) } catch(e) { return null }
+}
+function deleteDishPhoto(dishId) {
+  try { localStorage.removeItem("dish_photo_" + dishId) } catch(e) {}
+}
+async function compressPhoto(file) {
+  return new Promise(resolve => {
+    const reader = new FileReader()
+    reader.onload = e => {
+      const img = new window.Image()
+      img.onload = () => {
+        const MAX = 800
+        let w = img.width, h = img.height
+        if (w > MAX || h > MAX) {
+          if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+          else { w = Math.round(w * MAX / h); h = MAX }
+        }
+        const canvas = document.createElement("canvas")
+        canvas.width = w; canvas.height = h
+        canvas.getContext("2d").drawImage(img, 0, 0, w, h)
+        resolve(canvas.toDataURL("image/jpeg", 0.65))
+      }
+      img.src = e.target.result
+    }
+    reader.readAsDataURL(file)
+  })
 }
 
 class ErrorBoundary extends Component {
@@ -1058,6 +1093,114 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
       )}
 
       {/* Delete confirm */}
+      {/* SCHEDA PIATTO */}
+      {detail && (
+        <div onClick={e => e.target === e.currentTarget && setDetail(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "flex-end", overflowY: "auto" }}>
+          <div style={{ width: "100%", background: STYLE.surf, borderRadius: "20px 20px 0 0", maxHeight: "90vh", overflowY: "auto" }}>
+            {/* Foto */}
+            {getDishPhoto(detail.id)
+              ? <img src={getDishPhoto(detail.id)} style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: "20px 20px 0 0" }} />
+              : <div style={{ width: "100%", height: 160, background: STYLE.el, borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>🍽️</div>
+            }
+            <div style={{ padding: "20px 20px 32px" }}>
+              {/* Header */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 22, color: STYLE.t1, marginBottom: 2 }}>{detail.name}</div>
+                  <div style={{ fontSize: 12, color: STYLE.t3, textTransform: "capitalize" }}>{detail.cat}</div>
+                </div>
+                <button onClick={() => setDetail(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: STYLE.t3, fontSize: 16 }}>✕</button>
+              </div>
+              {/* KPI */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
+                {[
+                  { l: "Food cost", v: detail.fc ? Math.round(detail.fc*100)+"%" : "—", c: FC_COLOR(detail.fc, detail.target) },
+                  { l: "Prezzo", v: detail.price > 0 ? formatEuro(detail.price) : "—", c: STYLE.ac },
+                  { l: "Margine", v: detail.margin > 0 ? formatEuro(detail.margin) : "—", c: STYLE.green },
+                ].map((k,i) => (
+                  <div key={i} style={{ background: STYLE.el, borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
+                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: k.c, fontWeight: 700 }}>{k.v}</div>
+                  </div>
+                ))}
+              </div>
+              {/* Ingredienti */}
+              {detail.recipe && detail.recipe.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Ingredienti</div>
+                  {detail.recipe.map((r, i) => {
+                    const ing = ings.find(x => x.id === r.ingId)
+                    if (!ing) return null
+                    const qty = r.unit === "kg" ? (r.qty * 1000) + "g" : r.unit === "l" ? (r.qty * 1000) + "ml" : r.qty + (r.unit || "")
+                    return (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #1f1f25", fontSize: 13 }}>
+                        <span style={{ color: STYLE.t1 }}>{ing.name}</span>
+                        <span style={{ color: STYLE.t3 }}>{qty}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {/* Valori nutrizionali */}
+              {(() => {
+                if (!detail.recipe || detail.recipe.length === 0) return null
+                const n = calcolaNutriPorzione(detail.recipe, ings)
+                if (!n) return null
+                return (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
+                      Valori nutrizionali per porzione
+                      {n.trovati < n.totali && <span style={{ color: STYLE.ac, fontWeight: 400, marginLeft: 6 }}>({n.trovati}/{n.totali} ingredienti)</span>}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 8 }}>
+                      {[
+                        { l: "Kcal", v: n.kcal, u: "" },
+                        { l: "Proteine", v: n.prot, u: "g" },
+                        { l: "Carboidrati", v: n.carb, u: "g" },
+                        { l: "Grassi sat.", v: n.gsat, u: "g" },
+                      ].map((k,i) => (
+                        <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1 }}>{k.v}<span style={{ fontSize: 10, color: STYLE.t3 }}>{k.u}</span></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                      {[
+                        { l: "Fibre", v: n.fibr, u: "g" },
+                        { l: "Zuccheri", v: n.zucc, u: "g" },
+                        { l: "Sodio", v: n.sodio, u: "mg" },
+                      ].map((k,i) => (
+                        <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: STYLE.t2 }}>{k.v}<span style={{ fontSize: 10, color: STYLE.t3 }}>{k.u}</span></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+
+              {/* Azioni */}
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", background: STYLE.el, border: STYLE.bd, borderRadius: 8, fontSize: 13, color: STYLE.t2, cursor: "pointer", flex: 1, justifyContent: "center" }}>
+                  📷 {getDishPhoto(detail.id) ? "Cambia foto" : "Aggiungi foto"}
+                  <input type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+                    onChange={async e => {
+                      const f = e.target.files?.[0]
+                      if (f) { const b64 = await compressPhoto(f); saveDishPhoto(detail.id, b64); setDetail({ ...detail, _ts: Date.now() }) }
+                    }} />
+                </label>
+                <button style={{ ...btn("g"), flex: 1, justifyContent: "center" }} onClick={() => { setEditDish?.(detail); setDetail(null); setShowFC(true) }}>Modifica</button>
+                <button style={{ padding: "10px 14px", background: "none", border: "1px solid rgba(248,113,113,0.3)", color: STYLE.red, borderRadius: 8, cursor: "pointer", fontSize: 13 }}
+                  onClick={() => { setDelTarget(detail); setDetail(null) }}>Elimina</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {delTarget && (
         <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
@@ -1197,9 +1340,27 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
           Nessun piatto in questa categoria  -  aggiungili dalla sezione Food Cost
         </div>
       ) : (
-        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {list.map(d => (
-            <div key={d.id} style={card({ padding: "14px 16px" })}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3,1fr)", gap: 12 }}>
+          {list.map(d => {
+            const photo = getDishPhoto(d.id)
+            return (
+            <div key={d.id} onClick={() => setDetail(d)}
+              style={{ ...card({ padding: 0, cursor: "pointer", overflow: "hidden" }), display: "flex", flexDirection: "column" }}>
+              {photo
+                ? <img src={photo} style={{ width: "100%", height: 120, objectFit: "cover" }} />
+                : <div style={{ width: "100%", height: 120, background: STYLE.el, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36 }}>🍽️</div>
+              }
+              <div style={{ padding: "10px 12px", flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: STYLE.t1, marginBottom: 4, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.name}</div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 11, color: FC_COLOR(d.fc, d.target), fontWeight: 600 }}>{d.fc ? Math.round(d.fc*100)+"% FC" : "—"}</span>
+                  <span style={{ fontSize: 11, color: STYLE.ac, fontWeight: 600 }}>{d.price > 0 ? formatEuro(d.price) : "—"}</span>
+                </div>
+              </div>
+            </div>
+          )})}
+          {false && list.map(d => (
+            <div key={d.id+"_old"} style={{ display:"none" }}>
               <div style={row({ justifyContent: "space-between", marginBottom: 8 })}>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 15, fontWeight: 700, color: STYLE.t1, marginBottom: 2 }}>{d.name}</div>
@@ -3054,6 +3215,7 @@ function FoodCostAI({ ings, dishes, setDishes, isMobile, onBack }) {
   const UNITS = ["g", "kg", "ml", "l", "pz"]
 
   const [step, setStep] = useState("form") // "form" | "loading" | "review"
+  const [photoPreview, setPhotoPreview] = useState(null)
   const [form, setForm] = useState({ name: "", cat: "Secondi", ricarico: "300" })
   const [rows, setRows] = useState([]) // ingredienti selezionati: { id, ingId, ingName, ingUnit, cur, qty, unit, waste, _open, _cat, _sotto1, lineCost }
   const [error, setError] = useState("")
@@ -3170,13 +3332,15 @@ Restituisci SOLO JSON:
       qty: r.unit === "g" ? r.qty / 1000 : r.unit === "ml" ? r.qty / 1000 : r.qty,
       unit: r.ingUnit || "kg", waste: String(r.waste || 0)
     }))
+    const newId = "d" + uid2()
     setDishes(prev => [...prev, {
-      id: "d" + uid2(), name: form.name.trim(),
+      id: newId, name: form.name.trim(),
       cat: catMap[form.cat] || form.cat.toLowerCase(),
       price: sugPrice, target: fcPct / 100, cost: totalCost,
       fc: fcPct / 100, margin: r2(sugPrice - totalCost),
       ricarico, recipe, stagioni: []
     }])
+    if (photoPreview) saveDishPhoto(newId, photoPreview)
     setSaved(true)
     setTimeout(() => {
       setSaved(false); setStep("form")
@@ -3251,6 +3415,27 @@ Restituisci SOLO JSON:
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Foto piatto */}
+      <div style={card({ padding: 16, marginBottom: 14 })}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 12 }}>Foto piatto (opzionale)</div>
+        {photoPreview ? (
+          <div style={{ position: "relative", marginBottom: 8 }}>
+            <img src={photoPreview} style={{ width: "100%", height: 160, objectFit: "cover", borderRadius: 8 }} />
+            <button onClick={() => setPhotoPreview(null)}
+              style={{ position: "absolute", top: 6, right: 6, background: "rgba(0,0,0,0.6)", border: "none", borderRadius: "50%", width: 28, height: 28, color: "#fff", cursor: "pointer", fontSize: 14 }}>✕</button>
+          </div>
+        ) : (
+          <label style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px", background: STYLE.el, borderRadius: 8, border: "1px dashed #2a2a31", cursor: "pointer", fontSize: 13, color: STYLE.t3 }}>
+            📷 Scatta o scegli foto
+            <input type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+              onChange={async e => {
+                const f = e.target.files?.[0]
+                if (f) { const b64 = await compressPhoto(f); setPhotoPreview(b64) }
+              }} />
+          </label>
+        )}
       </div>
 
       <div style={row({ gap: 10, marginBottom: 0 })}>
@@ -3631,7 +3816,7 @@ function LoginPage() {
     email: "Email", password: "Password", confirmPwd: "Conferma password",
     forgotPwd: "Password dimenticata?", loginGoogle: "Continua con Google",
     noAccount: "Non hai un account?", haveAccount: "Hai già un account?",
-    appDesc: "Gestione costi per ristoratori",
+    appDesc: "La ristorazione a 360°",
     errEmail: "Email non valida", errPwd: "La password deve avere almeno 6 caratteri",
     errPwdMatch: "Le password non coincidono",
     errLogin: "Email o password errati", errRegister: "Errore durante la registrazione",
@@ -3684,11 +3869,13 @@ function LoginPage() {
     <div style={{ minHeight: "100vh", background: "#0d0d0f", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 20, fontFamily: "system-ui, sans-serif" }}>
 
       <div style={{ marginBottom: 32, textAlign: "center" }}>
-        <div style={{ width: 72, height: 72, background: STYLE.ac, borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
-          <FMPercentIcon size={44} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 3, lineHeight: 1 }}>
+            <span style={{ fontFamily: "'Inter',system-ui,sans-serif", fontWeight: 700, fontSize: 36, color: STYLE.t1, letterSpacing: "-1px", paddingBottom: 6 }}>CHEF</span>
+            <span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", fontSize: 72, color: STYLE.ac, lineHeight: 0.85, filter: "drop-shadow(0 0 20px rgba(232,168,56,0.3))" }}>Z</span>
+          </div>
+          <div style={{ fontSize: 12, color: STYLE.t3, letterSpacing: "0.15em", textTransform: "uppercase" }}>{t.appDesc}</div>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 2, fontSize: 26 }}><span style={{ fontFamily: "'Inter',system-ui,sans-serif", fontWeight: 600, color: STYLE.t1, letterSpacing: "-0.5px" }}>CHEF</span><span style={{ fontFamily: "'Georgia',serif", fontStyle: "italic", color: STYLE.ac }}>Z</span></div>
-        <div style={{ fontSize: 13, color: STYLE.t3, marginTop: 4 }}>{t.appDesc}</div>
       </div>
       <div style={{ width: "100%", maxWidth: 380, background: STYLE.surf, border: STYLE.bd, borderRadius: 16, padding: "28px 24px" }}>
         <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 20 }}>
@@ -3729,8 +3916,9 @@ function LoginPage() {
         </button>
         {mode !== "reset" && (
           <button onClick={handleGoogle} disabled={loading}
-            style={{ width: "100%", padding: "12px", background: STYLE.el, color: STYLE.t1, border: STYLE.bd, borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <span style={{ fontSize: 16 }}>G</span> {t.loginGoogle}
+            style={{ width: "100%", padding: "12px", background: "#ffffff", color: "#1f1f1f", border: "none", borderRadius: 8, fontFamily: "inherit", fontSize: 13, fontWeight: 500, cursor: "pointer", marginBottom: 16, display: "flex", alignItems: "center", justifyContent: "center", gap: 10 }}>
+            <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            {t.loginGoogle}
           </button>
         )}
         <div style={{ textAlign: "center", fontSize: 13, color: STYLE.t3 }}>
