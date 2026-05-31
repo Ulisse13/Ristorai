@@ -1093,113 +1093,6 @@ function Ingredients({ ings, setIngs, invs, isMobile, setNavBack, clearNavBack, 
       )}
 
       {/* Delete confirm */}
-      {/* SCHEDA PIATTO */}
-      {detail && (
-        <div onClick={e => e.target === e.currentTarget && setDetail(null)}
-          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "flex-end", overflowY: "auto" }}>
-          <div style={{ width: "100%", background: STYLE.surf, borderRadius: "20px 20px 0 0", maxHeight: "90vh", overflowY: "auto" }}>
-            {/* Foto */}
-            {getDishPhoto(detail.id)
-              ? <img src={getDishPhoto(detail.id)} style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: "20px 20px 0 0" }} />
-              : <div style={{ width: "100%", height: 160, background: STYLE.el, borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>🍽️</div>
-            }
-            <div style={{ padding: "20px 20px 32px" }}>
-              {/* Header */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
-                <div>
-                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 22, color: STYLE.t1, marginBottom: 2 }}>{detail.name}</div>
-                  <div style={{ fontSize: 12, color: STYLE.t3, textTransform: "capitalize" }}>{detail.cat}</div>
-                </div>
-                <button onClick={() => setDetail(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: STYLE.t3, fontSize: 16 }}>✕</button>
-              </div>
-              {/* KPI */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
-                {[
-                  { l: "Food cost", v: detail.fc ? Math.round(detail.fc*100)+"%" : "—", c: FC_COLOR(detail.fc, detail.target) },
-                  { l: "Prezzo", v: detail.price > 0 ? formatEuro(detail.price) : "—", c: STYLE.ac },
-                  { l: "Margine", v: detail.margin > 0 ? formatEuro(detail.margin) : "—", c: STYLE.green },
-                ].map((k,i) => (
-                  <div key={i} style={{ background: STYLE.el, borderRadius: 10, padding: "10px 12px" }}>
-                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
-                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: k.c, fontWeight: 700 }}>{k.v}</div>
-                  </div>
-                ))}
-              </div>
-              {/* Ingredienti */}
-              {detail.recipe && detail.recipe.length > 0 && (
-                <div style={{ marginBottom: 16 }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Ingredienti</div>
-                  {detail.recipe.map((r, i) => {
-                    const ing = ings.find(x => x.id === r.ingId)
-                    if (!ing) return null
-                    const qty = r.unit === "kg" ? (r.qty * 1000) + "g" : r.unit === "l" ? (r.qty * 1000) + "ml" : r.qty + (r.unit || "")
-                    return (
-                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #1f1f25", fontSize: 13 }}>
-                        <span style={{ color: STYLE.t1 }}>{ing.name}</span>
-                        <span style={{ color: STYLE.t3 }}>{qty}</span>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-              {/* Valori nutrizionali */}
-              {(() => {
-                if (!detail.recipe || detail.recipe.length === 0) return null
-                const n = calcolaNutriPorzione(detail.recipe, ings)
-                if (!n) return null
-                return (
-                  <div style={{ marginBottom: 16 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
-                      Valori nutrizionali per porzione
-                      {n.trovati < n.totali && <span style={{ color: STYLE.ac, fontWeight: 400, marginLeft: 6 }}>({n.trovati}/{n.totali} ingredienti)</span>}
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 8 }}>
-                      {[
-                        { l: "Kcal", v: n.kcal, u: "" },
-                        { l: "Proteine", v: n.prot, u: "g" },
-                        { l: "Carboidrati", v: n.carb, u: "g" },
-                        { l: "Grassi sat.", v: n.gsat, u: "g" },
-                      ].map((k,i) => (
-                        <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
-                          <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1 }}>{k.v}<span style={{ fontSize: 10, color: STYLE.t3 }}>{k.u}</span></div>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
-                      {[
-                        { l: "Fibre", v: n.fibr, u: "g" },
-                        { l: "Zuccheri", v: n.zucc, u: "g" },
-                        { l: "Sodio", v: n.sodio, u: "mg" },
-                      ].map((k,i) => (
-                        <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
-                          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
-                          <div style={{ fontSize: 14, fontWeight: 700, color: STYLE.t2 }}>{k.v}<span style={{ fontSize: 10, color: STYLE.t3 }}>{k.u}</span></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })()}
-
-              {/* Azioni */}
-              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                <label style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", background: STYLE.el, border: STYLE.bd, borderRadius: 8, fontSize: 13, color: STYLE.t2, cursor: "pointer", flex: 1, justifyContent: "center" }}>
-                  📷 {getDishPhoto(detail.id) ? "Cambia foto" : "Aggiungi foto"}
-                  <input type="file" accept="image/*" capture="environment" style={{ display: "none" }}
-                    onChange={async e => {
-                      const f = e.target.files?.[0]
-                      if (f) { const b64 = await compressPhoto(f); saveDishPhoto(detail.id, b64); setDetail({ ...detail, _ts: Date.now() }) }
-                    }} />
-                </label>
-                <button style={{ ...btn("g"), flex: 1, justifyContent: "center" }} onClick={() => { setEditDish?.(detail); setDetail(null); setShowFC(true) }}>Modifica</button>
-                <button style={{ padding: "10px 14px", background: "none", border: "1px solid rgba(248,113,113,0.3)", color: STYLE.red, borderRadius: 8, cursor: "pointer", fontSize: 13 }}
-                  onClick={() => { setDelTarget(detail); setDetail(null) }}>Elimina</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {delTarget && (
         <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
@@ -1400,6 +1293,107 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
           ))}
         </div>
       )}
+      {/* SCHEDA PIATTO */}
+      {detail && (
+        <div onClick={e => e.target === e.currentTarget && setDetail(null)}
+          style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.85)", zIndex: 200, display: "flex", alignItems: "flex-end", overflowY: "auto" }}>
+          <div style={{ width: "100%", background: STYLE.surf, borderRadius: "20px 20px 0 0", maxHeight: "90vh", overflowY: "auto" }}>
+            {getDishPhoto(detail.id)
+              ? <img src={getDishPhoto(detail.id)} style={{ width: "100%", height: 220, objectFit: "cover", borderRadius: "20px 20px 0 0" }} />
+              : <div style={{ width: "100%", height: 160, background: STYLE.el, borderRadius: "20px 20px 0 0", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 48 }}>🍽️</div>
+            }
+            <div style={{ padding: "20px 20px 32px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+                <div>
+                  <div style={{ fontFamily: "'Georgia',serif", fontSize: 22, color: STYLE.t1, marginBottom: 2 }}>{detail.name}</div>
+                  <div style={{ fontSize: 12, color: STYLE.t3, textTransform: "capitalize" }}>{detail.cat}</div>
+                </div>
+                <button onClick={() => setDetail(null)} style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 8, width: 32, height: 32, cursor: "pointer", color: STYLE.t3, fontSize: 16 }}>✕</button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 16 }}>
+                {[
+                  { l: "Food cost", v: detail.fc ? Math.round(detail.fc*100)+"%" : "—", c: FC_COLOR(detail.fc, detail.target) },
+                  { l: "Prezzo", v: detail.price > 0 ? formatEuro(detail.price) : "—", c: STYLE.ac },
+                  { l: "Margine", v: detail.margin > 0 ? formatEuro(detail.margin) : "—", c: STYLE.green },
+                ].map((k,i) => (
+                  <div key={i} style={{ background: STYLE.el, borderRadius: 10, padding: "10px 12px" }}>
+                    <div style={{ fontSize: 9, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
+                    <div style={{ fontFamily: "'Georgia',serif", fontSize: 20, color: k.c, fontWeight: 700 }}>{k.v}</div>
+                  </div>
+                ))}
+              </div>
+              {detail.recipe && detail.recipe.length > 0 && (
+                <div style={{ marginBottom: 16 }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 8 }}>Ingredienti</div>
+                  {detail.recipe.map((r, i) => {
+                    const ing = ings.find(x => x.id === r.ingId)
+                    if (!ing) return null
+                    const qty = r.unit === "kg" ? (r.qty * 1000) + "g" : r.unit === "l" ? (r.qty * 1000) + "ml" : r.qty + (r.unit || "")
+                    return (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", padding: "7px 0", borderBottom: "1px solid #1f1f25", fontSize: 13 }}>
+                        <span style={{ color: STYLE.t1 }}>{ing.name}</span>
+                        <span style={{ color: STYLE.t3 }}>{qty}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+              {(() => {
+                if (!detail.recipe || detail.recipe.length === 0) return null
+                const n = calcolaNutriPorzione(detail.recipe, ings)
+                if (!n) return null
+                return (
+                  <div style={{ marginBottom: 16 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 10 }}>
+                      Valori nutrizionali per porzione
+                      {n.trovati < n.totali && <span style={{ color: STYLE.ac, fontWeight: 400, marginLeft: 6 }}>({n.trovati}/{n.totali} ingredienti)</span>}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6, marginBottom: 8 }}>
+                      {[
+                        { l: "Kcal", v: n.kcal, u: "" },
+                        { l: "Proteine", v: n.prot, u: "g" },
+                        { l: "Carbo", v: n.carb, u: "g" },
+                        { l: "Grassi", v: n.gsat, u: "g" },
+                      ].map((k,i) => (
+                        <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
+                          <div style={{ fontSize: 16, fontWeight: 700, color: STYLE.t1 }}>{k.v}<span style={{ fontSize: 10, color: STYLE.t3 }}>{k.u}</span></div>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                      {[
+                        { l: "Fibre", v: n.fibr, u: "g" },
+                        { l: "Zuccheri", v: n.zucc, u: "g" },
+                        { l: "Sodio", v: n.sodio, u: "mg" },
+                      ].map((k,i) => (
+                        <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
+                          <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
+                          <div style={{ fontSize: 14, fontWeight: 700, color: STYLE.t2 }}>{k.v}<span style={{ fontSize: 10, color: STYLE.t3 }}>{k.u}</span></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+              <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                <label style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 14px", background: STYLE.el, border: STYLE.bd, borderRadius: 8, fontSize: 13, color: STYLE.t2, cursor: "pointer", flex: 1, justifyContent: "center" }}>
+                  📷 {getDishPhoto(detail.id) ? "Cambia foto" : "Aggiungi foto"}
+                  <input type="file" accept="image/*" capture="environment" style={{ display: "none" }}
+                    onChange={async e => {
+                      const f = e.target.files?.[0]
+                      if (f) { const b64 = await compressPhoto(f); saveDishPhoto(detail.id, b64); setDetail({ ...detail, _ts: Date.now() }) }
+                    }} />
+                </label>
+                <button style={{ ...btn("g"), flex: 1, justifyContent: "center" }} onClick={() => { setEditDish?.(detail); setDetail(null); setShowFC(true) }}>Modifica</button>
+                <button style={{ padding: "10px 14px", background: "none", border: "1px solid rgba(248,113,113,0.3)", color: STYLE.red, borderRadius: 8, cursor: "pointer", fontSize: 13 }}
+                  onClick={() => { setDelTarget(detail); setDetail(null) }}>Elimina</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 {delTarget && (
         <div onClick={e => e.target === e.currentTarget && setDelTarget(null)}
           style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.8)", display: "flex", alignItems: "center", justifyContent: "center", padding: 20, zIndex: 1000 }}>
