@@ -1,7 +1,7 @@
 {
-  "name": "FoodMargin",
-  "short_name": "FoodMargin",
-  "description": "Gestione costi e margini per ristoratori",
+  "name": "Chef Z",
+  "short_name": "Chef Z",
+  "description":  "La ristorazione a 360°",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0d0d0f",
