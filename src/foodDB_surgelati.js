@@ -1,92 +1,171 @@
-// ─────────────────────────────────────────────────────────────────────────────
 // foodDB_surgelati.js — Database SURGELATI per Ristorai
-// Struttura: nome (matching) + testo (varianti) + sotto1/sotto2 + unit
-// Nota: gli stati (IQF, gelo, S, C ecc.) sono gestiti da detectStato in foodDB.js
-// Fonti: catalogo MARR + catalogo Selecta
-// ─────────────────────────────────────────────────────────────────────────────
-
+// Fonti: catalogo Selecta + catalogo MARR + keywords IQF/glassato/abbattuto
 export const SURGELATI_DB = [
 
   // ══════════════════════════════════════════════════════════════════════════
   // CARNI SURGELATE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Pollo Surgelato", testo: "alias: pollo gelo, pollo congelato, pollo IQF | varianti: intero, quarti, busto, gallina, cappone, faraona | calibri: 180/220g, 230g, 240/280g | CL.A | S/V", sotto1: "Carni", sotto2: "Pollo", unit: "kg" },
-  { nome: "Petto Pollo Surgelato", testo: "alias: petto pollo gelo, petto pollo IQF | varianti: intero, a fette, prep., marinato, croccante | calibri: 150/200g, 220g | TR, S/V", sotto1: "Carni", sotto2: "Pollo", unit: "kg" },
-  { nome: "Coscia Pollo Surgelata", testo: "alias: coscia pollo gelo, coscia pollo IQF, fuso pollo, sovracoscia pollo | calibri: 180/220g, 230g, 240/280g | CL.A | S/V", sotto1: "Carni", sotto2: "Pollo", unit: "kg" },
-  { nome: "Ali Pollo Surgelate", testo: "alias: ali pollo gelo, alette pollo, wings surgelate, mexico wings | arrostite, crude | IQF | S/V", sotto1: "Carni", sotto2: "Pollo", unit: "kg" },
-  { nome: "Hamburger Surgelato", testo: "alias: burger surgelato, hamburger gelo, hamburger congelato | varianti: manzo, bovino, Angus, Black Angus, ovino, vegetale, vegano | calibri: 80g, 100g, 113g, 125g, 150g, 180g, 200g | IQF | S/V", sotto1: "Carni", sotto2: "Hamburger", unit: "kg" },
-  { nome: "Polpette Surgelate", testo: "alias: polpette gelo, polpetta surgelata | varianti: bovino, maiale, miste | calibri: 20g, 30g, 50g | IQF | S/V", sotto1: "Carni", sotto2: "Polpette", unit: "kg" },
-  { nome: "Salsiccia Surgelata", testo: "alias: salsicce surgelate, salsiccia gelo | varianti: suino, pollo, piccante | IQF | S/V", sotto1: "Carni", sotto2: "Salsiccia", unit: "kg" },
-  { nome: "Arrosticini Surgelati", testo: "alias: arrosticini gelo, arrosticini IQF | varianti: ovino adulto, Black Angus | calibri: 21g, 28g | S/V", sotto1: "Carni", sotto2: "Agnello", unit: "kg" },
-  { nome: "Macinato Surgelato", testo: "alias: macinato bovino gelo, macinato IQF | varianti: bovino adulto, vitellone | IQF | S/V, ATM", sotto1: "Carni", sotto2: "Manzo", unit: "kg" },
-  { nome: "Anatra Surgelata", testo: "alias: anatra gelo, polpa anatra gelo, petto anatra gelo | varianti: busto, quarti, polpa, petto Mulard | gelo | S/V", sotto1: "Carni", sotto2: "Anatra", unit: "kg" },
-  { nome: "Foie Gras Surgelato", testo: "alias: fegato grasso gelo, scaloppa fegato grasso gelo, pepite fegato grasso gelo | varianti: scaloppa, mini scaloppa, pepite, intero, mondato | calibri: 20/40g, 40/60g, 60/80g | marchi: Rougié | gelo | S/V", sotto1: "Carni", sotto2: "Anatra", unit: "kg" },
-  { nome: "Selvaggina Surgelata", testo: "alias: cervo gelo, capriolo gelo, cinghiale gelo, lepre gelo, faraona gelo, piccione gelo, quaglia gelo | varianti: filetto, sella, coscia, polpa | gelo | S/V", sotto1: "Carni", sotto2: "Selvaggina", unit: "kg" },
-  { nome: "Costine Surgelate", testo: "alias: costine cotte gelo, spare ribs surgelate | con salsa barbecue | IQF | S/V", sotto1: "Carni", sotto2: "Maiale", unit: "kg" },
-  { nome: "Spiedini Surgelati", testo: "alias: spiedini gelo, spiedini di carne | varianti: misti, pollo, maiale | IQF | S/V", sotto1: "Carni", sotto2: "Misto Carni", unit: "kg" },
+  { keywords: ["pollo surgelato", "petto pollo surgelato", "pollo congelato", "pollo abbattuto", "pollo in quarti gelo", "pollo quarti gelo"], sotto1: "Carni", sotto2: "Pollo" },
+  { keywords: ["hamburger surgelato", "hamburger congelato", "burger surgelato", "hamburger abbattuto"], sotto1: "Carni", sotto2: "Hamburger" },
+  { keywords: ["manzo surgelato", "bovino surgelato", "carne bovina surgelata", "manzo abbattuto", "bovino gelo"], sotto1: "Carni", sotto2: "Manzo" },
+  { keywords: ["maiale surgelato", "suino surgelato", "maiale congelato"], sotto1: "Carni", sotto2: "Maiale" },
+  { keywords: ["agnello surgelato", "agnello congelato", "agnello abbattuto", "agnello gelo"], sotto1: "Carni", sotto2: "Agnello" },
+  { keywords: ["coniglio surgelato", "coniglio congelato", "coniglio abbattuto"], sotto1: "Carni", sotto2: "Coniglio" },
+  { keywords: ["anatra surgelata", "anatra congelata", "petto anatra surgelato", "anatra abbattuta", "polpa anatra gelo", "petto anatra mulard gelo"], sotto1: "Carni", sotto2: "Anatra" },
+  { keywords: ["tacchino surgelato", "petto tacchino surgelato", "tacchino abbattuto"], sotto1: "Carni", sotto2: "Tacchino" },
+  { keywords: ["cappone surgelato", "cappone gelo", "cappone quarti gelo"], sotto1: "Carni", sotto2: "Pollo" },
+  { keywords: ["gallina surgelata", "gallina gelo", "gallina quarti gelo"], sotto1: "Carni", sotto2: "Pollo" },
+  { keywords: ["faraona surgelata", "faraona gelo"], sotto1: "Carni", sotto2: "Selvaggina" },
+  { keywords: ["piccione surgelato", "piccione gelo"], sotto1: "Carni", sotto2: "Selvaggina" },
+  { keywords: ["quaglia surgelata", "quaglia gelo"], sotto1: "Carni", sotto2: "Selvaggina" },
+  { keywords: ["fegato grasso d'anatra gelo", "fegato grasso anatra gelo", "scaloppa fegato grasso gelo", "pepite fegato grasso gelo"], sotto1: "Carni", sotto2: "Anatra" },
+  { keywords: ["polpette surgelate", "polpetta surgelata"], sotto1: "Carni", sotto2: "Polpette" },
+  { keywords: ["salsiccia surgelata", "salsicce surgelate"], sotto1: "Carni", sotto2: "Salsiccia" },
+  { keywords: ["wurstel surgelato", "hot dog surgelato"], sotto1: "Carni", sotto2: "Wurstel" },
+  { keywords: ["spiedini surgelati", "misto carni surgelato"], sotto1: "Carni", sotto2: "Misto Carni" },
 
   // ══════════════════════════════════════════════════════════════════════════
-  // PESCE SURGELATO — già gestito da foodDB_pesce.js con isSurgelato
-  // qui le voci specifiche per prodotti solo surgelati senza fresco
+  // PESCE SURGELATO — tutte le varianti IQF/glassato/abbattuto/congelato
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Bastoncini Pesce", testo: "alias: bastoncini di merluzzo, fish fingers, bastoncini surgelati | varianti: merluzzo, platessa | impanati | calibri: 30g, 50g, 80g | IQF | S/V", sotto1: "Pesce", sotto2: "Bastoncini", unit: "kg" },
-  { nome: "Bauletti Astice", testo: "alias: bauletti di astice surgelati | varianti: ripieni | IQF | S/V | Selecta", sotto1: "Pesce", sotto2: "Astice", unit: "kg" },
-  { nome: "Misto Mare Surgelato", testo: "alias: frutti di mare surgelati, seafood mix, misto mare IQF | varianti: con cozze, vongole, gamberi, calamari | IQF | busta | Selecta", sotto1: "Pesce", sotto2: "Misto Mare", unit: "kg" },
-  { nome: "Canestrello Surgelato", testo: "alias: canestrelli surgelati, canestrello IQF | calibri: 20/40 | sgusciati | IQF", sotto1: "Pesce", sotto2: "Capesante", unit: "kg" },
+  // Salmone
+  { keywords: ["salmone surgelato", "filetto salmone surgelato", "salmone congelato", "salmone iqf", "salmone glassato", "salmone abbattuto", "salmone glass", "salmone ora king gelo"], sotto1: "Pesce", sotto2: "Salmone" },
+
+  // Merluzzo / Baccalà
+  { keywords: ["merluzzo surgelato", "filetto merluzzo surgelato", "merluzzo congelato", "baccala surgelato", "merluzzo iqf", "merluzzo glassato", "merluzzo abbattuto", "merluzzo glass", "merluzzo alaska"], sotto1: "Pesce", sotto2: "Merluzzo" },
+
+  // Tonno
+  { keywords: ["tonno surgelato", "trancio tonno surgelato", "tonno iqf", "tonno glassato", "tonno abbattuto", "tonno glass", "tonno ultra frozen", "filone tonno surgelato"], sotto1: "Pesce", sotto2: "Tonno" },
+
+  // Pesce Spada
+  { keywords: ["pesce spada surgelato", "trancio pesce spada surgelato", "pesce spada iqf", "pesce spada glassato", "pesce spada abbattuto", "pesce spada glass", "pesce spada ultra frozen"], sotto1: "Pesce", sotto2: "Pesce Spada" },
+
+  // Orata / Branzino
+  { keywords: ["orata surgelata", "orata iqf", "orata glassata", "orata abbattuta", "filetti orata surgelati", "filetto orata surgelato"], sotto1: "Pesce", sotto2: "Orata" },
+  { keywords: ["branzino surgelato", "spigola surgelata", "branzino iqf", "branzino glassato", "branzino abbattuto", "filetto branzino surgelato", "filetti branzino surgelati"], sotto1: "Pesce", sotto2: "Branzino" },
+
+  // Ricciola
+  { keywords: ["ricciola surgelata", "ricciola iqf", "ricciola glassata", "ricciola abbattuta", "ricciola glass", "filetto ricciola surgelato"], sotto1: "Pesce", sotto2: "Ricciola" },
+
+  // Ombrina
+  { keywords: ["ombrina surgelata", "ombrina iqf", "ombrina glassata", "ombrina abbattuta", "filetto ombrina surgelato"], sotto1: "Pesce", sotto2: "Ombrina" },
+
+  // Rombo
+  { keywords: ["rombo surgelato", "rombo iqf", "rombo glassato", "rombo abbattuto", "trancio rombo surgelato", "filetto rombo surgelato"], sotto1: "Pesce", sotto2: "Rombo" },
+
+  // Sogliola
+  { keywords: ["sogliola surgelata", "filetto sogliola surgelato", "sogliola iqf", "sogliola glassata"], sotto1: "Pesce", sotto2: "Sogliola" },
+
+  // Gamberi — tutte le varianti e calibri
+  { keywords: ["gamberi surgelati", "gambero surgelato", "code gamberi surgelate", "gamberi iqf", "gamberi glassati", "gambero glassato", "gamberi abbattuti", "gambero abbattuto", "gamberi glass", "gambero indop", "gambero vannamei surgelato", "gambero tropicale surgelato", "gambero tigre surgelato", "gamb.indop", "gambero pink surgelato", "gambero bianco surgelato", "gambero rosa surgelato", "gambero rosso surgelato", "gambero viola surgelato", "gambero blu surgelato"], sotto1: "Pesce", sotto2: "Gamberi" },
+
+  // Gamberoni / Mazzancolle
+  { keywords: ["mazzancolle surgelate", "mazzancolla surgelata", "gamberoni surgelati", "mazzancolle iqf", "mazzancolle glassate", "mazzancolle abbattute", "mazzancolle glass"], sotto1: "Pesce", sotto2: "Gamberoni" },
+
+  // Gamberetti
+  { keywords: ["gamberetti surgelati", "gamberetto surgelato", "gamberetti iqf", "gamberetti glassati", "code gamberetti surgelate"], sotto1: "Pesce", sotto2: "Gamberetti" },
+
+  // Scampi
+  { keywords: ["scampi surgelati", "scampo surgelato", "scampi iqf", "scampi glassati", "scampi abbattuti", "scampi glass", "code scampi surgelate"], sotto1: "Pesce", sotto2: "Scampi" },
+
+  // Aragosta / Astice
+  { keywords: ["aragosta surgelata", "aragosta iqf", "aragosta glassata", "coda aragosta surgelata"], sotto1: "Pesce", sotto2: "Aragosta" },
+  { keywords: ["astice surgelato", "astice iqf", "astice glassato", "coda astice surgelata", "astice americano congelato"], sotto1: "Pesce", sotto2: "Astice" },
+
+  // Calamari
+  { keywords: ["calamari surgelati", "calamaro surgelato", "calamari congelati", "calamari iqf", "calamari glassati", "calamaro glassato", "calamari abbattuti", "calamaro abbattuto", "calamari glass", "calamaretto surgelato", "calamaretti surgelati", "calamari sporchi congelati", "calamari puliti congelati"], sotto1: "Pesce", sotto2: "Calamari" },
+
+  // Polpo
+  { keywords: ["polpo surgelato", "polpo congelato", "polpo iqf", "polpo glassato", "polpo abbattuto", "polpo glass", "polpi surgelati", "polpi glassati", "polpi abbattuti", "polpo cotto surgelato"], sotto1: "Pesce", sotto2: "Polpo" },
+
+  // Seppia
+  { keywords: ["seppia surgelata", "seppie surgelate", "seppia iqf", "seppia glassata", "seppie glassate", "seppia abbattuta", "seppie abbattute", "seppia glass"], sotto1: "Pesce", sotto2: "Seppia" },
+
+  // Cozze
+  { keywords: ["cozze surgelate", "cozza surgelata", "cozze sgusciate surgelate", "cozze iqf", "cozze glassate", "cozze abbattute"], sotto1: "Pesce", sotto2: "Cozze" },
+
+  // Vongole
+  { keywords: ["vongole surgelate", "vongola surgelata", "vongole iqf", "vongole glassate", "vongole sgusciate surgelate"], sotto1: "Pesce", sotto2: "Vongole" },
+
+  // Capesante
+  { keywords: ["capesante surgelate", "capasanta surgelata", "capesante iqf", "capesante glassate", "noce capasanta surgelata"], sotto1: "Pesce", sotto2: "Capesante" },
+
+  // Misto mare
+  { keywords: ["misto mare surgelato", "frutti di mare surgelati", "seafood mix surgelato", "misto mare iqf", "misto mare glassato"], sotto1: "Pesce", sotto2: "Misto Mare" },
+
+  // Bastoncini
+  { keywords: ["bastoncini pesce", "bastoncini di merluzzo", "fish fingers", "bastoncini surgelati"], sotto1: "Pesce", sotto2: "Bastoncini" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // VERDURE SURGELATE
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Piselli Surgelati", testo: "alias: piselli gelo, piselli IQF | varianti: fini, finissimi, medi | Bonduelle | IQF | busta", sotto1: "Verdure", sotto2: "Piselli", unit: "kg" },
-  { nome: "Spinaci Surgelati", testo: "alias: spinaci gelo, spinaci IQF | varianti: foglia intera, tritati, porzioni | IQF | busta", sotto1: "Verdure", sotto2: "Spinaci", unit: "kg" },
-  { nome: "Fagiolini Surgelati", testo: "alias: fagiolini gelo, fagiolini IQF | varianti: interi, tagliati | IQF | busta", sotto1: "Verdure", sotto2: "Fagiolini", unit: "kg" },
-  { nome: "Broccoli Surgelati", testo: "alias: broccoli gelo, broccoli IQF, cimette broccoli | varianti: rosette, cimette, interi | Bonduelle, Fruttad | IQF | busta", sotto1: "Verdure", sotto2: "Broccoli", unit: "kg" },
-  { nome: "Patate Surgelate", testo: "alias: patatine surgelate, patate fritte surgelate, purea patate | varianti: fritte, al forno, spicchi, rustic, purea, blu | IQF | busta, sacco", sotto1: "Verdure", sotto2: "Patate", unit: "kg" },
-  { nome: "Mais Surgelato", testo: "alias: mais gelo, granturco surgelato | varianti: chicchi, spiga baby | IQF | busta", sotto1: "Verdure", sotto2: "Mais", unit: "kg" },
-  { nome: "Carote Surgelate", testo: "alias: carote gelo, carote IQF | varianti: a rondelle, intere, baby | IQF | busta", sotto1: "Verdure", sotto2: "Carote", unit: "kg" },
-  { nome: "Asparagi Surgelati", testo: "alias: asparagi gelo, asparagi IQF | varianti: verdi, bianchi, mini | IQF | busta", sotto1: "Verdure", sotto2: "Asparagi", unit: "kg" },
-  { nome: "Funghi Surgelati", testo: "alias: funghi gelo, porcini surgelati, finferli surgelati | varianti: porcini, finferli, misto bosco | IQF | busta", sotto1: "Verdure", sotto2: "Funghi", unit: "kg" },
-  { nome: "Carciofi Surgelati", testo: "alias: carciofi gelo, carciofi IQF | varianti: interi, a spicchi, cuori | IQF | busta", sotto1: "Verdure", sotto2: "Carciofi", unit: "kg" },
-  { nome: "Peperoni Surgelati", testo: "alias: peperoni gelo, peperoni IQF | varianti: a striscioline, a cubetti, misti | IQF | busta", sotto1: "Verdure", sotto2: "Peperoni", unit: "kg" },
-  { nome: "Zucchine Surgelate", testo: "alias: zucchine gelo, zucchine IQF | varianti: a rondelle, a cubetti, grigliate | IQF | busta", sotto1: "Verdure", sotto2: "Zucchine", unit: "kg" },
-  { nome: "Pomodorini Surgelati", testo: "alias: pomodorini confit gelo, pomodorini IQF | varianti: confit, ciliegino | IQF | busta", sotto1: "Verdure", sotto2: "Pomodori", unit: "kg" },
-  { nome: "Cipolla Surgelata", testo: "alias: cipolla gelo, cipolla tritata surgelata, cipolle IQF | varianti: tritata, a rondelle, stuita | IQF | busta", sotto1: "Verdure", sotto2: "Cipolla", unit: "kg" },
-  { nome: "Edamame Surgelato", testo: "alias: soia edamame gelo, edamame IQF | Pinguin | IQF | busta", sotto1: "Verdure", sotto2: "Legumi", unit: "kg" },
-  { nome: "Avocado Surgelato", testo: "alias: avocado gelo, avocado IQF | varianti: cubetti, fette, MAP | IQF | busta", sotto1: "Verdure", sotto2: "Avocado", unit: "kg" },
-  { nome: "Castagne Surgelate", testo: "alias: castagne gelo, marron gelo, marroni surgelati | varianti: intere, pelate | IQF | busta", sotto1: "Verdure", sotto2: "Castagne", unit: "kg" },
-  { nome: "Mix Verdure Surgelate", testo: "alias: misto verdure surgelato, verdure miste gelo, minestrone surgelato | varianti: classico, estivo, orientale, minestrone | IQF | busta", sotto1: "Verdure", sotto2: "Misto Verdure", unit: "kg" },
-  { nome: "Bieta Surgelata", testo: "alias: bieta costa gelo, bieta IQF | Gran Natura | IQF | busta", sotto1: "Verdure", sotto2: "Bieta", unit: "kg" },
-  { nome: "Cavolo Nero Surgelato", testo: "alias: cavolo nero gelo | IQF | busta", sotto1: "Verdure", sotto2: "Cavolo", unit: "kg" },
-  { nome: "Cimette di Rapa Surgelate", testo: "alias: cimette rapa gelo, broccoletti gelo | Gran Natura | IQF | busta", sotto1: "Verdure", sotto2: "Broccoli", unit: "kg" },
+  { keywords: ["piselli surgelati", "pisello surgelato", "piselli gelo"], sotto1: "Verdure", sotto2: "Piselli" },
+  { keywords: ["spinaci surgelati", "spinacio surgelato", "spinaci gelo"], sotto1: "Verdure", sotto2: "Spinaci" },
+  { keywords: ["fagiolini surgelati", "fagiolino surgelato", "fagiolini gelo"], sotto1: "Verdure", sotto2: "Fagiolini" },
+  { keywords: ["broccoli surgelati", "broccolo surgelato"], sotto1: "Verdure", sotto2: "Broccoli" },
+  { keywords: ["mais surgelato", "mais gelo", "granturco surgelato"], sotto1: "Verdure", sotto2: "Mais" },
+  { keywords: ["carote surgelate", "carota surgelata"], sotto1: "Verdure", sotto2: "Carote" },
+  { keywords: ["patate surgelate", "patatine surgelate", "patate fritte surgelate", "patatine fritte surgelate"], sotto1: "Verdure", sotto2: "Patate" },
+  { keywords: ["asparagi surgelati", "asparago surgelato"], sotto1: "Verdure", sotto2: "Asparagi" },
+  { keywords: ["zucchine surgelate", "zucchina surgelata"], sotto1: "Verdure", sotto2: "Zucchine" },
+  { keywords: ["funghi surgelati", "fungo surgelato", "porcini surgelati", "finferli surgelati"], sotto1: "Verdure", sotto2: "Funghi" },
+  { keywords: ["peperoni surgelati", "peperone surgelato"], sotto1: "Verdure", sotto2: "Peperoni" },
+  { keywords: ["carciofi surgelati", "carciofo surgelato"], sotto1: "Verdure", sotto2: "Carciofi" },
+  { keywords: ["fave surgelate", "fava surgelata"], sotto1: "Verdure", sotto2: "Fave" },
+  { keywords: ["misto verdure surgelato", "verdure miste surgelate", "minestrone surgelato", "mix verdure surgelato"], sotto1: "Verdure", sotto2: "Misto Verdure" },
+  { keywords: ["cipolla surgelata", "cipolle surgelate", "cipolla tritata surgelata"], sotto1: "Verdure", sotto2: "Cipolla" },
+  { keywords: ["castagne surgelate", "castagna surgelata", "marron gelo"], sotto1: "Verdure", sotto2: "Castagne" },
+  { keywords: ["tartufo surgelato", "tartufo congelato"], sotto1: "Verdure", sotto2: "Tartufo" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // PREPARATI SURGELATI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Lasagne Surgelate", testo: "alias: lasagna surgelata, lasagne gelo | varianti: carne, ricotta spinaci, verdure | IQF | vassoi, S/V", sotto1: "Preparati", sotto2: "Lasagne", unit: "kg" },
-  { nome: "Cannelloni Surgelati", testo: "alias: cannellone surgelato, cannelloni gelo | varianti: carne, ricotta spinaci | IQF | S/V", sotto1: "Preparati", sotto2: "Cannelloni", unit: "kg" },
-  { nome: "Gnocchi Surgelati", testo: "alias: gnocchi gelo, gnocco surgelato | varianti: patate, ricotta | IQF | S/V, ATM", sotto1: "Preparati", sotto2: "Gnocchi", unit: "kg" },
-  { nome: "Pasta Ripiena Surgelata", testo: "alias: ravioli surgelati, tortellini surgelati, tortelloni gelo, cappelletti gelo | varianti: carne, formaggio, verdure, tartufo | IQF | S/V, ATM", sotto1: "Preparati", sotto2: "Pasta Ripiena", unit: "kg" },
-  { nome: "Arancini Surgelati", testo: "alias: arancino surgelato, supplì surgelato | varianti: classici, al ragù, mozzarella | IQF | S/V", sotto1: "Preparati", sotto2: "Arancini", unit: "kg" },
-  { nome: "Crocchette Surgelate", testo: "alias: crocchetta surgelata, crocchette patate gelo | varianti: patate, miste | IQF | S/V", sotto1: "Preparati", sotto2: "Crocchette", unit: "kg" },
-  { nome: "Pizza Surgelata", testo: "alias: pizza gelo, pizza congelata | varianti: Margherita, Quattro stagioni, tonno | IQF | S/V", sotto1: "Preparati", sotto2: "Pizza", unit: "kg" },
-  { nome: "Pane Surgelato", testo: "alias: pane gelo, baguette surgelata, panini surgelati, brioche surgelata, croissant surgelato, miniburger surgelato | varianti: baguette, panini, burger bun, croissant, da lievitare | IQF | S/V", sotto1: "Preparati", sotto2: "Pane e Lievitati", unit: "kg" },
-  { nome: "Pasta Sfoglia Surgelata", testo: "alias: pasta sfoglia gelo, pasta brisée surgelata, pasta fillo gelo, pasta kataifi gelo, pasta brick | varianti: sfoglia, brisée, fillo, kataifi, brick | gelo | S/V | Selecta", sotto1: "Preparati", sotto2: "Impasti", unit: "kg" },
-  { nome: "Frutta Surgelata", testo: "alias: frutti di bosco surgelati, fragole surgelate, mirtilli surgelati, lamponi surgelati, more surgelate, ribes surgelato, fragole iqf, lamponi iqf, mirtilli iqf, frutti di bosco misti surgelati, mango surgelato, ananas surgelato, purea di fragola surgelata, purea di lampone surgelata, purea di mango surgelata, purea di frutta surgelata | varianti: fragole, mirtilli, lamponi, frutti di bosco misti, mango, ananas | IQF, blocco | busta | Ravifruit, Adamance", sotto1: "Preparati", sotto2: "Frutta", unit: "kg" },
-  { nome: "Erbe Surgelate", testo: "alias: basilico surgelato, prezzemolo surgelato, erbe aromatiche surgelate | varianti: basilico, prezzemolo, mix erbe | IQF | busta", sotto1: "Preparati", sotto2: "Erbe Aromatiche", unit: "kg" },
-  { nome: "Brodo Surgelato", testo: "alias: fondo surgelato, brodo congelato, fondo di cottura gelo | varianti: bovino, pollo, pesce, verdure, cipolla | blocco, S/V | Selecta fondi", sotto1: "Preparati", sotto2: "Brodi e Fondi", unit: "kg" },
-  { nome: "Snack Surgelati", testo: "alias: snack gelo, finger food surgelati | varianti: gyoza gamberi, spring roll, dim sum, xiaolongbao | IQF | S/V | Selecta, MARR", sotto1: "Preparati", sotto2: "Snack", unit: "kg" },
+  { keywords: ["pizza surgelata", "pizza congelata"], sotto1: "Preparati", sotto2: "Pizza" },
+  { keywords: ["lasagne surgelate", "lasagna surgelata"], sotto1: "Preparati", sotto2: "Lasagne" },
+  { keywords: ["cannelloni surgelati", "cannellone surgelato"], sotto1: "Preparati", sotto2: "Cannelloni" },
+  { keywords: ["arancini surgelati", "arancino surgelato", "supplì surgelato"], sotto1: "Preparati", sotto2: "Arancini" },
+  { keywords: ["crocchette surgelate", "crocchetta surgelata"], sotto1: "Preparati", sotto2: "Crocchette" },
+  { keywords: ["frittura mista surgelata", "misto fritto surgelato"], sotto1: "Preparati", sotto2: "Frittura Mista" },
+  { keywords: ["cotoletta surgelata", "cotolette surgelate", "cotoletta impanata surgelata"], sotto1: "Preparati", sotto2: "Cotolette" },
+  { keywords: ["gnocchi surgelati", "gnocco surgelato", "gnocchi surgelati"], sotto1: "Preparati", sotto2: "Gnocchi" },
+  { keywords: ["ravioli surgelati", "tortellini surgelati", "pasta ripiena surgelata"], sotto1: "Preparati", sotto2: "Pasta Ripiena" },
+  { keywords: ["pane surgelato", "baguette surgelata", "panini surgelati", "croissant surgelato", "croissant da lievitare", "brioche surgelata"], sotto1: "Preparati", sotto2: "Pane e Lievitati" },
+  { keywords: ["pasta fresca surgelata", "pasta surgelata"], sotto1: "Preparati", sotto2: "Pasta Fresca" },
+  { keywords: ["frutta surgelata", "frutti di bosco surgelati", "fragole surgelate", "mirtilli surgelati", "lamponi surgelati"], sotto1: "Preparati", sotto2: "Frutta" },
+  { keywords: ["erbe surgelate", "basilico surgelato", "prezzemolo surgelato", "erbe aromatiche surgelate"], sotto1: "Preparati", sotto2: "Erbe Aromatiche" },
+  { keywords: ["brodo surgelato", "brodo congelato", "fondo surgelato", "fondo di cottura surgelato"], sotto1: "Preparati", sotto2: "Brodi e Fondi" },
+  { keywords: ["impasto surgelato", "pasta sfoglia surgelata", "pasta brisee surgelata"], sotto1: "Preparati", sotto2: "Impasti" },
 
   // ══════════════════════════════════════════════════════════════════════════
   // GELATI E DOLCI
   // ══════════════════════════════════════════════════════════════════════════
 
-  { nome: "Gelato", testo: "alias: gelato artigianale, fior di latte, gelato alla crema, gelato al cioccolato, gelato alla fragola, gelato al pistacchio, gelato alla nocciola, gelato al limone | varianti: crema, cioccolato, limone, fragola, pistacchio, nocciola, fior di latte | formato: vaschetta 1,5L, 5L, 10L, monoporzione | -18 | Selecta", sotto1: "Gelati e Dolci", sotto2: "Gelati", unit: "kg" },
-  { nome: "Sorbetto", testo: "alias: sorbetto al limone, sorbetto alla fragola, sorbetto al mango, sorbetto al lampone, sorbetto al maracuja, sorbetto al passion fruit, sorbetto alla pesca, sorbetto al melone, sorbetto alla menta, granita al limone, granita alla fragola, granita al limone siciliano | varianti: limone, fragola, lampone, mango, passion fruit | formato: vaschetta, monoporzione | -18 | IQF | Selecta", sotto1: "Gelati e Dolci", sotto2: "Gelati", unit: "kg" },
-  { nome: "Semifreddo", testo: "alias: semifreddo surgelato, torta gelato | varianti: al cioccolato, tiramisù, zabaione | formato: intera, monoporzione | -18 | Selecta", sotto1: "Gelati e Dolci", sotto2: "Dolci", unit: "kg" },
-  { nome: "Macarons Surgelati", testo: "alias: macarons gelo | varianti: assortiti | IQF | Valrhona, Selecta", sotto1: "Gelati e Dolci", sotto2: "Dolci", unit: "kg" },
-  { nome: "Mini Dessert Surgelati", testo: "alias: mini dessert gelo, dessert monoporzione surgelati | varianti: cheesecake, mousse, panna cotta | IQF | Selecta", sotto1: "Gelati e Dolci", sotto2: "Dolci", unit: "kg" },
+  { keywords: ["gelato", "sorbetto", "semifreddo surgelato", "gelato artigianale"], sotto1: "Gelati e Dolci", sotto2: "Gelati" },
+  { keywords: ["torta gelato", "torta fredda surgelata"], sotto1: "Gelati e Dolci", sotto2: "Dolci" },
 ]
+
+  // ── Frutta Surgelata IQF ──────────────────────────────────────────────────
+  { nome: "Lamponi Surgelati", testo: "alias: lamponi iqf, lampone surgelato, lamponi interi, lamponi gran naturali, raspberry frozen, lampponi, lamponi congelati, lamponi naturali | marchi: Gran Naturali, GN, Ardo, Orogel | formato: 1kg, 2.5kg, 5kg | varianti: interi, pezzi", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Fragole Surgelate", testo: "alias: fragola iqf, fragole intere surgelate, fragole congelate, strawberry frozen, fragolina surgelata | marchi: Gran Naturali, Ardo | formato: 1kg, 2.5kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Mirtilli Surgelati", testo: "alias: mirtillo iqf, mirtilli congelati, blueberry frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Ribes Surgelato", testo: "alias: ribes iqf, ribes rosso surgelato, ribes nero surgelato, cassis surgelato | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Misti Bosco Surgelati", testo: "alias: misto bosco, frutti bosco surgelati, frutti di bosco misti, mix bosco, forest fruits frozen, frutti del bosco iqf, misti bosco iqf, misto frutti bosco | marchi: Gran Naturali, Ardo, Orogel | formato: 1kg, 2.5kg, 5kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Mango Surgelato", testo: "alias: mango iqf, mango congelato, mango frozen, mango a pezzi surgelato | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Ananas Surgelato", testo: "alias: ananas iqf, ananas a pezzi surgelato, pineapple frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Ciliegie Surgelate", testo: "alias: ciliegia iqf, ciliegie congelate, cherry frozen, amarene surgelate | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Pesche Surgelate", testo: "alias: pesca iqf, pesche a pezzi surgelate, peach frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Albicocche Surgelate", testo: "alias: albicocca iqf, albicocche a metà surgelate, apricot frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
+  { nome: "Coulis Frutti Rossi", testo: "alias: coulis lamponi, coulis fragole, coulis misti bosco, purea frutta surgelata, coulis frutto, coulis frutti bosco | formato: 1kg, 2.5kg", sotto1: "Preparati", sotto2: "Frutta", unit: "kg" },
+
+  // ── Verdure Surgelate ─────────────────────────────────────────────────────
+  { nome: "Piselli Fini Surgelati", testo: "alias: piselli surgelati, piselli fini, piselli iqf, piselli congelati, peas frozen, pisellini surgelati, piselli extra fini, piselli g natura, piselli fine | marchi: Gran Naturali, Ardo, Orogel, GN | formato: 1kg, 2.5kg, 5kg | varianti: fini, extrafini, medi", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Fagiolini Surgelati", testo: "alias: fagiolino surgelato, green beans frozen, fagiolini iqf | formato: 1kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Spinaci Surgelati", testo: "alias: spinacio surgelato, spinaci foglia, spinach frozen, spinaci iqf | formato: 1kg, 2.5kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Mix Verdure Surgelate", testo: "alias: verdure miste surgelate, verdure miste, misto verdure, minestrone surgelato, mix verdure | formato: 1kg, 2.5kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Peperoni Arrostiti Surgelati", testo: "alias: peperoni arrostiti surgelati, peperoni grigliati surgelati, peperoni rossi arrosto surgelati, peperoni arr nat, peperoni arrosto naturali, peperoni rossi arr | marchi: Natura, Greci | formato: 3pz, 3kg, vasetto, surgelato | varianti: div13/1, rossi, gialli, misti", sotto1: "Verdure", sotto2: "", unit: "pz" },
+  { nome: "Carciofi Surgelati", testo: "alias: carciofo surgelato, carciofi iqf, artichoke frozen | formato: 1kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
+  { nome: "Porcini Surgelati", testo: "alias: porcino surgelato, porcini iqf, funghi porcini surgelati | formato: 1kg", sotto1: "Funghi", sotto2: "", unit: "kg" },
+
