@@ -145,27 +145,25 @@ export const SURGELATI_DB = [
 
   { keywords: ["gelato", "sorbetto", "semifreddo surgelato", "gelato artigianale"], sotto1: "Gelati e Dolci", sotto2: "Gelati" },
   { keywords: ["torta gelato", "torta fredda surgelata"], sotto1: "Gelati e Dolci", sotto2: "Dolci" },
-]
 
   // ── Frutta Surgelata IQF ──────────────────────────────────────────────────
-  { nome: "Lamponi Surgelati", testo: "alias: lamponi iqf, lampone surgelato, lamponi interi, lamponi gran naturali, raspberry frozen, lampponi, lamponi congelati, lamponi naturali | marchi: Gran Naturali, GN, Ardo, Orogel | formato: 1kg, 2.5kg, 5kg | varianti: interi, pezzi", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Fragole Surgelate", testo: "alias: fragola iqf, fragole intere surgelate, fragole congelate, strawberry frozen, fragolina surgelata | marchi: Gran Naturali, Ardo | formato: 1kg, 2.5kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Mirtilli Surgelati", testo: "alias: mirtillo iqf, mirtilli congelati, blueberry frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Ribes Surgelato", testo: "alias: ribes iqf, ribes rosso surgelato, ribes nero surgelato, cassis surgelato | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Misti Bosco Surgelati", testo: "alias: misto bosco, frutti bosco surgelati, frutti di bosco misti, mix bosco, forest fruits frozen, frutti del bosco iqf, misti bosco iqf, misto frutti bosco | marchi: Gran Naturali, Ardo, Orogel | formato: 1kg, 2.5kg, 5kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Mango Surgelato", testo: "alias: mango iqf, mango congelato, mango frozen, mango a pezzi surgelato | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Ananas Surgelato", testo: "alias: ananas iqf, ananas a pezzi surgelato, pineapple frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Ciliegie Surgelate", testo: "alias: ciliegia iqf, ciliegie congelate, cherry frozen, amarene surgelate | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Pesche Surgelate", testo: "alias: pesca iqf, pesche a pezzi surgelate, peach frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Albicocche Surgelate", testo: "alias: albicocca iqf, albicocche a metà surgelate, apricot frozen | formato: 1kg", sotto1: "Frutta", sotto2: "", unit: "kg" },
-  { nome: "Coulis Frutti Rossi", testo: "alias: coulis lamponi, coulis fragole, coulis misti bosco, purea frutta surgelata, coulis frutto, coulis frutti bosco | formato: 1kg, 2.5kg", sotto1: "Preparati", sotto2: "Frutta", unit: "kg" },
-
+  { keywords: ["lamponi surgelati", "lamponi iqf", "lampone surgelato", "lamponi interi", "lamponi gran naturali", "lampponi", "lamponi naturali", "raspberry frozen", "gran naturali lamponi"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["fragole surgelate", "fragola iqf", "fragole intere surgelate", "strawberry frozen", "fragolina surgelata", "gran naturali fragole"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["mirtilli surgelati", "mirtillo iqf", "blueberry frozen"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["misti bosco", "frutti bosco surgelati", "frutti di bosco misti", "mix bosco", "forest fruits frozen", "frutti bosco iqf", "misto frutti bosco", "frutti del bosco", "misti bosco iqf", "mix frutti bosco"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["mango surgelato", "mango iqf", "mango frozen", "mango a pezzi surgelato"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["ananas surgelato", "ananas iqf", "pineapple frozen"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["ciliegie surgelate", "ciliegia iqf", "cherry frozen", "amarene surgelate"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["pesche surgelate", "pesca iqf", "peach frozen"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["albicocche surgelate", "albicocca iqf", "apricot frozen"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["ribes surgelato", "ribes iqf", "cassis surgelato", "ribes nero surgelato"], sotto1: "Frutta", sotto2: "" },
+  { keywords: ["coulis lamponi", "coulis fragole", "coulis misti bosco", "purea frutta surgelata", "coulis frutti bosco"], sotto1: "Preparati", sotto2: "Frutta" },
   // ── Verdure Surgelate ─────────────────────────────────────────────────────
-  { nome: "Piselli Fini Surgelati", testo: "alias: piselli surgelati, piselli fini, piselli iqf, piselli congelati, peas frozen, pisellini surgelati, piselli extra fini, piselli g natura, piselli fine | marchi: Gran Naturali, Ardo, Orogel, GN | formato: 1kg, 2.5kg, 5kg | varianti: fini, extrafini, medi", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Fagiolini Surgelati", testo: "alias: fagiolino surgelato, green beans frozen, fagiolini iqf | formato: 1kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Spinaci Surgelati", testo: "alias: spinacio surgelato, spinaci foglia, spinach frozen, spinaci iqf | formato: 1kg, 2.5kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Mix Verdure Surgelate", testo: "alias: verdure miste surgelate, verdure miste, misto verdure, minestrone surgelato, mix verdure | formato: 1kg, 2.5kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Peperoni Arrostiti Surgelati", testo: "alias: peperoni arrostiti surgelati, peperoni grigliati surgelati, peperoni rossi arrosto surgelati, peperoni arr nat, peperoni arrosto naturali, peperoni rossi arr | marchi: Natura, Greci | formato: 3pz, 3kg, vasetto, surgelato | varianti: div13/1, rossi, gialli, misti", sotto1: "Verdure", sotto2: "", unit: "pz" },
-  { nome: "Carciofi Surgelati", testo: "alias: carciofo surgelato, carciofi iqf, artichoke frozen | formato: 1kg", sotto1: "Verdure", sotto2: "", unit: "kg" },
-  { nome: "Porcini Surgelati", testo: "alias: porcino surgelato, porcini iqf, funghi porcini surgelati | formato: 1kg", sotto1: "Funghi", sotto2: "", unit: "kg" },
-
+  { keywords: ["piselli fini surgelati", "piselli surgelati", "piselli fini", "piselli iqf", "pisellini surgelati", "piselli extra fini", "piselli g natura", "gran naturali piselli", "piselli fine gr natura"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["fagiolini surgelati", "fagiolino surgelato", "green beans frozen", "fagiolini iqf"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["spinaci surgelati", "spinacio surgelato", "spinaci foglia", "spinach frozen", "spinaci iqf"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["mix verdure surgelate", "verdure miste surgelate", "minestrone surgelato", "misto verdure"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["peperoni arrostiti surgelati", "peperoni grigliati surgelati", "peperoni rossi arr", "peperoni arr nat surgelati", "peperoni arrostiti nat"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["carciofi surgelati", "carciofo surgelato", "artichoke frozen"], sotto1: "Verdure", sotto2: "" },
+  { keywords: ["porcini surgelati", "porcino surgelato", "funghi porcini surgelati", "porcini iqf"], sotto1: "Funghi", sotto2: "" },
+]
