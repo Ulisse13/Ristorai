@@ -163,22 +163,24 @@ export const DISPENSA_DB = [
   { nome: "Scopa", testo: "alias: scopa, spazzolone, granata, spazzolone pavimenti | varianti: classica, con manico, raccoglipolvere | formato: pz | marchi: vari", sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
   { nome: "Carta Asciugamani", testo: "alias: carta mani, asciugamani carta, carta interfogliata, carta rotolo, carta bobina | varianti: Z-fold, interfogliata, rotolo, bobina | formato: confezione, pacco | marchi: Everyday, vari", sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
 
-  // ── Frutta Secca e Granelle ───────────────────────────────────────────────
-  { nome: "Nocciole", testo: "alias: nocciola, noccioline, nocciole pelate, nocciole tostate, nocciole intere, nocciole tritate, granella nocciole, nocciole pelate tostate, hazelnut | marchi: Melandri, Borges, Senna | formato: 1kg, 500g, 5kg", sotto1: "Frutta Secca", sotto2: "", unit: "kg" },
-  { nome: "Mandorle", testo: "alias: mandorla, mandorle pelate, mandorle tostate, mandorle intere, granella mandorle, almond | formato: 1kg, 500g", sotto1: "Frutta Secca", sotto2: "", unit: "kg" },
-  { nome: "Pistacchi", testo: "alias: pistacchio, pistacchi sgusciati, granella pistacchio, pistacchi pelati, granella pistacchio 2/4, pistachio | formato: 1kg, 500g", sotto1: "Frutta Secca", sotto2: "", unit: "kg" },
-  { nome: "Pinoli", testo: "alias: pinolo, pinoli italiani, pine nut | formato: 500g, 1kg", sotto1: "Frutta Secca", sotto2: "", unit: "kg" },
-  { nome: "Noci", testo: "alias: noce, noci sgusciate, noci intere, noci tritate, walnut | formato: 1kg", sotto1: "Frutta Secca", sotto2: "", unit: "kg" },
-  { nome: "Uvetta", testo: "alias: uvetta sultanina, uva passa, raisin, sultana | formato: 1kg, 500g", sotto1: "Frutta Secca", sotto2: "", unit: "kg" },
+  // ── Frutta Secca ─────────────────────────────────────────────────────────
+  { nome: "Nocciole", testo: "alias: nocciola, noccioline, nocciole pelate, nocciole tostate, nocciole intere, nocciole tritate, granella nocciole, nocciole pelate tostate, hazelnut | marchi: Melandri, Borges, Senna | formato: 1kg, 500g, 5kg", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Mandorle", testo: "alias: mandorla, mandorle pelate, mandorle tostate, mandorle intere, granella mandorle, almond | formato: 1kg, 500g", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Pistacchi", testo: "alias: pistacchio, pistacchi sgusciati, granella pistacchio, granella pistacchio 2/4, pistacchi pelati, pistachio | formato: 1kg, 500g", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Pinoli", testo: "alias: pinolo, pinoli italiani, pine nut | formato: 500g, 1kg", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Noci", testo: "alias: noce, noci sgusciate, noci intere, noci tritate, walnut | formato: 1kg", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Uvetta", testo: "alias: uvetta sultanina, uva passa, raisin, sultana | formato: 1kg, 500g", sotto1: "Secchi", sotto2: "", unit: "kg" },
   // ── Legumi Secchi ─────────────────────────────────────────────────────────
-  { nome: "Ceci Secchi", testo: "alias: ceci, ceci secchi, chickpeas, ceci melandri, garbanzo | formato: 1kg, 2.5kg, 5kg | marchi: Melandri", sotto1: "Legumi Secchi", sotto2: "", unit: "kg" },
-  { nome: "Lenticchie Secche", testo: "alias: lenticchia, lenticchie, lentils | formato: 1kg, 5kg", sotto1: "Legumi Secchi", sotto2: "", unit: "kg" },
-  { nome: "Fagioli Secchi", testo: "alias: fagiolo secco, fagioli borlotti secchi, fagioli cannellini secchi, cannellini | formato: 1kg, 5kg", sotto1: "Legumi Secchi", sotto2: "", unit: "kg" },
-  // ── Dolci Secchi ──────────────────────────────────────────────────────────
-  { nome: "Amaretti", testo: "alias: amaretto, biscotto amaretto, amaretti morbidi, amaretti secchi, amaretti bonomi, amaretti lazzaroni | marchi: Bonomi, Lazzaroni | formato: 200g, 300g, 400g, 1kg", sotto1: "Dolci Secchi", sotto2: "", unit: "pz" },
-  { nome: "Savoiardi", testo: "alias: savoiardo, lady finger, biscotto savoiardo | marchi: Vicenzi, Balocco | formato: 200g, 400g", sotto1: "Dolci Secchi", sotto2: "", unit: "pz" },
-  { nome: "Biscotti Secchi", testo: "alias: biscotto, cantucci, cantuccini, brutti ma buoni, frollino | formato: 200g, 1kg", sotto1: "Dolci Secchi", sotto2: "", unit: "pz" },
+  { nome: "Ceci Secchi", testo: "alias: ceci, ceci secchi, chickpeas, ceci melandri, garbanzo | formato: 1kg, 2.5kg, 5kg | marchi: Melandri", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Lenticchie Secche", testo: "alias: lenticchia, lenticchie, lentils | formato: 1kg, 5kg", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Fagioli Secchi", testo: "alias: fagiolo secco, fagioli borlotti secchi, fagioli cannellini secchi, cannellini secchi | formato: 1kg, 5kg", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  { nome: "Fave Secche", testo: "alias: fava secca, fave, broad beans | formato: 1kg", sotto1: "Secchi", sotto2: "", unit: "kg" },
+  // ── Dolci e Biscotti Secchi ───────────────────────────────────────────────
+  { nome: "Amaretti", testo: "alias: amaretto, biscotto amaretto, amaretti morbidi, amaretti secchi, amaretti bonomi, amaretti lazzaroni | marchi: Bonomi, Lazzaroni | formato: 200g, 300g, 400g, 1kg", sotto1: "Secchi", sotto2: "", unit: "pz" },
+  { nome: "Savoiardi", testo: "alias: savoiardo, lady finger, biscotto savoiardo, vicenzi savoiardi | marchi: Vicenzi, Balocco | formato: 200g, 400g", sotto1: "Secchi", sotto2: "", unit: "pz" },
+  { nome: "Biscotti Secchi", testo: "alias: biscotto, cantucci, cantuccini, brutti ma buoni, frollino, wafer | formato: 200g, 1kg", sotto1: "Secchi", sotto2: "", unit: "pz" },
+  { nome: "Cioccolato Fondente", testo: "alias: fondente, cioccolato 70, cioccolato 55, dark chocolate, extra fondente | formato: 1kg, 2kg, tavoletta", sotto1: "Secchi", sotto2: "", unit: "kg" },
   // ── Conserve Vegetali ─────────────────────────────────────────────────────
-  { nome: "Capperi Sottaceto", testo: "alias: cappero, capperi, caper, frutti cappero, frutti capperi, capperi aceto, frutti cappero aceto, capperi sotto aceto | formato: 690g, 1kg, 3kg | marchi: Sacla", sotto1: "Conserve", sotto2: "Capperi", unit: "kg" },
-  { nome: "Peperoni Arrostiti Conserva", testo: "alias: peperoni grigliati, peperoni arrosto, peperoni arrostiti, peperoni natura, peperoni rossi arrosto, peperoni arr nat | marchi: Greci, Sacla, Natura | formato: 2.6kg, 3kg", sotto1: "Conserve", sotto2: "Verdure", unit: "kg" },
+  { nome: "Capperi Sottaceto", testo: "alias: cappero, capperi, caper, frutti cappero, frutti capperi, capperi aceto, frutti cappero aceto, capperi sotto aceto | formato: 690g, 1kg, 3kg | marchi: Sacla", sotto1: "Conserve", sotto2: "", unit: "kg" },
+  { nome: "Peperoni Arrostiti Conserva", testo: "alias: peperoni grigliati, peperoni arrosto, peperoni arrostiti, peperoni natura, peperoni rossi arrosto, peperoni arr nat | marchi: Greci, Sacla, Natura | formato: 2.6kg, 3kg", sotto1: "Conserve", sotto2: "", unit: "kg" },
 ]
