@@ -1728,19 +1728,23 @@ PRODOTTI:
           reader.readAsDataURL(compressed)
         })
 
-        setProg(50); setProgLabel("Analisi AI in corso...")
+        setProg(50); setProgLabel("Analisi AI in corso (Claude)...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST", signal: ctrl.signal,
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
+            "anthropic-version": "2023-06-01"
+          },
           body: JSON.stringify({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
+            model: "claude-sonnet-4-20250514",
             max_tokens: 4096,
             messages: [{
               role: "user",
               content: [
-                { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
+                { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
                 { type: "text", text: PROMPT }
               ]
             }]
@@ -1748,8 +1752,8 @@ PRODOTTI:
         })
         clearTimeout(to)
         const data = await res.json()
-        if (data.error) throw new Error(data.error.message || "Errore Groq")
-        const raw = data.choices?.[0]?.message?.content || ""
+        if (data.error) throw new Error(data.error?.message || data.error?.type || "Errore Claude")
+        const raw = data.content?.[0]?.text || ""
         const match = raw.match(/\{[\s\S]*\}/)
         if (!match) throw new Error("Risposta AI non valida  -  riprova con foto più nitida")
         processResult(JSON.parse(cleanJSON(match[0])))
