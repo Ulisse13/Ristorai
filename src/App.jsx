@@ -1717,31 +1717,57 @@ PRODOTTI:
         })
 
       } else {
-        //  -  -  IMMAGINE: comprimi e manda a Groq con visione  -  -  -  -  -  -  -  - 
-        setProg(20); setProgLabel("Compressione immagine...")
-        const compressed = await compressImage(f)
-        setProg(35); setProgLabel("Lettura immagine...")
-        const base64 = await new Promise((res, rej) => {
-          const reader = new FileReader()
-          reader.onload = () => res(reader.result.split(",")[1])
-          reader.onerror = () => rej(new Error("Lettura fallita"))
-          reader.readAsDataURL(compressed)
-        })
+        //  -  -  IMMAGINE: Tesseract OCR → Claude interpreta  -  -  -  -  -  -  -  -
+        setProg(15); setProgLabel("Caricamento OCR...")
 
-        setProg(50); setProgLabel("Analisi AI in corso (Claude)...")
+        // Carica Tesseract.js da CDN se non già presente
+        if (!window.Tesseract) {
+          await new Promise((res, rej) => {
+            const script = document.createElement("script")
+            script.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"
+            script.onload = res; script.onerror = () => rej(new Error("Impossibile caricare Tesseract"))
+            document.head.appendChild(script)
+          })
+        }
+
+        setProg(25); setProgLabel("Preparazione immagine...")
+        const compressed = await compressImage(f)
+        const imageUrl = URL.createObjectURL(compressed)
+
+        setProg(35); setProgLabel("Lettura testo fattura (OCR)...")
+        let ocrText = ""
+        try {
+          const result = await window.Tesseract.recognize(imageUrl, "ita+eng", {
+            logger: m => {
+              if (m.status === "recognizing text") {
+                const p = 35 + Math.round(m.progress * 30)
+                setProg(p); setProgLabel("Lettura testo fattura...")
+              }
+            }
+          })
+          ocrText = result.data.text || ""
+          URL.revokeObjectURL(imageUrl)
+        } catch(e) {
+          URL.revokeObjectURL(imageUrl)
+          throw new Error("OCR fallito: " + e.message)
+        }
+
+        if (!ocrText.trim()) throw new Error("Nessun testo trovato nella foto. Riprova con una foto più nitida.")
+
+        setProg(70); setProgLabel("Analisi AI in corso (Claude)...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
         const res = await fetch("/api/claude-vision", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ base64, prompt: PROMPT })
+          body: JSON.stringify({ text: ocrText })
         })
         clearTimeout(to)
         const data = await res.json()
         if (data.error) throw new Error(data.error || "Errore Claude")
         const raw = data.text || ""
         const match = raw.match(/\{[\s\S]*\}/)
-        if (!match) throw new Error("Risposta AI non valida  -  riprova con foto più nitida")
+        if (!match) throw new Error("Risposta AI non valida — riprova con foto più nitida")
         processResult(JSON.parse(cleanJSON(match[0])))
       }
 
