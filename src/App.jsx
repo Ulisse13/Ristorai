@@ -1469,7 +1469,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
         const url = URL.createObjectURL(file)
         img.onload = () => {
           try {
-            const MAX_W = 1600, MAX_H = 2400
+            const MAX_W = 1200, MAX_H = 1800
             let w = img.width, h = img.height
             if (w > MAX_W) { h = Math.round(h * MAX_W / w); w = MAX_W }
             if (h > MAX_H) { w = Math.round(w * MAX_H / h); h = MAX_H }
@@ -1477,7 +1477,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
             canvas.width = w; canvas.height = h
             canvas.getContext("2d").drawImage(img, 0, 0, w, h)
             URL.revokeObjectURL(url)
-            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.90)
+            canvas.toBlob(blob => res(blob || file), "image/jpeg", 0.75)
           } catch(e) { URL.revokeObjectURL(url); res(file) }
         }
         img.onerror = () => { URL.revokeObjectURL(url); res(file) }
@@ -1717,51 +1717,24 @@ PRODOTTI:
         })
 
       } else {
-        //  -  -  IMMAGINE: Tesseract OCR → Claude interpreta  -  -  -  -  -  -  -  -
-        setProg(15); setProgLabel("Caricamento OCR...")
-
-        // Carica Tesseract.js da CDN se non già presente
-        if (!window.Tesseract) {
-          await new Promise((res, rej) => {
-            const script = document.createElement("script")
-            script.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"
-            script.onload = res; script.onerror = () => rej(new Error("Impossibile caricare Tesseract"))
-            document.head.appendChild(script)
-          })
-        }
-
-        setProg(25); setProgLabel("Preparazione immagine...")
+        //  -  -  IMMAGINE: comprimi e manda a Claude vision  -  -  -  -  -  -  -  -
+        setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
-        const imageUrl = URL.createObjectURL(compressed)
+        setProg(35); setProgLabel("Lettura immagine...")
+        const base64 = await new Promise((res, rej) => {
+          const reader = new FileReader()
+          reader.onload = () => res(reader.result.split(",")[1])
+          reader.onerror = () => rej(new Error("Lettura fallita"))
+          reader.readAsDataURL(compressed)
+        })
 
-        setProg(35); setProgLabel("Lettura testo fattura (OCR)...")
-        let ocrText = ""
-        try {
-          const result = await window.Tesseract.recognize(imageUrl, "ita+eng", {
-            logger: m => {
-              if (m.status === "recognizing text") {
-                const p = 35 + Math.round(m.progress * 30)
-                setProg(p); setProgLabel("Lettura testo fattura...")
-              }
-            }
-          })
-          ocrText = result.data.text || ""
-          console.log("TESSERACT OUTPUT:", ocrText)
-          URL.revokeObjectURL(imageUrl)
-        } catch(e) {
-          URL.revokeObjectURL(imageUrl)
-          throw new Error("OCR fallito: " + e.message)
-        }
-
-        if (!ocrText.trim()) throw new Error("Nessun testo trovato nella foto. Riprova con una foto più nitida.")
-
-        setProg(70); setProgLabel("Analisi AI in corso (Claude)...")
+        setProg(50); setProgLabel("Analisi AI in corso (Claude)...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
         const res = await fetch("/api/claude-vision", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: ocrText })
+          body: JSON.stringify({ base64 })
         })
         clearTimeout(to)
         const data = await res.json()
