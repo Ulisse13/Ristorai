@@ -100,7 +100,7 @@ export const DISPENSA_DB = [
   { keywords: ["secchio", "secchio pulizie", "secchio con strizzatore", "secchio plastica"], sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
   { keywords: ["mocio", "mop", "mocio lavapavimenti", "frange mocio", "ricambio mocio"], sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
   { keywords: ["scopa", "spazzolone", "granata", "spazzolone pavimenti"], sotto1: "Detersivi", sotto2: "Attrezzature", unit: "pz" },
-  { keywords: ["carta asciugamani", "carta mani", "asciugamani carta", "carta interfogliata", "carta rotolo", "carta bobina"], sotto1: "Detersivi", sotto2: "Carta", unit: "pz" }
+  { keywords: ["carta asciugamani", "carta mani", "asciugamani carta", "carta interfogliata", "carta rotolo", "carta bobina"], sotto1: "Detersivi", sotto2: "Carta", unit: "pz" },
 
   // ── Frutta Secca ─────────────────────────────────────────────────────────
   { keywords: ["nocciole", "nocciola", "nocciole pelate", "nocciole tostate", "nocciole pelate tostate", "granella nocciole", "hazelnut"], sotto1: "Secchi", sotto2: "", unit: "kg" },
