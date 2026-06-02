@@ -1746,6 +1746,7 @@ PRODOTTI:
             }
           })
           ocrText = result.data.text || ""
+          console.log("TESSERACT OUTPUT:", ocrText)
           URL.revokeObjectURL(imageUrl)
         } catch(e) {
           URL.revokeObjectURL(imageUrl)
