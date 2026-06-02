@@ -1731,29 +1731,15 @@ PRODOTTI:
         setProg(50); setProgLabel("Analisi AI in corso (Claude)...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("/api/claude-vision", {
           method: "POST", signal: ctrl.signal,
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": import.meta.env.VITE_ANTHROPIC_KEY,
-            "anthropic-version": "2023-06-01"
-          },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 4096,
-            messages: [{
-              role: "user",
-              content: [
-                { type: "image", source: { type: "base64", media_type: "image/jpeg", data: base64 } },
-                { type: "text", text: PROMPT }
-              ]
-            }]
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, prompt: PROMPT })
         })
         clearTimeout(to)
         const data = await res.json()
-        if (data.error) throw new Error(data.error?.message || data.error?.type || "Errore Claude")
-        const raw = data.content?.[0]?.text || ""
+        if (data.error) throw new Error(data.error || "Errore Claude")
+        const raw = data.text || ""
         const match = raw.match(/\{[\s\S]*\}/)
         if (!match) throw new Error("Risposta AI non valida  -  riprova con foto più nitida")
         processResult(JSON.parse(cleanJSON(match[0])))
