@@ -1801,14 +1801,13 @@ PRODOTTI:
       // 2. Determina categoria AI
       const aiCat = normCat(p.categoria) || guessCat(p.nome)
       // DB lookup per categoria e unità
-      // const dbMatch = !learnedMatch ? lookupFood(p.nome) : null  // DB LOOKUP DISATTIVATO — usa solo Claude+learned
-      const dbMatch = null // DB disattivato temporaneamente
-      // PRIORITÀ: learned > AI (DB commentato)
-      const rawCat = (learnedMatch ? learnedMatch.cat : null) || aiCat
+      const dbMatch = !learnedMatch ? lookupFood(p.nome) : null
+      // PRIORITÀ: learned > DB locale > AI
+      const rawCat = (learnedMatch ? learnedMatch.cat : null) || (dbMatch ? dbMatch.cat : null) || aiCat
       // Vini da bere → Dispensa/Bevande alcoliche (sezione Vini non attiva)
       const cat = rawCat === "Vini" ? "Dispensa" : rawCat
-      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (rawCat === "Vini" ? "Bevande alcoliche" : p.sotto1) || ""
-      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (rawCat === "Vini" ? "" : p.sotto2) || ""
+      const sotto1Final = (learnedMatch ? learnedMatch.sotto1 : null) || (dbMatch ? dbMatch.sotto1 : "") || (rawCat === "Vini" ? "Bevande alcoliche" : p.sotto1) || ""
+      const sotto2Final = (learnedMatch ? learnedMatch.sotto2 : null) || (dbMatch ? dbMatch.sotto2 : "") || (rawCat === "Vini" ? "" : p.sotto2) || ""
       const dbUnit = (learnedMatch ? learnedMatch.unit : null) || (dbMatch ? dbMatch.unit : null)
       const nameLower = normNameForMatch(p.nome)
       const existing = ings.find(i => {
