@@ -1750,6 +1750,7 @@ PRODOTTI:
         const data = await res.json()
         if (data.error) throw new Error(data.error.message || "Errore Groq")
         const raw = data.choices?.[0]?.message?.content || ""
+        console.log("GROQ RAW OUTPUT:", raw)
         const match = raw.match(/\{[\s\S]*\}/)
         if (!match) throw new Error("Risposta AI non valida — riprova con foto più nitida")
         processResult(JSON.parse(cleanJSON(match[0])))
