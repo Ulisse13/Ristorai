@@ -1717,44 +1717,18 @@ PRODOTTI:
         })
 
       } else {
-        //  -  -  IMMAGINE: Tesseract OCR → Groq interpreta  -  -  -  -  -  -  -  -
-        setProg(15); setProgLabel("Caricamento OCR...")
-
-        if (!window.Tesseract) {
-          await new Promise((res, rej) => {
-            const script = document.createElement("script")
-            script.src = "https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/5.0.4/tesseract.min.js"
-            script.onload = res; script.onerror = () => rej(new Error("Impossibile caricare Tesseract"))
-            document.head.appendChild(script)
-          })
-        }
-
-        setProg(25); setProgLabel("Preparazione immagine...")
+        //  -  -  IMMAGINE: comprimi e manda direttamente a Groq con visione  -  -  -  -  -  -  -  -
+        setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
-        const imageUrl = URL.createObjectURL(compressed)
+        setProg(35); setProgLabel("Lettura immagine...")
+        const base64 = await new Promise((res, rej) => {
+          const reader = new FileReader()
+          reader.onload = () => res(reader.result.split(",")[1])
+          reader.onerror = () => rej(new Error("Lettura fallita"))
+          reader.readAsDataURL(compressed)
+        })
 
-        setProg(35); setProgLabel("Lettura testo fattura (OCR)...")
-        let ocrText = ""
-        try {
-          const result = await window.Tesseract.recognize(imageUrl, "ita+eng", {
-            logger: m => {
-              if (m.status === "recognizing text") {
-                const p = 35 + Math.round(m.progress * 30)
-                setProg(p); setProgLabel("Lettura testo fattura...")
-              }
-            }
-          })
-          ocrText = result.data.text || ""
-          console.log("TESSERACT OUTPUT:", ocrText)
-          URL.revokeObjectURL(imageUrl)
-        } catch(e) {
-          URL.revokeObjectURL(imageUrl)
-          throw new Error("OCR fallito: " + e.message)
-        }
-
-        if (!ocrText.trim()) throw new Error("Nessun testo trovato nella foto. Riprova con una foto più nitida.")
-
-        setProg(70); setProgLabel("Analisi AI in corso...")
+        setProg(50); setProgLabel("Analisi AI in corso...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -1763,7 +1737,13 @@ PRODOTTI:
           body: JSON.stringify({
             model: "meta-llama/llama-4-scout-17b-16e-instruct",
             max_tokens: 4096,
-            messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + ocrText }]
+            messages: [{
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
+                { type: "text", text: PROMPT }
+              ]
+            }]
           })
         })
         clearTimeout(to)
