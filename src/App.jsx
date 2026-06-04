@@ -1717,7 +1717,7 @@ PRODOTTI:
         })
 
       } else {
-        //  -  -  IMMAGINE: comprimi e manda direttamente a Groq con visione  -  -  -  -  -  -  -  -
+        //  -  -  IMMAGINE: comprimi e manda a /api/claude-vision  -  -  -  -  -  -  -  -
         setProg(20); setProgLabel("Compressione immagine...")
         const compressed = await compressImage(f)
         setProg(35); setProgLabel("Lettura immagine...")
@@ -1731,26 +1731,16 @@ PRODOTTI:
         setProg(50); setProgLabel("Analisi AI in corso...")
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
-        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        const res = await fetch("/api/claude-vision", {
           method: "POST", signal: ctrl.signal,
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
-          body: JSON.stringify({
-            model: "meta-llama/llama-4-scout-17b-16e-instruct",
-            max_tokens: 4096,
-            messages: [{
-              role: "user",
-              content: [
-                { type: "image_url", image_url: { url: "data:image/jpeg;base64," + base64 } },
-                { type: "text", text: PROMPT }
-              ]
-            }]
-          })
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64 })
         })
         clearTimeout(to)
         const data = await res.json()
-        if (data.error) throw new Error(data.error.message || "Errore Groq")
-        const raw = data.choices?.[0]?.message?.content || ""
-        console.log("GROQ RAW OUTPUT:", raw)
+        if (data.error) throw new Error(data.error || "Errore Claude")
+        const raw = data.text || ""
+        console.log("CLAUDE RAW OUTPUT:", raw)
         const match = raw.match(/\{[\s\S]*\}/)
         if (!match) throw new Error("Risposta AI non valida — riprova con foto più nitida")
         processResult(JSON.parse(cleanJSON(match[0])))
