@@ -1,8 +1,0 @@
-{
-  "functions": {
-    "api/claude-vision.js": {
-      "maxDuration": 60,
-      "memory": 1024
-    }
-  }
-}
