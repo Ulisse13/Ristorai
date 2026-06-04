@@ -3734,9 +3734,16 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
   function importaMagazzino() {
     if (!pendingJSON) return
 
+    // Stessa logica di normCat da processResult
+    function normCat(c) {
+      if (!c) return ""
+      const m = { "carni": "Carni", "carne": "Carni", "pesce": "Pesce", "freschi": "Freschi", "fresco": "Freschi",
+        "frutta e verdura": "Frutta e Verdura", "frutta": "Frutta e Verdura", "verdura": "Frutta e Verdura",
+        "surgelati": "Surgelati", "surgelato": "Surgelati", "dispensa": "Dispensa" }
+      return m[c.toLowerCase().trim()] || c
+    }
+
     function guessCat(nome) {
-      const dbResult = lookupFood(nome)
-      if (dbResult) return dbResult.cat
       const n = nome.toLowerCase()
       if (/detersiv|sapone|candegg|disinfett|sgrassator|lavastoviglie|spugna|bobina|guanti nitr|carta igien/.test(n)) return "Dispensa"
       if (/surgelat|gelo|frozen|\biqf\b|abbattut/.test(n)) return "Surgelati"
@@ -3747,11 +3754,16 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
       return "Dispensa"
     }
 
+    function normNameForMatch(n) {
+      return (n || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9\s]/g," ").replace(/\s+/g," ").trim()
+    }
+
+    const learningKey = n => n.toLowerCase().replace(/[^a-z0-9\s]/g,"").trim().split(/\s+/).slice(0,3).join(" ")
+
     const parsed = pendingJSON
-    const prodotti = parsed.prodotti || []
+    const prodotti = parsed.prodotti?.filter(p => p && p.nome) || []
     const newIngs = [...(ings || [])]
     const newFornitori = [...(fornitori || [])]
-    const newLearned = { ...(learned || {}) }
     const now = Date.now()
     let importati = 0
 
@@ -3759,34 +3771,46 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
     if (parsed.fornitore) {
       const nomeForn = parsed.fornitore.trim()
       const exists = newFornitori.some(f => f.name?.toLowerCase() === nomeForn.toLowerCase())
-      if (!exists) {
-        newFornitori.push({ id: "f_" + now, name: nomeForn, tel: "", email: "", cat: "" })
-      }
+      if (!exists) newFornitori.push({ id: "f_" + now, name: nomeForn, tel: "", email: "", cat: "" })
     }
 
-    prodotti.filter(p => p && p.nome).forEach(p => {
+    prodotti.forEach(p => {
       const nome = p.nome.trim()
-      const cat = p.categoria || guessCat(nome)
-      const sotto1 = p.sotto1 || ""
-      const prezzo = parseFloat(p.prezzoUnitario) || 0
-      const unita = p.unita || "kg"
+      const prezzo = parseFloat(String(p.prezzoUnitario || "0").replace(",", ".")) || 0
       const fornitore = parsed.fornitore || ""
 
       if (prezzo <= 0) return
 
-      // Cerca ingrediente esistente
-      const idx = newIngs.findIndex(i => i.name?.toLowerCase() === nome.toLowerCase())
+      // Stessa priorità di processResult: learned > DB > AI > guessCat
+      const nomeKey = learningKey(nome)
+      const learnedMatch = learned && learned[nomeKey]
+      const aiCat = normCat(p.categoria) || guessCat(nome)
+      const dbMatch = !learnedMatch ? lookupFood(nome) : null
+      const rawCat = (learnedMatch?.cat) || (dbMatch?.cat) || aiCat
+      const cat = rawCat === "Vini" ? "Dispensa" : rawCat
+      const sotto1 = (learnedMatch?.sotto1) || (dbMatch?.sotto1) || (rawCat === "Vini" ? "Bevande alcoliche" : p.sotto1) || ""
+      const sotto2 = (learnedMatch?.sotto2) || (dbMatch?.sotto2) || p.sotto2 || ""
+      const unita = (learnedMatch?.unit) || (dbMatch?.unit) || p.unita || "kg"
+
+      // Cerca ingrediente esistente (stessa logica Jaccard di processResult)
+      const nameLower = normNameForMatch(nome)
+      const idx = newIngs.findIndex(i => {
+        const aNorm = normNameForMatch(i.name)
+        if (aNorm === nameLower) return true
+        const aWords = aNorm.split(/\s+/).filter(w => w.length >= 4)
+        const bWords = nameLower.split(/\s+/).filter(w => w.length >= 4)
+        if (!aWords.length || !bWords.length) return false
+        const common = aWords.filter(w => bWords.includes(w))
+        const union = new Set([...aWords, ...bWords]).size
+        return common.length / union >= 0.8 && common.length >= 2
+      })
 
       if (idx >= 0) {
-        // Aggiorna prezzi
         const ing = { ...newIngs[idx] }
         const prezzi = [...(ing.prezzi || [])]
-        const existing = prezzi.findIndex(pr => pr.sup?.toLowerCase() === fornitore.toLowerCase())
-        if (existing >= 0) {
-          prezzi[existing] = { ...prezzi[existing], p: prezzo, date: new Date().toISOString().split("T")[0] }
-        } else {
-          prezzi.push({ sup: fornitore, p: prezzo, date: new Date().toISOString().split("T")[0] })
-        }
+        const ei = prezzi.findIndex(pr => pr.sup?.toLowerCase() === fornitore.toLowerCase())
+        if (ei >= 0) prezzi[ei] = { ...prezzi[ei], p: prezzo, date: new Date().toISOString().split("T")[0] }
+        else prezzi.push({ sup: fornitore, p: prezzo, date: new Date().toISOString().split("T")[0] })
         prezzi.sort((a, b) => a.p - b.p)
         if (prezzi.length > 5) prezzi.splice(5)
         const bestPrice = prezzi[0]?.p || prezzo
@@ -3795,18 +3819,11 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
         ing.updatedAt = now
         newIngs[idx] = ing
       } else {
-        // Nuovo ingrediente
         newIngs.push({
           id: "i_" + now + "_" + importati,
-          name: nome,
-          cat,
-          sotto1,
-          sotto2: p.sotto2 || "",
-          unit: unita,
+          name: nome, cat, sotto1, sotto2, unit: unita,
           prezzi: [{ sup: fornitore, p: prezzo, date: new Date().toISOString().split("T")[0] }],
-          avg: prezzo,
-          createdAt: now,
-          updatedAt: now
+          avg: prezzo, createdAt: now, updatedAt: now
         })
       }
       importati++
@@ -3814,7 +3831,6 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
 
     setIngs(newIngs)
     setFornitori(newFornitori)
-    setLearned(newLearned)
     setImportDone(true)
     setPendingJSON(null)
     setMessages(prev => [...prev, {
