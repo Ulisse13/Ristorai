@@ -3596,20 +3596,215 @@ Per qualsiasi altra domanda (politica, sport, tecnologia generica, vita privata,
 
 Rispondi sempre in italiano. Sii diretto, pratico e professionale. Usa la terminologia del settore.`
 
-function ChefZAI({ isMobile, setPage, pushHistory }) {
+function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, setFornitori, learned, setLearned, setRecentAlerts, setInvs }) {
+  const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
   const [view, setView] = useState("hub") // "hub" | "chat"
   const [messages, setMessages] = useState([
-    { role: "assistant", content: "Ciao! Sono Chef Z AI, il tuo consulente di cucina e ristorazione professionale. Posso aiutarti su ingredienti, ricette, food cost, attrezzature, fornitori, HACCP e su come usare Chef Z. Come posso esserti utile?" }
+    { role: "assistant", content: "Ciao! Sono Chef Z AI, il tuo consulente di cucina e ristorazione professionale. Posso aiutarti su ingredienti, ricette, food cost, attrezzature, fornitori, HACCP e su come usare Chef Z.\n\nPuoi anche allegarmi una foto o PDF di una fattura — la leggo e importo i prodotti direttamente in magazzino." }
   ])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [pendingJSON, setPendingJSON] = useState(null) // JSON fattura pronto per import
+  const [importDone, setImportDone] = useState(false)
   const bottomRef = useRef(null)
   const inputRef = useRef(null)
+  const fileRef = useRef(null)
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages])
 
+  // ── Carica prompt da Firebase ────────────────────────────────────────────
+  async function loadPromptAI() {
+    try {
+      const snap = await getDoc(doc(db, "config", "prompts"))
+      if (snap.exists() && snap.data().prompt_fattura) return snap.data().prompt_fattura
+    } catch(e) {}
+    return null
+  }
+
+  // ── Gestione file allegato ────────────────────────────────────────────────
+  async function handleAttach(f) {
+    if (!f) return
+    const typeGuess = f.type || (f.name?.toLowerCase().endsWith(".pdf") ? "application/pdf" : "image/jpeg")
+    const isImage = typeGuess.startsWith("image/")
+    const isPdf = typeGuess === "application/pdf"
+    if (!isImage && !isPdf) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Formato non supportato. Usa JPG, PNG o PDF." }])
+      return
+    }
+
+    // Mostra messaggio utente con nome file
+    setMessages(prev => [...prev, { role: "user", content: "📎 " + f.name }])
+    setLoading(true)
+    setPendingJSON(null)
+    setImportDone(false)
+
+    try {
+      const promptBase = await loadPromptAI()
+      const PROMPT = promptBase || `Sei un esperto contabile per la ristorazione. Analizza questa fattura e restituisci SOLO JSON valido senza markdown. REGOLE NOME: massimo 5 parole, solo il prodotto. NO pesi, NO volumi, NO codici articolo. PRESERVARE SEMPRE nel nome queste specificazioni se presenti: Conservazione: al naturale, sott'aceto, sott'olio, affumicato, salmistrato, marinato, fermentato Stato: fresco, precotto, cotto, crudo, abbattuto, decongelato Surgelazione: surgelato, gelo, IQF Tagli: intero, metà, filetti, pulito, sporco Calibri gamberi: 1°, 2°, 3°, 4° Calibri polpo: T1 T2 T3 T4 T5 T6 T7 Abbreviazioni: B.A., C/O, S/V REGOLE PREZZO: copia il valore della colonna Prezzo. Se c'è colonna Sconto: applica prezzoUnitario = Prezzo x (1 - Sconto/100). I numeri 4,5,10,22 in ultima colonna sono IVA non sconti. CATEGORIE: Carni, Pesce, Frutta e Verdura, Freschi, Surgelati, Dispensa CARNI - sotto1: Bovino, Maiale, Pollo, Tacchino, Agnello, Anatra, Coniglio, Selvaggina PESCE - sotto1: Orata, Branzino, Salmone, Pesce Spada, Tonno, Ricciola, Dentice, Cernia, Ombrina, Crostacei, Molluschi, Altri Pesci FRESCHI - sotto1: Formaggi Nobili, Latticini, Salumi, Altri Freschi FRUTTA E VERDURA - sotto1: Frutta, Verdure, Erbe aromatiche SURGELATI - sotto1: Carni, Pesce, Verdure, Gelati e Dolci, Preparati DISPENSA - sotto1: Conserve, Condimenti, Secchi, Bevande analcoliche, Bevande alcoliche, Superalcolici, Detersivi Uova fresche/sfuse/Cat.A → Freschi/Altri Freschi. NON usare Ovoprodotti come categoria. SURGELATI: prodotti con parola surgelato/frozen/gelo/IQF/glassato/abbattuto o lettera S o C isolata come ultima parola. {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0,"iva":0,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0,"unita":"kg o pz o l","prezzoUnitario":0,"sconto":"","produttore":""}]}`
+
+      let raw = ""
+
+      if (isPdf) {
+        // PDF: manda a claude-vision come base64
+        const base64 = await new Promise((res, rej) => {
+          const reader = new FileReader()
+          reader.onload = () => res(reader.result.split(",")[1])
+          reader.onerror = () => rej(new Error("Lettura fallita"))
+          reader.readAsDataURL(f)
+        })
+        const ctrl = new AbortController()
+        const to = setTimeout(() => ctrl.abort(), 90000)
+        const resp = await fetch("/api/claude-vision", {
+          method: "POST", signal: ctrl.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, prompt: PROMPT })
+        })
+        clearTimeout(to)
+        const data = await resp.json()
+        if (data.error) throw new Error(data.error)
+        raw = data.text || ""
+      } else {
+        // IMMAGINE: manda direttamente a claude-vision senza compressione
+        const base64 = await new Promise((res, rej) => {
+          const reader = new FileReader()
+          reader.onload = () => res(reader.result.split(",")[1])
+          reader.onerror = () => rej(new Error("Lettura fallita"))
+          reader.readAsDataURL(f)
+        })
+        const ctrl = new AbortController()
+        const to = setTimeout(() => ctrl.abort(), 90000)
+        const resp = await fetch("/api/claude-vision", {
+          method: "POST", signal: ctrl.signal,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ base64, prompt: PROMPT })
+        })
+        clearTimeout(to)
+        const data = await resp.json()
+        if (data.error) throw new Error(data.error)
+        raw = data.text || ""
+      }
+
+      console.log("CHAT FATTURA RAW:", raw)
+      const match = raw.match(/\{[\s\S]*\}/)
+      if (!match) throw new Error("Non riesco a leggere la fattura. Riprova con una foto più nitida.")
+      const parsed = JSON.parse(cleanJSON(match[0]))
+      const prodotti = parsed.prodotti?.filter(p => p && p.nome) || []
+      setPendingJSON(parsed)
+
+      // Riepilogo dettagliato
+      const righe = prodotti.map(p => {
+        const cat = p.categoria || ""
+        const sub = p.sotto1 ? "/" + p.sotto1 : ""
+        const prezzo = p.prezzoUnitario > 0 ? "€" + p.prezzoUnitario + "/" + (p.unita || "kg") : "prezzo n.d."
+        return `• ${p.nome} — ${cat}${sub} — ${prezzo}`
+      }).join("\n")
+
+      setMessages(prev => [...prev, {
+        role: "assistant",
+        content: `Ho letto la fattura ${parsed.fornitore ? "**" + parsed.fornitore + "**" : ""} del ${parsed.data || "?"}.\nTrovati **${prodotti.length} prodotti**:\n\n${righe}\n\nVuoi importarli in magazzino?`
+      }])
+    } catch(e) {
+      setMessages(prev => [...prev, { role: "assistant", content: "Errore nella lettura: " + e.message }])
+    }
+    setLoading(false)
+  }
+
+  // ── Import in magazzino ───────────────────────────────────────────────────
+  function importaMagazzino() {
+    if (!pendingJSON) return
+
+    function guessCat(nome) {
+      const dbResult = lookupFood(nome)
+      if (dbResult) return dbResult.cat
+      const n = nome.toLowerCase()
+      if (/detersiv|sapone|candegg|disinfett|sgrassator|lavastoviglie|spugna|bobina|guanti nitr|carta igien/.test(n)) return "Dispensa"
+      if (/surgelat|gelo|frozen|\biqf\b|abbattut/.test(n)) return "Surgelati"
+      if (/pollo|manzo|maiale|vitello|agnello|coniglio|tacchino|anatra|fesa|bistecca|macinato/.test(n)) return "Carni"
+      if (/pesce|salmone|tonno|branzino|orata|cozze|vongole|gamberi|scampi|calamari|polpo|seppia/.test(n)) return "Pesce"
+      if (/parmigiano|mozzarella|burro|latte|panna|yogurt|ricotta|formaggio|uova|uovo/.test(n)) return "Freschi"
+      if (/mela|pera|pomodor|insalata|zucchine|melanzane|peperone|cipolla|carota|patate|verdura|frutta/.test(n)) return "Frutta e Verdura"
+      return "Dispensa"
+    }
+
+    const parsed = pendingJSON
+    const prodotti = parsed.prodotti || []
+    const newIngs = [...(ings || [])]
+    const newFornitori = [...(fornitori || [])]
+    const newLearned = { ...(learned || {}) }
+    const now = Date.now()
+    let importati = 0
+
+    // Auto-crea fornitore se non esiste
+    if (parsed.fornitore) {
+      const nomeForn = parsed.fornitore.trim()
+      const exists = newFornitori.some(f => f.name?.toLowerCase() === nomeForn.toLowerCase())
+      if (!exists) {
+        newFornitori.push({ id: "f_" + now, name: nomeForn, tel: "", email: "", cat: "" })
+      }
+    }
+
+    prodotti.filter(p => p && p.nome).forEach(p => {
+      const nome = p.nome.trim()
+      const cat = p.categoria || guessCat(nome)
+      const sotto1 = p.sotto1 || ""
+      const prezzo = parseFloat(p.prezzoUnitario) || 0
+      const unita = p.unita || "kg"
+      const fornitore = parsed.fornitore || ""
+
+      if (prezzo <= 0) return
+
+      // Cerca ingrediente esistente
+      const idx = newIngs.findIndex(i => i.name?.toLowerCase() === nome.toLowerCase())
+
+      if (idx >= 0) {
+        // Aggiorna prezzi
+        const ing = { ...newIngs[idx] }
+        const prezzi = [...(ing.prezzi || [])]
+        const existing = prezzi.findIndex(pr => pr.sup?.toLowerCase() === fornitore.toLowerCase())
+        if (existing >= 0) {
+          prezzi[existing] = { ...prezzi[existing], p: prezzo, date: new Date().toISOString().split("T")[0] }
+        } else {
+          prezzi.push({ sup: fornitore, p: prezzo, date: new Date().toISOString().split("T")[0] })
+        }
+        prezzi.sort((a, b) => a.p - b.p)
+        if (prezzi.length > 5) prezzi.splice(5)
+        const bestPrice = prezzi[0]?.p || prezzo
+        ing.prezzi = prezzi
+        ing.avg = ing.avg ? Math.round((ing.avg * 0.7 + bestPrice * 0.3) * 100) / 100 : bestPrice
+        ing.updatedAt = now
+        newIngs[idx] = ing
+      } else {
+        // Nuovo ingrediente
+        newIngs.push({
+          id: "i_" + now + "_" + importati,
+          name: nome,
+          cat,
+          sotto1,
+          sotto2: p.sotto2 || "",
+          unit: unita,
+          prezzi: [{ sup: fornitore, p: prezzo, date: new Date().toISOString().split("T")[0] }],
+          avg: prezzo,
+          createdAt: now,
+          updatedAt: now
+        })
+      }
+      importati++
+    })
+
+    setIngs(newIngs)
+    setFornitori(newFornitori)
+    setLearned(newLearned)
+    setImportDone(true)
+    setPendingJSON(null)
+    setMessages(prev => [...prev, {
+      role: "assistant",
+      content: `✅ Importati **${importati} prodotti** in magazzino da ${parsed.fornitore || "fattura"}.`
+    }])
+  }
+
+  // ── Messaggio testuale ────────────────────────────────────────────────────
   async function sendMessage() {
     const text = input.trim()
     if (!text || loading) return
@@ -3627,7 +3822,7 @@ function ChefZAI({ isMobile, setPage, pushHistory }) {
           max_tokens: 1024,
           messages: [
             { role: "system", content: CHEFZ_SYSTEM_PROMPT },
-            ...newMessages.map(m => ({ role: m.role, content: m.content }))
+            ...newMessages.map(m => ({ role: m.role, content: typeof m.content === "string" ? m.content : "" }))
           ]
         })
       })
@@ -3755,15 +3950,38 @@ function ChefZAI({ isMobile, setPage, pushHistory }) {
         <div ref={bottomRef} />
       </div>
 
+      {/* Bottone importa magazzino */}
+      {pendingJSON && !importDone && (
+        <div style={{ flexShrink: 0, padding: "8px 0" }}>
+          <button onClick={importaMagazzino} style={{ ...btn("p"), width: "100%", borderRadius: 12, padding: "12px", fontSize: 15, fontWeight: 700 }}>
+            📥 Importa {pendingJSON.prodotti?.length || 0} prodotti in magazzino
+          </button>
+        </div>
+      )}
+
       {/* Input */}
       <div style={{ flexShrink: 0, display: "flex", gap: 8, padding: "12px 0 0", borderTop: STYLE.bds }}>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*,application/pdf"
+          capture="environment"
+          style={{ display: "none" }}
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleAttach(f); e.target.value = "" }}
+        />
+        <button
+          onClick={() => fileRef.current?.click()}
+          disabled={loading}
+          style={{ ...btn("s"), borderRadius: 12, padding: "10px 12px", fontSize: 18, opacity: loading ? 0.5 : 1, flexShrink: 0 }}>
+          📎
+        </button>
         <input
           ref={inputRef}
           style={{ ...inp({ flex: 1, fontSize: 14, padding: "10px 14px" }), borderRadius: 12 }}
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
-          placeholder="Chiedi qualcosa su cucina o Chef Z..."
+          placeholder="Chiedi qualcosa o allega una fattura..."
           disabled={loading}
         />
         <button
@@ -4674,7 +4892,7 @@ export default function App() {
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
-        case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} />
+        case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} setRecentAlerts={setRecentAlerts} setInvs={setInvs} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
