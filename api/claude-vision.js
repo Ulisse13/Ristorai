@@ -61,6 +61,8 @@ Ovoprodotti (pasta d'uovo, misto d'uovo, tuorlo/albume pastorizzato) → Freschi
 Restituisci SOLO questo JSON, nessun testo prima o dopo, nessun markdown:
 {"fornitore":"","numero":"","data":"YYYY-MM-DD","totale":0,"iva":0,"prodotti":[{"nome":"","categoria":"","sotto1":"","sotto2":"","quantita":0,"unita":"kg o pz o l","prezzoUnitario":0,"sconto":"","produttore":""}]}`
 
+export const config = { api: { bodyParser: { sizeLimit: "10mb" } } }
+
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*")
   res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -100,7 +102,7 @@ export default async function handler(req, res) {
           "anthropic-version": "2023-06-01"
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-4-20250514",
           max_tokens: 4096,
           messages: [{ role: "user", content: messageContent }]
         })
