@@ -3666,12 +3666,31 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
         if (data.error) throw new Error(data.error)
         raw = data.text || ""
       } else {
-        // IMMAGINE: manda direttamente a claude-vision senza compressione
+        // IMMAGINE: comprimi leggera solo se necessario (max 2000px, qualità 0.85)
+        const compressLight = (file) => new Promise((res) => {
+          const img = new Image()
+          const url = URL.createObjectURL(file)
+          img.onload = () => {
+            URL.revokeObjectURL(url)
+            const MAX = 2000
+            let w = img.width, h = img.height
+            if (w > MAX || h > MAX) {
+              if (w > h) { h = Math.round(h * MAX / w); w = MAX }
+              else { w = Math.round(w * MAX / h); h = MAX }
+            }
+            const canvas = document.createElement("canvas")
+            canvas.width = w; canvas.height = h
+            canvas.getContext("2d").drawImage(img, 0, 0, w, h)
+            canvas.toBlob(blob => res(blob), "image/jpeg", 0.85)
+          }
+          img.src = url
+        })
+        const compressed = await compressLight(f)
         const base64 = await new Promise((res, rej) => {
           const reader = new FileReader()
           reader.onload = () => res(reader.result.split(",")[1])
           reader.onerror = () => rej(new Error("Lettura fallita"))
-          reader.readAsDataURL(f)
+          reader.readAsDataURL(compressed)
         })
         const ctrl = new AbortController()
         const to = setTimeout(() => ctrl.abort(), 90000)
