@@ -97,6 +97,7 @@ export const CARNI_DB = [
   { nome: "Costolette Agnello", testo: "alias: costolette di agnello | fresche, congelate | S/V", sotto1: "Agnello", sotto2: "Costolette", unit: "kg" },
   { nome: "Spalla Agnello", testo: "alias: spalla di agnello | fresca, congelata, gelo | C/O, S/O | origine: Nuova Zelanda, Lumina | S/V", sotto1: "Agnello", sotto2: "Spalla", unit: "kg" },
   { nome: "Stinco Agnello", testo: "alias: stinco posteriore agnello | fresco, congelato, gelo | origine: Nuova Zelanda | S/V", sotto1: "Agnello", sotto2: "Stinco", unit: "kg" },
+  { nome: "Lombo Agnello", testo: "alias: lombo di agnello, sella di agnello, lombata agnello, lombo agn | fresco, congelato, gelo | C/O, S/O | origine: Nuova Zelanda, NZL, Irlanda | S/V", sotto1: "Agnello", sotto2: "Lombo", unit: "kg" },
   { nome: "Abbacchio", testo: "alias: agnello da latte, capretto | fresco, congelato | intero, a pezzi | S/V", sotto1: "Agnello", sotto2: "Intero", unit: "kg" },
   { nome: "Capretto", testo: "alias: capretto da latte | fresco, congelato | intero, a pezzi | S/V", sotto1: "Agnello", sotto2: "Intero", unit: "kg" },
 

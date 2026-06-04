@@ -115,11 +115,19 @@ function norm(s) {
  * @param {string} nome - Nome del prodotto dalla fattura
  * @returns {{ cat, sotto1, sotto2, unit } | null}
  */
+// Controlla se tutte le parole del keyword sono presenti nel nome (anche non adiacenti)
+function wordsMatch(name, kw) {
+  if (name.includes(kw)) return true // substring match diretto
+  const nWords = new Set(name.split(' ').filter(w => w.length >= 3))
+  const kWords = kw.split(' ').filter(w => w.length >= 3)
+  return kWords.length >= 2 && kWords.every(w => nWords.has(w))
+}
+
 function lookupFoodBase(n) {
   if (INDEX[n]) return INDEX[n]
   const keys = Object.keys(INDEX).sort((a, b) => b.length - a.length)
   for (const kw of keys) {
-    if (n.includes(kw) && kw.length >= 4) return INDEX[kw]
+    if (kw.length >= 4 && wordsMatch(n, kw)) return INDEX[kw]
   }
   const words = n.split(" ").filter(w => w.length >= 4)
   let best = null, bestScore = 0
@@ -145,10 +153,16 @@ export function lookupFood(nome) {
       .filter(k => INDEX[k].cat === "Surgelati")
       .sort((a, b) => b.length - a.length)
     for (const kw of surgelatiKeys) {
-      if (n.includes(kw) && kw.length >= 4) return INDEX[kw]
+      if (kw.length >= 4 && wordsMatch(n, kw)) return INDEX[kw]
     }
     const baseMatch = lookupFoodBase(n)
     if (baseMatch) return { ...baseMatch, cat: "Surgelati" }
+  }
+
+  // Override grattugiati: tutti i formaggi gratt. → Freschi/Latticini
+  if (/gratt|grattugiato|grattuggiato/.test(n)) {
+    const base = lookupFoodBase(n)
+    if (base && base.cat === "Freschi") return { ...base, sotto1: "Latticini", sotto2: "" }
   }
 
   return lookupFoodBase(n)
