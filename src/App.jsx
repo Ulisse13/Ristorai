@@ -1650,7 +1650,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
           const res2 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST", signal: ctrl2.signal,
             headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
-            body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 4096,
+            body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", max_tokens: 4096,
               messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }] })
           })
           clearTimeout(to2)
@@ -1681,7 +1681,7 @@ PRODOTTI:
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
-          body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 2048,
+          body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", max_tokens: 2048,
             messages: [{ role: "user", content: PROMPT_CAT }] })
         })
         clearTimeout(to)
@@ -3274,7 +3274,7 @@ Restituisci SOLO JSON:
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           max_tokens: 512,
           messages: [{ role: "user", content: prompt }]
         })
@@ -3853,7 +3853,7 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
           max_tokens: 1024,
           messages: [
             { role: "system", content: CHEFZ_SYSTEM_PROMPT },
@@ -4173,7 +4173,7 @@ function LoginPage() {
 
 
 
-function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, clearNavBack, pushHistory }) {
+function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, clearNavBack, setRecentAlerts, pushHistory }) {
   const CATS = ["Carni", "Pesce", "Frutta e Verdura", "Freschi", "Surgelati", "Dispensa"]
   const [selCat, setSelCat] = useState(null)
   const [note, setNote]     = useState({}) // { ingId: noteText }
@@ -4928,7 +4928,7 @@ export default function App() {
         case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
         case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} setRecentAlerts={setRecentAlerts} setInvs={setInvs} />
-        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} setRecentAlerts={setRecentAlerts} />
         default:       return <Dashboard ings={ings} isMobile={isMobile} />
       }
     } catch(e) {
