@@ -4208,22 +4208,41 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
   const [consegnaDate, setConsegnaDate] = useState("")
   const [sendCat, setSendCat] = useState("Tutto")
 
-  function sendOrder(fornitore) {
+  const [orderMsg, setOrderMsg] = useState("")
+  const [orderFornitore, setOrderFornitore] = useState(null)
+  const [orderModalOpen, setOrderModalOpen] = useState(false)
+
+  function buildOrderMsg() {
     const items = spesa.filter(s => !s.done && (sendCat === "Tutto" || s.cat === sendCat))
-    if (!items.length) return
+    if (!items.length) return ""
     const text = items.map(s => (parseFloat(s.qty) || 1) + " " + (s.unitSpesa || s.unit || "pz") + " " + s.name).join("\n")
     const now = new Date()
     const dataOra = now.toLocaleDateString("it-IT") + " ore " + now.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })
     const consegnaStr = consegnaDate ? "Consegna richiesta: " + consegnaDate : ""
     const header = (ristoranteName ? ristoranteName + "\n" : "") + "Data ordine: " + dataOra + (consegnaStr ? "\n" + consegnaStr : "")
-    const msg = header + "\n\n" + text
-    if (fornitore.tel) {
-      const tel = fornitore.tel.replace(/\s/g, "")
-      window.open("https://wa.me/" + (tel.startsWith("+") ? tel.slice(1) : "39" + tel) + "?text=" + encodeURIComponent(msg))
-    } else if (fornitore.email) {
-      window.open("mailto:" + fornitore.email + "?subject=Ordine " + new Date().toLocaleDateString("it-IT") + "&body=" + encodeURIComponent(msg))
-    }
+    return header + "\n\n" + text
+  }
+
+  function sendOrder(fornitore) {
+    const msg = buildOrderMsg()
+    if (!msg) return
+    setOrderMsg(msg)
+    setOrderFornitore(fornitore)
     setSendModalOpen(false)
+    setOrderModalOpen(true)
+  }
+
+  function sendWhatsApp() {
+    if (!orderFornitore?.tel) return
+    const tel = orderFornitore.tel.replace(/\s/g, "")
+    window.open("https://wa.me/" + (tel.startsWith("+") ? tel.slice(1) : "39" + tel) + "?text=" + encodeURIComponent(orderMsg))
+    setOrderModalOpen(false)
+  }
+
+  function sendEmail() {
+    if (!orderFornitore?.email) return
+    window.open("mailto:" + orderFornitore.email + "?subject=Ordine " + new Date().toLocaleDateString("it-IT") + "&body=" + encodeURIComponent(orderMsg))
+    setOrderModalOpen(false)
   }
 
   const todoByCat = CATS.map(cat => ({
@@ -4234,6 +4253,43 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
   const doneItems = spesa.filter(s => s.done)
 
   const [selSotto1, setSelSotto1] = useState(null)
+
+  // Modal scelta canale invio ordine
+  if (orderModalOpen && orderFornitore) return (
+    <div style={{ maxWidth: 500 }}>
+      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 4 }}>Invia ordine a {orderFornitore.name}</div>
+      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 16 }}>Scegli come inviare l'ordine</div>
+
+      {/* Testo ordine */}
+      <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 13, color: STYLE.t1, whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 200, overflowY: "auto" }}>
+        {orderMsg}
+      </div>
+
+      {/* Bottoni invio */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+        {orderFornitore.tel && (
+          <button onClick={sendWhatsApp} style={{ ...btn("p"), justifyContent: "center", gap: 8 }}>
+            📱 WhatsApp — {orderFornitore.tel}
+          </button>
+        )}
+        {orderFornitore.email && (
+          <button onClick={sendEmail} style={{ ...btn("g"), justifyContent: "center", gap: 8 }}>
+            ✉️ Email — {orderFornitore.email}
+          </button>
+        )}
+        {!orderFornitore.tel && !orderFornitore.email && (
+          <div style={{ fontSize: 12, color: STYLE.t3, padding: "10px 0" }}>
+            Nessun contatto salvato per questo fornitore. Copia il testo e invialo manualmente.
+          </div>
+        )}
+        <button onClick={() => { navigator.clipboard?.writeText(orderMsg); }} style={{ ...btn("s"), justifyContent: "center" }}>
+          📋 Copia testo
+        </button>
+      </div>
+
+      <button onClick={() => setOrderModalOpen(false)} style={{ ...btn("g"), width: "100%", justifyContent: "center" }}>← Indietro</button>
+    </div>
+  )
 
   // Back button: naviga tra i livelli lista spesa
   useEffect(() => {
