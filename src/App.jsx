@@ -1650,7 +1650,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
           const res2 = await fetch("https://api.groq.com/openai/v1/chat/completions", {
             method: "POST", signal: ctrl2.signal,
             headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
-            body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", max_tokens: 4096,
+            body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 4096,
               messages: [{ role: "user", content: PROMPT + "\n\nTESTO FATTURA:\n" + fullText }] })
           })
           clearTimeout(to2)
@@ -1681,7 +1681,7 @@ PRODOTTI:
         const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST", signal: ctrl.signal,
           headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
-          body: JSON.stringify({ model: "meta-llama/llama-4-scout-17b-16e-instruct", max_tokens: 2048,
+          body: JSON.stringify({ model: "llama-3.3-70b-versatile", max_tokens: 2048,
             messages: [{ role: "user", content: PROMPT_CAT }] })
         })
         clearTimeout(to)
@@ -3274,7 +3274,7 @@ Restituisci SOLO JSON:
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: "llama-3.3-70b-versatile",
           max_tokens: 512,
           messages: [{ role: "user", content: prompt }]
         })
@@ -3853,7 +3853,7 @@ function ChefZAI({ isMobile, setPage, pushHistory, ings, setIngs, fornitori, set
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + import.meta.env.VITE_GROQ_KEY },
         body: JSON.stringify({
-          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          model: "llama-3.3-70b-versatile",
           max_tokens: 1024,
           messages: [
             { role: "system", content: CHEFZ_SYSTEM_PROMPT },
