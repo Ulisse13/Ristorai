@@ -4563,21 +4563,40 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
 function Onboarding({ onDone }) {
   const steps = [
     {
-      icon: "-- ",
+      id: "dash",
       title: "Benvenuto in Chef Z",
       desc: "Il gestionale pensato per ristoratori italiani. Tieni sotto controllo costi, fornitori e menu  -  tutto dal tuo telefono."
     },
     {
-      icon: "- ",
-      title: "Inizia dalle fatture",
-      desc: "Scatta una foto alla bolla del fornitore. Chef Z legge i prodotti automaticamente, aggiorna i prezzi e popola il magazzino."
+      id: "inv",
+      title: "Scansiona le fatture",
+      desc: "Scatta una foto o carica il PDF della bolla. Chef Z legge i prodotti, aggiorna i prezzi in magazzino e ti avvisa se qualcosa e aumentato."
     },
     {
-      icon: "-- ",
-      title: "Calcola le ricette",
-      desc: "Crea ricette con ingredienti e grammature reali. Il food cost e il prezzo di vendita consigliato vengono calcolati in automatico."
+      id: "dishes",
+      title: "Calcola il food cost",
+      desc: "Crea ricette con ingredienti e grammature reali, a mano o lasciando che l'AI le stimi per te. Food cost % e prezzo di vendita consigliato, sempre sotto controllo."
     },
-
+    {
+      id: "dishes",
+      title: "Schede piatto complete",
+      desc: "Foto, ingredienti, margini e valori nutrizionali calcolati in automatico per ogni ricetta che crei."
+    },
+    {
+      id: "ai",
+      title: "Chef Z AI",
+      desc: "Il tuo assistente in cucina: chiedigli consigli su ricette, abbinamenti e gestione del ristorante, in qualsiasi momento."
+    },
+    {
+      id: "spesa",
+      title: "Lista Spesa",
+      desc: "Seleziona cosa ti serve e invia l'ordine ai tuoi fornitori direttamente su WhatsApp o email, in un tocco."
+    },
+    {
+      id: "dash",
+      title: "Dashboard",
+      desc: "Margini, KPI e andamento dei costi sempre a colpo d'occhio, per decidere con i numeri alla mano."
+    },
   ]
   const [step, setStep] = useState(0)
   const cur = steps[step]
@@ -5097,4 +5116,3 @@ export default function App() {
     </div>
   )
 }
-
