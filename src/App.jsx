@@ -4254,42 +4254,7 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
 
   const [selSotto1, setSelSotto1] = useState(null)
 
-  // Modal scelta canale invio ordine
-  if (orderModalOpen && orderFornitore) return (
-    <div style={{ maxWidth: 500 }}>
-      <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 4 }}>Invia ordine a {orderFornitore.name}</div>
-      <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 16 }}>Scegli come inviare l'ordine</div>
-
-      {/* Testo ordine */}
-      <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 13, color: STYLE.t1, whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 200, overflowY: "auto" }}>
-        {orderMsg}
-      </div>
-
-      {/* Bottoni invio */}
-      <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
-        {orderFornitore.tel && (
-          <button onClick={sendWhatsApp} style={{ ...btn("p"), justifyContent: "center", gap: 8 }}>
-            📱 WhatsApp — {orderFornitore.tel}
-          </button>
-        )}
-        {orderFornitore.email && (
-          <button onClick={sendEmail} style={{ ...btn("g"), justifyContent: "center", gap: 8 }}>
-            ✉️ Email — {orderFornitore.email}
-          </button>
-        )}
-        {!orderFornitore.tel && !orderFornitore.email && (
-          <div style={{ fontSize: 12, color: STYLE.t3, padding: "10px 0" }}>
-            Nessun contatto salvato per questo fornitore. Copia il testo e invialo manualmente.
-          </div>
-        )}
-        <button onClick={() => { navigator.clipboard?.writeText(orderMsg); }} style={{ ...btn("s"), justifyContent: "center" }}>
-          📋 Copia testo
-        </button>
-      </div>
-
-      <button onClick={() => setOrderModalOpen(false)} style={{ ...btn("g"), width: "100%", justifyContent: "center" }}>← Indietro</button>
-    </div>
-  )
+  // Modal ordine gestito nel return principale
 
   // Back button: naviga tra i livelli lista spesa
   useEffect(() => {
@@ -4455,6 +4420,44 @@ function ListaSpesa({ spesa, setSpesa, ings, fornitori, isMobile, setNavBack, cl
                 ))
               )}
               <button onClick={() => setSendModalOpen(false)} style={{ ...btn("g", { width: "100%", marginTop: 8 }) }}>Annulla</button>
+            </div>
+          </div>
+        )}
+
+        {orderModalOpen && orderFornitore && (
+          <div onClick={() => setOrderModalOpen(false)}
+            style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 9999 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background: STYLE.surf, borderRadius: "16px 16px 0 0", padding: 20, width: "100%", maxWidth: 480, maxHeight: "85vh", overflowY: "auto" }}>
+              <div style={{ fontFamily: "'Georgia',serif", fontSize: 18, color: STYLE.t1, marginBottom: 4 }}>Invia ordine a {orderFornitore.name}</div>
+              <div style={{ fontSize: 12, color: STYLE.t3, marginBottom: 16 }}>Scegli come inviare l'ordine</div>
+
+              <div style={{ background: STYLE.el, border: STYLE.bd, borderRadius: 10, padding: 14, marginBottom: 16, fontSize: 13, color: STYLE.t1, whiteSpace: "pre-wrap", lineHeight: 1.6, maxHeight: 200, overflowY: "auto" }}>
+                {orderMsg}
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 12 }}>
+                {orderFornitore.tel && (
+                  <button onClick={sendWhatsApp} style={{ ...btn("p"), justifyContent: "center", gap: 8 }}>
+                    📱 WhatsApp — {orderFornitore.tel}
+                  </button>
+                )}
+                {orderFornitore.email && (
+                  <button onClick={sendEmail} style={{ ...btn("g"), justifyContent: "center", gap: 8 }}>
+                    ✉️ Email — {orderFornitore.email}
+                  </button>
+                )}
+                {!orderFornitore.tel && !orderFornitore.email && (
+                  <div style={{ fontSize: 12, color: STYLE.t3, padding: "10px 0" }}>
+                    Nessun contatto salvato per questo fornitore. Copia il testo e invialo manualmente.
+                  </div>
+                )}
+                <button onClick={() => { navigator.clipboard?.writeText(orderMsg) }} style={{ ...btn("s"), justifyContent: "center" }}>
+                  📋 Copia testo
+                </button>
+              </div>
+
+              <button onClick={() => setOrderModalOpen(false)} style={{ ...btn("g"), width: "100%", justifyContent: "center" }}>Chiudi</button>
             </div>
           </div>
         )}
@@ -5094,3 +5097,4 @@ export default function App() {
     </div>
   )
 }
+
