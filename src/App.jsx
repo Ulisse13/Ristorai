@@ -2801,7 +2801,11 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     const norm = u => {
       if (!u) return "kg"
       const s = u.toLowerCase().trim()
-      if (s === "litri" || s === "liter" || s === "litre") return "l"
+      if (s === "litri" || s === "liter" || s === "litre" || s === "lt" || s === "lt." || s === "litro") return "l"
+      if (s === "grammi" || s === "gr" || s === "gr." || s === "grammo") return "g"
+      if (s === "chilogrammi" || s === "chilo" || s === "chili" || s === "kg.") return "kg"
+      if (s === "millilitri" || s === "ml.") return "ml"
+      if (s === "pezzo" || s === "pezzi" || s === "pcs" || s === "pc") return "pz"
       if (s === "bottiglia") return "bottiglia"
       return s
     }
