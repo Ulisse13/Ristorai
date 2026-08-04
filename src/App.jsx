@@ -1182,7 +1182,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
   if (showFC) return <FoodCost
     dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile}
     editDish={editDish} setEditDish={setEditDish} defaultTab="food"
-    onBack={() => setShowFC(false)}
+    onBack={() => { setShowFC(false); setEditDish?.(null) }}
   />
 
 
@@ -2834,9 +2834,11 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 
   //  -  -  FOOD COST state  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
   const [fForm, setFForm]     = useState(() => {
+    if (editDish) return { name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" } // sara sovrascritto dal useEffect di precarico
     try { const s = localStorage.getItem("fm_fc_form"); return s ? JSON.parse(s) : { name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" } } catch(e) { return { name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" } }
   })
   const [fRecipe, setFRecipe] = useState(() => {
+    if (editDish) return [{ id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] // sara sovrascritto dal useEffect di precarico
     try { const s = localStorage.getItem("fm_fc_recipe"); return s ? JSON.parse(s) : [{ id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] } catch(e) { return [{ id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }] }
   })
   const [fErr, setFErr]       = useState({})
