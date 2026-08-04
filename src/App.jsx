@@ -2796,8 +2796,12 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
     let qtyConverted = qty
     if      (ru === "g"  && iu === "kg") qtyConverted = qty / 1000
     else if (ru === "kg" && iu === "g")  qtyConverted = qty * 1000
+    else if (ru === "hg" && iu === "kg") qtyConverted = qty / 10
+    else if (ru === "kg" && iu === "hg") qtyConverted = qty * 10
     else if (ru === "ml" && iu === "l")  qtyConverted = qty / 1000
+    else if (ru === "cl" && iu === "l")  qtyConverted = qty / 100
     else if (ru === "l"  && iu === "ml") qtyConverted = qty * 1000
+    else if (ru === "l"  && iu === "cl") qtyConverted = qty * 100
     else if (ru === "pz" && iu === "pz") qtyConverted = qty
     else if (ru === iu) qtyConverted = qty
     else qtyConverted = qty // unità incompatibili - passa as-is
@@ -3014,10 +3018,10 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                       return (
                         <button
                           onClick={() => fUpdateRow(row.id, { _open: true, _cat: row._cat || "" })}
-                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: selected ? STYLE.acg : STYLE.el, borderColor: selected ? STYLE.acd : "#2a2a31" })}}>
-                          <div style={{ overflow: "hidden", flex: 1 }}>
+                          style={{ ...inp({ padding: "6px 8px", fontSize: 11, cursor: "pointer", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center", background: selected ? STYLE.acg : STYLE.el, borderColor: selected ? STYLE.acd : "#2a2a31", minWidth: 0 })}}>
+                          <div style={{ overflow: "hidden", flex: 1, minWidth: 0 }}>
                             <div style={{ color: selected ? STYLE.ac : STYLE.t3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                              {ing ? ing.name.slice(0,6) + (ing.name.length > 6 ? "…" : "") : prep ? prep.name.slice(0,6) + (prep.name.length > 6 ? "…" : "") : "Sel…"}
+                              {ing ? ing.name : prep ? prep.name : "Seleziona…"}
                             </div>
                             {lineCost > 0 && <div style={{ fontSize: 10, color: STYLE.green, marginTop: 1 }}>{formatEuro(lineCost)}</div>}
                           </div>
@@ -3137,13 +3141,18 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
                       </div>
                     )}
                     <div style={{ display: "flex", gap: 3 }}>
-                      <input style={inp({ padding: "6px 4px", fontSize: 12, width: "50px" })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
+                      <input style={inp({ padding: "6px 4px", fontSize: 12, width: "50px" })} type="number" step="0.1" min="0" placeholder="0" value={row.qty} onFocus={e => e.target.select()} onChange={e => fUpdateRow(row.id, { qty: e.target.value })} />
                       <select style={inp({ padding: "6px 3px", fontSize: 11, appearance: "none", width: "38px" })} value={row.unit} onChange={e => fUpdateRow(row.id, { unit: e.target.value })}>
-                        {UNITS.map(u => <option key={u}>{u}</option>)}
+                        {(() => {
+                          const refIng = row.ingType !== "prep" ? ings.find(i => i.id === row.ingId) : null
+                          const baseUnit = refIng ? (refIng.unit === "l" || refIng.unit === "ml" ? "vol" : refIng.unit === "pz" ? "pz" : "peso") : null
+                          const opts = baseUnit === "vol" ? ["ml","cl","l"] : baseUnit === "pz" ? ["pz"] : baseUnit === "peso" ? ["g","hg","kg"] : UNITS
+                          return opts.map(u => <option key={u}>{u}</option>)
+                        })()}
                       </select>
                     </div>
                     <div style={{ position: "relative" }}>
-                      <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
+                      <input style={inp({ padding: "6px 20px 6px 6px", fontSize: 12 })} type="number" step="1" min="0" max="99" placeholder="0" value={row.waste} onFocus={e => e.target.select()} onChange={e => fUpdateRow(row.id, { waste: e.target.value })} />
                       <span style={{ position: "absolute", right: 5, top: "50%", transform: "translateY(-50%)", fontSize: 10, color: STYLE.t3, pointerEvents: "none" }}>%</span>
                     </div>
                     <button onClick={() => fRemoveRow(row.id)} style={{ background: "none", border: "none", color: STYLE.t3, cursor: "pointer", fontSize: 13, padding: 0 }}> --</button>
@@ -3175,7 +3184,7 @@ function FoodCost({ dishes, setDishes, ings, isMobile, editDish, setEditDish, de
 
           {editDish && (
             <button style={{ ...btn("g"), width: "100%", justifyContent: "center", padding: "10px", marginBottom: 8 }}
-              onClick={() => { if(setEditDish) setEditDish(null); setFForm({ name: "", cat: "Secondi", ricarico: "300" }); setFRecipe([{ id: uid2(), ingId: "", qty: "", unit: "g", waste: "0" }]) }}>
+              onClick={() => { if(setEditDish) setEditDish(null); setFForm({ name: "", cat: "Secondi", ricarico: "300", resa: "1", resaUnit: "porzioni" }); setFRecipe([{ id: uid2(), ingId: "", ingType: "ing", _cat: "", _open: false, qty: "", unit: "g", waste: "0" }]) }}>
               Annulla modifica
             </button>
           )}
