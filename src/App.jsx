@@ -5036,7 +5036,7 @@ export default function App() {
       switch(page) {
         case "dash":   return <Dashboard ings={ings} dishes={dishes} invs={invs} isMobile={isMobile} setPage={navTo} />
         case "ing":    return <Ingredients ings={ings} setIngs={setIngs} invs={invs} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} pushHistory={pushHistory} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
-        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
+        case "dishes": return <Dishes dishes={dishes} setDishes={setDishes} ings={ings} isMobile={isMobile} setPage={navTo} setEditDish={setEditDish} editDish={editDish} setNavBack={setNavBack} clearNavBack={clearNavBack} />
         case "inv":    return <Invoices invs={invs} setInvs={setInvs} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} recentAlerts={recentAlerts} setRecentAlerts={setRecentAlerts} />
         case "ai":     return <ChefZAI isMobile={isMobile} setPage={navTo} pushHistory={pushHistory} ings={ings} setIngs={setIngs} fornitori={fornitori} setFornitori={setFornitori} learned={learned} setLearned={setLearned} setRecentAlerts={setRecentAlerts} setInvs={setInvs} />
         case "spesa":  return <ListaSpesa spesa={spesa} setSpesa={setSpesa} ings={ings} fornitori={fornitori} isMobile={isMobile} setNavBack={setNavBack} clearNavBack={clearNavBack} setRecentAlerts={setRecentAlerts} />
