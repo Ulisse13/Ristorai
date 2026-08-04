@@ -1428,7 +1428,12 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
   const [forniEdit, setForniEdit]   = useState(null)
 
   // step: "list" | "upload" | "loading" | "review"
-  const [step, setStep]           = useState("list")
+  const [step, setStep]           = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("fm_found_products")
+      return (saved && JSON.parse(saved).length > 0) ? "review" : "list"
+    } catch(e) { return "list" }
+  })
   const [detailInv, setDetailInv] = useState(null)
   const [prog, setProg]           = useState(0)
   const [progLabel, setProgLabel] = useState("")
@@ -1443,7 +1448,12 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
 
   // ingredienti trovati in fattura
   // tipo: { nome, quantita, unita, prezzoUnitario, tipo: "update"|"new", ingId, ingName, cat, include }
-  const [found, setFound] = useState([])
+  const [found, setFound] = useState(() => {
+    try {
+      const saved = sessionStorage.getItem("fm_found_products")
+      return saved ? JSON.parse(saved) : []
+    } catch(e) { return [] }
+  })
 
   // Back button: annulla step corrente o chiudi fornitore
   useEffect(() => {
@@ -1459,6 +1469,7 @@ function Invoices({ invs, setInvs, ings, setIngs, fornitori, setFornitori, learn
     setStep("list"); setProg(0); setProgLabel(""); setOcrError(null)
     setFattura({ sup: "", num: "", date: "", total: "", vat: "" })
     setFattErr({}); setFound([]); setPriceAlerts([])
+    try { sessionStorage.removeItem("fm_found_products") } catch(e) {}
   }
 
   //  -  -  Comprimi immagine  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  -  - 
@@ -1861,6 +1872,7 @@ PRODOTTI:
     })
 
     setFound(foundList)
+    try { sessionStorage.setItem("fm_found_products", JSON.stringify(foundList)) } catch(e) {}
 
     // ── Rilevamento anomalie prezzi ──────────────────────────────────────────
     const alerts = []
@@ -2549,7 +2561,17 @@ PRODOTTI:
                             </div>
                             {p.confQty && +p.confQty > 0 && (p.prezzoFattura || p.prezzoUnitario) > 0 && (
                               <div style={{ fontSize: 11, color: STYLE.green, marginTop: 6, fontWeight: 600 }}>
-                                {formatEuro(Math.round((p.prezzoFattura || p.prezzoUnitario) / +p.confQty * 100) / 100)}/{p.confUnit || "kg"} per unità base
+                                {(() => {
+                                  const prezzoFatt = p.prezzoFattura || p.prezzoUnitario
+                                  const qty = +p.confQty || 1
+                                  const cu = p.confUnit || "kg"
+                                  // Converto sempre in prezzo per kg o litro (unità leggibile)
+                                  let prezzoGrande, unitaGrande
+                                  if (cu === "g") { prezzoGrande = (prezzoFatt / qty) * 1000; unitaGrande = "kg" }
+                                  else if (cu === "ml") { prezzoGrande = (prezzoFatt / qty) * 1000; unitaGrande = "l" }
+                                  else { prezzoGrande = prezzoFatt / qty; unitaGrande = cu }
+                                  return formatEuro(Math.round(prezzoGrande * 100) / 100) + "/" + unitaGrande
+                                })()} per unità base
                               </div>
                             )}
                             {(p.confUnit || "kg") === "pz" && (
