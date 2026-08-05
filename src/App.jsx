@@ -1353,7 +1353,7 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
                         { l: "Kcal", v: n.kcal, u: "" },
                         { l: "Proteine", v: n.prot, u: "g" },
                         { l: "Carbo", v: n.carb, u: "g" },
-                        { l: "Grassi", v: n.gsat, u: "g" },
+                        { l: "Grassi", v: n.gtot != null ? n.gtot : n.gsat, u: "g" },
                       ].map((k,i) => (
                         <div key={i} style={{ background: STYLE.el, borderRadius: 8, padding: "8px 10px", textAlign: "center" }}>
                           <div style={{ fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", color: STYLE.t3, marginBottom: 4 }}>{k.l}</div>
@@ -1361,8 +1361,9 @@ function Dishes({ dishes, setDishes, ings, isMobile, setPage, setEditDish, editD
                         </div>
                       ))}
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
                       {[
+                        { l: "Grassi sat.", v: n.gsat, u: "g" },
                         { l: "Fibre", v: n.fibr, u: "g" },
                         { l: "Zuccheri", v: n.zucc, u: "g" },
                         { l: "Sodio", v: n.sodio, u: "mg" },
