@@ -2,17 +2,62 @@ import { useState, useEffect, useRef, Component } from "react"
 import { lookupNutri, calcolaNutriPorzione } from "./nutriDB.js"
 
 
+// Levenshtein distance per gestire errori OCR (lettere in piu/mancanti)
+function levenshtein(a, b) {
+  const m = a.length, n = b.length
+  if (m === 0) return n
+  if (n === 0) return m
+  const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)])
+  for (let j = 0; j <= n; j++) dp[0][j] = j
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      dp[i][j] = a[i-1] === b[j-1]
+        ? dp[i-1][j-1]
+        : 1 + Math.min(dp[i-1][j], dp[i][j-1], dp[i-1][j-1])
+    }
+  }
+  return dp[m][n]
+}
+
 function simFornitore(a, b) {
   const na = normFornitore(a)
   const nb = normFornitore(b)
   if (!na || !nb) return 0
   if (na === nb) return 1
+
+  // 1. Match a parole intere (Jaccard)
   const aw = na.split(/\s+/).filter(w => w.length >= 3)
   const bw = nb.split(/\s+/).filter(w => w.length >= 3)
-  if (!aw.length || !bw.length) return 0
-  const common = aw.filter(w => bw.includes(w))
-  const union = new Set([...aw, ...bw]).size
-  return common.length / union
+  let wordScore = 0
+  if (aw.length && bw.length) {
+    const common = aw.filter(w => bw.includes(w))
+    const union = new Set([...aw, ...bw]).size
+    wordScore = common.length / union
+  }
+
+  // 2. Match compatto (rimuove spazi) - gestisce OCR che unisce/separa parole diversamente
+  const compA = na.replace(/\s+/g, "")
+  const compB = nb.replace(/\s+/g, "")
+
+  // 2a. Substring containment: una e contenuta nell'altra (es. "marr" in "uamarr" o "fhjmarr")
+  let containScore = 0
+  if (compA.length >= 3 && compB.length >= 3) {
+    if (compA.includes(compB) || compB.includes(compA)) {
+      const shorter = Math.min(compA.length, compB.length)
+      const longer = Math.max(compA.length, compB.length)
+      containScore = shorter / longer >= 0.5 ? 0.85 + (shorter / longer) * 0.15 : 0.6
+    }
+  }
+
+  // 2b. Distanza di edit normalizzata - per errori OCR (lettere sbagliate/mancanti)
+  let editScore = 0
+  if (compA.length >= 3 && compB.length >= 3) {
+    const dist = levenshtein(compA, compB)
+    const maxLen = Math.max(compA.length, compB.length)
+    editScore = 1 - (dist / maxLen)
+  }
+
+  return Math.max(wordScore, containScore, editScore)
 }
 
 function cleanJSON(str) {
@@ -1941,7 +1986,41 @@ PRODOTTI:
     if (!fattura.total || +fattura.total <= 0) e.total = "Totale > 0"
     if (Object.keys(e).length) { setFattErr(e); return }
 
-    const toProcess = found.filter(p => p.include && p.prezzoUnitario > 0)
+    // Rimuove sigle tecniche dal nome SOLO per il confronto (mai per il nome salvato)
+    // Cosi "Lombo Agnello Nzl C/O S/V" e "Lombo Agnello Surgelato C/O S/V" vengono
+    // riconosciuti come lo stesso prodotto se sono nella stessa categoria/sotto1 CORRETTA
+    function stripSigleForMatch(s) {
+      return normNameForMatch(s)
+        .replace(/\b(iqf|surgelat[oa]|congelat[oa]|frozen|gelo|abbattut[oa]|abb|fresc[oa]|crud[oa]|cott[oa])\b/gi, "")
+        .replace(/\b(c\s*\/?\s*o|s\s*\/?\s*v|s\s*\/?\s*o|b\s*\.?\s*a\s*\.?|dis|c\s*\/?\s*t|s\s*\/?\s*t)\b/gi, "")
+        .replace(/\s+/g, " ").trim()
+    }
+
+    let found0 = found
+    const toProcess = found0.filter(p => p.include && p.prezzoUnitario > 0).map(p => {
+      // Ricalcola SEMPRE il match usando i valori FINALI corretti dall'utente
+      // (categoria e nome possono essere stati modificati dopo la lettura AI)
+      const finalName = (p.nomeEdit || p.nome).trim()
+      const finalCat = p.cat
+      const finalSotto1 = p.sotto1 || ""
+      const finalNameStripped = stripSigleForMatch(finalName)
+
+      const match = ings.find(i => {
+        if (i.cat !== finalCat) return false
+        if ((i.sotto1 || "") !== finalSotto1) return false
+        const iNameStripped = stripSigleForMatch(i.name)
+        if (iNameStripped === finalNameStripped) return true
+        const aWords = iNameStripped.split(/\s+/).filter(w => w.length >= 4)
+        const bWords = finalNameStripped.split(/\s+/).filter(w => w.length >= 4)
+        if (!aWords.length || !bWords.length) return false
+        const common = aWords.filter(w => bWords.includes(w))
+        const union = new Set([...aWords, ...bWords]).size
+        return common.length / union >= 0.7 && common.length >= 2
+      })
+
+      if (match) return { ...p, tipo: "update", ingId: match.id }
+      return { ...p, tipo: "new" }
+    })
 
     // Aggiorna prezzi ingredienti esistenti
     const toUpdate = toProcess.filter(p => p.tipo === "update")
